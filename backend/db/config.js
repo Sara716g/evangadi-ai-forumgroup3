@@ -1,13 +1,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
+
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_HOST:', process.env.DB_HOST);
+
 import mysql from 'mysql2/promise';
 
 // Database connection pool
 export const db = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'evangadi_forum',
+  password: process.env.DB_PASS || 'pass',
+  database: process.env.DB_NAME || 'evangadi_ai_forum',
 });
 
 const ensureParams = params => {

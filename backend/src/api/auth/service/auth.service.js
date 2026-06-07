@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { safeExecute } from '../../../../db/config.js';
 import {
   BadRequestError,
-  UnauthenticatedError,
+  UnauthenticatedError
 } from '../../../utils/errors/index.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
