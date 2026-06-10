@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiClient } from "../../services/core/api.client.js";
 
 // ── Service layer ─────────────────────────────────────────────────────────────
 const questionService = {
@@ -16,10 +17,11 @@ const questionService = {
   },
 
   createQuestion: async ({ title, content }) => {
-    // Replace with: return api.post('/api/questions', { title, content })
-    await new Promise((r) => setTimeout(r, 1400));
-    if (Math.random() < 0.15) throw new Error("Server error. Please try again.");
-    return { hash: "abc123" };
+    const response = await apiClient.post("/api/questions", {
+      title,
+      content,
+    });
+    return response.data;
   },
 };
 

@@ -6,7 +6,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { SquarePen, Library, BookOpen } from "lucide-react";
-// import { questionService } from "../../services/questionService";
+import { questionService } from "../../services/question/question.service.js";
 import { useAuth } from "../../contexts/AuthContext";
 import styles from "./Dashboard.module.css";
 
