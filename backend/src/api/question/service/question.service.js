@@ -15,12 +15,12 @@
 
 import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError, ServiceUnavailableError } from '../../../utils/errors/index.js';
-import { generateEmbedding } from '../../../utils/ai.js';
+import { generateEmbedding, generateText } from '../../../utils/ai.js';
 import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
 
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
-const DEFAULT_K = 5; 
+const DEFAULT_K = 5;
 
 const mapQuestionRow = row => ({
   id: row.question_id,
@@ -94,13 +94,10 @@ export const createQuestionWithVectorService = async ({ userId, title, content }
   const insertResult = await safeExecute(insertSql, [questionHash, userId, title, content]);
   const questionId = insertResult.insertId;
 
-  // Initialize vector record with 'pending' status for async processing
   const sourceText = `${title}\n\n${content}`;
   const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
   await safeExecute(vectorSql, [questionId, sourceText]);
 
-  // Attempt synchronous embedding generation (can be offloaded to background worker)
-  // For now, generate inline to match current behavior; in production, use a job queue
   await generateQuestionEmbeddingAsync({ questionId, sourceText });
 
   return {
