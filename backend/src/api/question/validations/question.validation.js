@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import { validationErrorHandler } from "../../../middleware/validation-handler.js";
 
 export const createQuestionValidation = [
@@ -20,6 +20,20 @@ export const createQuestionValidation = [
     .isLength({ min: 10 })
     .withMessage("Content must be at least 10 characters long")
     .trim(),
+
+  validationErrorHandler,
+];
+
+export const getQuestionsValidation = [
+  query("search")
+    .optional()
+    .isString()
+    .withMessage("Search must be a string")
+    .trim(),
+  query("mine")
+    .optional()
+    .isIn(["true", "false"])
+    .withMessage("mine must be true or false"),
 
   validationErrorHandler,
 ];
