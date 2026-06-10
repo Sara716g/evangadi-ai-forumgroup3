@@ -1,38 +1,35 @@
-import express from "express";
-import {
-  createQuestionController,
-  getQuestionsController,
-} from "../controller/question.controller.js";
+import express from 'express';
+import { authenticateUser } from '../../../middleware/authentication.js';
+import { validationErrorHandler } from '../../../middleware/validation-handler.js';
 import {
   createQuestionValidation,
   getQuestionsValidation,
-} from "../validations/question.validation.js";
-import { authenticateUser } from "../../../middleware/authentication.js";
+  getSingleQuestionValidation,
+  searchQuestionsValidation,
+  getSimilarQuestionsValidation,
+  generateQuestionDraftCoachValidation,
+  assessAnswerFitValidation,
+} from '../validations/question.validation.js';
+import {
+  createQuestionController,
+  getQuestionsController,
+  getSingleQuestionController,
+  searchQuestionsController,
+  getSimilarQuestionsController,
+  generateQuestionDraftCoachController,
+  assessAnswerAgainstQuestionController,
+} from '../controller/question.controller.js';
 
 const router = express.Router();
 
-/**
- * @route  POST /api/questions
- * @desc   Create a new question and generate a vector embedding
- * @access Protected
- */
-router.post(
-  "/",
-  authenticateUser,
-  createQuestionValidation,
-  createQuestionController,
-);
+router.use(authenticateUser);
 
-/**
- * @route  GET /api/questions
- * @desc   Get all questions with optional search and mine filters
- * @access Protected
- */
-router.get(
-  "/",
-  authenticateUser,
-  getQuestionsValidation,
-  getQuestionsController,
-);
+router.post('/', createQuestionValidation, validationErrorHandler, createQuestionController);
+router.post('/draft-coach', generateQuestionDraftCoachValidation, validationErrorHandler, generateQuestionDraftCoachController);
+router.post('/:questionHash/answer-fit', assessAnswerFitValidation, validationErrorHandler, assessAnswerAgainstQuestionController);
+router.get('/', getQuestionsValidation, validationErrorHandler, getQuestionsController);
+router.get('/search', searchQuestionsValidation, validationErrorHandler, searchQuestionsController);
+router.get('/:questionHash/similar', getSimilarQuestionsValidation, validationErrorHandler, getSimilarQuestionsController);
+router.get('/:questionHash', getSingleQuestionValidation, validationErrorHandler, getSingleQuestionController);
 
 export default router;
