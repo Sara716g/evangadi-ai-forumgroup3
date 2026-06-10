@@ -75,3 +75,59 @@ export const createQuestionWithVectorService = async ({
 
   return { id: questionId, questionHash, title, content, userId };
 };
+
+export const getQuestionsService = async ({ search, mine, userId }) => {
+  const params = [];
+
+  let sql = `
+    SELECT
+      q.question_id        AS id,
+      q.question_hash      AS questionHash,
+      q.title,
+      q.content,
+      q.created_at         AS createdAt,
+      q.updated_at         AS updatedAt,
+      u.user_id            AS authorId,
+      u.first_name         AS authorFirstName,
+      u.last_name          AS authorLastName,
+      COUNT(a.answer_id)   AS answerCount
+    FROM questions q
+    JOIN users u ON q.user_id = u.user_id
+    LEFT JOIN answers a ON q.question_id = a.question_id
+  `;
+
+  const conditions = [];
+
+  if (mine === "true") {
+    conditions.push("q.user_id = ?");
+    params.push(userId);
+  }
+
+  if (search) {
+    conditions.push("(q.title LIKE ? OR q.content LIKE ?)");
+    params.push(`%${search}%`, `%${search}%`);
+  }
+
+  if (conditions.length > 0) {
+    sql += " WHERE " + conditions.join(" AND ");
+  }
+
+  sql += " GROUP BY q.question_id ORDER BY q.created_at DESC LIMIT 100";
+
+  const rows = await safeExecute(sql, params);
+
+  return rows.map((row) => ({
+    id: row.id,
+    questionHash: row.questionHash,
+    title: row.title,
+    content: row.content,
+    answerCount: Number(row.answerCount),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    author: {
+      id: row.authorId,
+      firstName: row.authorFirstName,
+      lastName: row.authorLastName,
+    },
+  }));
+};
