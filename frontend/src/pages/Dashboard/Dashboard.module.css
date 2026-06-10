@@ -1,0 +1,359 @@
+.contentBody {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #334155;
+  background-color: #f8fafc;
+}
+
+.upperActionHeroCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.breadcrumb {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ea580c;
+  margin-bottom: 0.375rem;
+}
+
+.welcomeSection h2 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.welcomeSection p {
+  font-size: 0.875rem;
+  color: #475569;
+  margin-top: 0.5rem;
+  max-width: 48rem;
+  line-height: 1.625;
+}
+
+.quickCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .quickCardsGrid { 
+    grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  }
+}
+
+.actionCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.actionCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.cardIcon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.iconOrange { 
+  background-color: #fff7ed; 
+  color: #ea580c; 
+  border: 1px solid #ffedd5; 
+}
+
+.iconYellow { 
+  background-color: #fffbeb; 
+  color: #d97706; 
+  border: 1px solid #fef3c7; 
+}
+
+.iconBlue { 
+  background-color: #f0fdfa; 
+  color: #0d9488; 
+  border: 1px solid #ccfbf1; 
+}
+
+.cardText h3 { 
+  font-size: 0.875rem; 
+  font-weight: 600; 
+  color: #0f172a; 
+  margin: 0; 
+}
+
+.cardText p { 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  margin-top: 0.25rem; 
+  line-height: 1.4; 
+}
+
+.figuresSectionBlock { 
+  border-top: 1px solid #f1f5f9; 
+  padding-top: 1.5rem; 
+}
+
+.sectionCaption { 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  margin-bottom: 0.75rem; 
+}
+
+.statsGrid { 
+  display: grid; 
+  grid-template-columns: repeat(2, minmax(0, 1fr)); 
+  gap: 1rem; 
+}
+
+@media (min-width: 1024px) {
+  .statsGrid { 
+    grid-template-columns: repeat(4, minmax(0, 1fr)); 
+  }
+}
+
+.statBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 84px;
+}
+
+.statLabel { 
+  font-size: 0.75rem; 
+  font-weight: 500; 
+  color: #64748b; 
+}
+
+.statValue { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  color: #0f172a; 
+  margin-top: 0.25rem; 
+}
+
+.discussionFeedContainer {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.feedHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feedHeader h3 { 
+  font-size: 1rem; 
+  font-weight: 700; 
+  color: #0f172a; 
+  margin: 0; 
+}
+
+.feedHeader p { 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  margin-top: 0.125rem; 
+}
+
+.badgeOrange {
+  background-color: #ea580c;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+}
+
+.feedStateCenteringFrame { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 5rem 1.5rem; 
+}
+
+.feedPulseLoaderIndicator { 
+  color: #64748b; 
+  font-size: 0.875rem; 
+  font-weight: 500; 
+  animation: pulse 2s infinite; 
+}
+
+@keyframes pulse { 
+  0%, 100% { opacity: 1; } 
+  50% { opacity: 0.5; } 
+}
+
+.feedErrorBannerMessage { 
+  color: #ef4444; 
+  font-weight: 600; 
+  background-color: #fef2f2; 
+  border: 1px solid #fee2e2; 
+  padding: 0.875rem 1.5rem; 
+  border-radius: 0.5rem; 
+}
+
+.feedEmptyState { 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 4rem 1.5rem; 
+}
+
+.feedEmptyState p { 
+  color: #475569; 
+  font-size: 0.875rem; 
+  border: 1px dashed #cbd5e1; 
+  background-color: #f8fafc; 
+  padding: 2rem 3rem; 
+  border-radius: 0.75rem; 
+  text-align: center; 
+}
+
+.feedThreadStreamList { 
+  display: flex; 
+  flex-direction: column; 
+}
+
+.feedItemCardRow { 
+  display: flex; 
+  gap: 1rem; 
+  padding: 1.5rem; 
+  border-bottom: 1px solid #e2e8f0; 
+  transition: background-color 0.15s ease; 
+  cursor: pointer; 
+}
+
+.rowCardStandardHover:hover { 
+  background-color: #f8fafc; 
+}
+
+.feedItemCardUserOwned { 
+  border-left: 4px solid #ea580c; 
+  background-color: #ffffff; 
+}
+
+.avatar { 
+  width: 2.25rem; 
+  height: 2.25rem; 
+  border-radius: 50%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: 700; 
+  font-size: 0.75rem; 
+  flex-shrink: 0; 
+}
+
+.feedAvatarBlue { 
+  background-color: #bae6fd; 
+  color: #0369a1; 
+}
+
+.feedAvatarGreen { 
+  background-color: #bbf7d0; 
+  color: #15803d; 
+}
+
+.feedItemTextContentColumn { 
+  flex: 1; 
+  min-width: 0; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.375rem; 
+}
+
+.feedItemHeadlineFlexRow { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+}
+
+.feedItemHeadlineFlexRow h4 { 
+  font-size: 0.875rem; 
+  font-weight: 600; 
+  color: #0f172a; 
+  margin: 0; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+
+.feedItemCardRow:hover h4 { 
+  color: #ea580c; 
+}
+
+.yoursInlineFlagBadge { 
+  background-color: #ffedd5; 
+  color: #ea580c; 
+  font-size: 9px; 
+  font-weight: 700; 
+  padding: 0.125rem 0.375rem; 
+  border-radius: 0.25rem; 
+}
+
+.feedItemTruncatedDescription { 
+  font-size: 0.75rem; 
+  color: #64748b; 
+  line-height: 1.5; 
+  display: -webkit-box; 
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical; 
+  overflow: hidden; 
+}
+
+.feedItemMetricsFooterRow { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.75rem; 
+  font-size: 11px; 
+  color: #94a3b8; 
+}
+
+.feedItemFooterMetricItem { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.25rem; 
+}g
