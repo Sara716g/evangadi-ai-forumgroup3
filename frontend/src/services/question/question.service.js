@@ -23,3 +23,9 @@ export const questionService = {
     return response.data.data;
   },
 };
+
+// Convenience function used by question detail page
+export async function getSingleQuestion(questionHash) {
+  const res = await apiClient.get(`/api/questions/${questionHash}`);
+  return res.data;
+}
