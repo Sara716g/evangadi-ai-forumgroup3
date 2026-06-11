@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import { getSingleQuestion } from "../../services/question.service";
+import { getSingleQuestion } from "../../services/";
 import { postAnswer, assessAnswerFit } from "../../services/answer.service";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
