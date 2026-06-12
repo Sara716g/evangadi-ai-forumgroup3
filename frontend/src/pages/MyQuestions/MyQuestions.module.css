@@ -69,6 +69,7 @@
     align-items: center;
     gap: var(--spacing-xs, 0.5rem);
     white-space: nowrap;
+    text-decoration: none;
     transition: background-color var(--transition-base, 0.2s ease);
 }
 
@@ -150,6 +151,17 @@
     color: #334155;
     line-height: 1.6;
     margin: 0;
+}
+
+/* Styled inline routing hyperlink meeting requirement 4.3 */
+.inline_link {
+    color: var(--primary, #f05a28);
+    text-decoration: none;
+    font-weight: var(--font-medium, 500);
+}
+
+.inline_link:hover {
+    text-decoration: underline;
 }
 
 /* 4. Populated List Wrapper Container Panel */

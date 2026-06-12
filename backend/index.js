@@ -1,8 +1,11 @@
+import 'dotenv/config';
 import express from 'express';
 import { db } from './db/config.js';
 import { mainRouter } from './src/api/routes.js';
 import { errorHandler } from './src/middleware/error-handler.js';
+
 import cors from 'cors';
+// import { authenticateUser } from './src/middleware/authentication.js';
 
 const app = express();
 const port = process.env.PORT || 3777;
@@ -12,11 +15,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Authentication middleware
+// app.use(authenticateUser);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date() });
 });
 
+// Main API routes
 app.use('/api', mainRouter);
 
 app.use(errorHandler);
