@@ -83,30 +83,6 @@ startServer();*/
 
 
 
-import express from 'express';
-import cors from 'cors';
-import mainRouter from './src/api/routes.js';
-import { errorHandler } from './src/middleware/error-handler.js';
-
-const app = express();
-const port = process.env.PORT || 3777;
-
-// middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// health
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
-// routes
-app.use('/api', mainRouter);
-
-// error handler
-app.use(errorHandler);
-
 // start server
 app.listen(port, () => {
   console.log(`SERVER RUNNING: http://localhost:${port}`);

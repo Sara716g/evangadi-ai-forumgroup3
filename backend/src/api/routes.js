@@ -4,7 +4,7 @@ import questionRoutes from './question/routes/question.routes.js';
 import answerRoutes from './answer/routes/answer.routes.js';
 import ragRoutes from './rag/routes/rag.routes.js';
 
-const mainRouter = express.Router();
+export const mainRouter = express.Router();
 
 mainRouter.use('/auth', authRoutes);
 
