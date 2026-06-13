@@ -23,35 +23,15 @@ app.use('/api', mainRouter);
 app.use(errorHandler);
 
 // Start server
-/*const startServer = async () => {
+const startServer = async () => {
   try {
     // Test database connection
     const connection = await db.getConnection();
 
     console.log('Database connection established successfully.');
     connection.release();
-*/
-/*const startServer = async () => {
-  try {
-    console.log('Starting server...');*/
 
-    // COMMENT OUT DB TEST TEMPORARILY
-    // const connection = await db.getConnection();
-    // console.log('Database connection established successfully.');
-    // connection.release();
-/*
-    app.listen(port, () => {
-      console.log(`SERVER RUNNING: http://localhost:${port}`);
-    });
-
-  } catch (error) {
-    console.error('Server failed:', error.message);
-  }
-};
-
-startServer();*/
-
-    /*app.listen(port, err => {
+    app.listen(port, err => {
       if (err) {
         if (err.code === 'EADDRINUSE') {
           console.error(
@@ -64,12 +44,6 @@ startServer();*/
       }
       console.log(`Server running on port http://localhost:${port}`);
     });
-
-app.listen(port, () => {
-  console.log(`Server running on port http://localhost:${port}`);
-});
-
-
   } catch (error) {
     console.error(
       'Failed to connect to the database. Server not started.',
@@ -79,11 +53,5 @@ app.listen(port, () => {
   }
 };
 
-startServer();*/
+startServer();
 
-
-
-// start server
-app.listen(port, () => {
-  console.log(`SERVER RUNNING: http://localhost:${port}`);
-});

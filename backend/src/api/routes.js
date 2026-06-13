@@ -6,8 +6,8 @@ import ragRoutes from './rag/routes/rag.routes.js';
 
 export const mainRouter = express.Router();
 
+// Authentication routes
 mainRouter.use('/auth', authRoutes);
-
 
 // Question routes
 mainRouter.use('/questions', questionRoutes);
@@ -17,5 +17,3 @@ mainRouter.use('/answers', answerRoutes);
 
 // RAG document routes
 mainRouter.use('/rag', ragRoutes);
-
-export default mainRouter;
