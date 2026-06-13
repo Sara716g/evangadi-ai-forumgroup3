@@ -1,22 +1,16 @@
 import dotenv from "dotenv";
 dotenv.config();
-import mysql from "mysql2/promise";
 
-// Normalize env values and support both DB_PASSWORD and DB_PASS
-const dbHost = process.env.DB_HOST?.trim() || "localhost";
-const dbUser =
-  process.env.DB_USER?.trim() || process.env.DB_USERNAME?.trim() || "Customer2";
-const dbPassword =
-  process.env.DB_PASSWORD?.trim() || process.env.DB_PASS?.trim();
-const dbName = process.env.DB_NAME?.trim() || "evangadi_forum";
-const dbPort = Number(process.env.DB_PORT?.trim() || 3306);
+console.log('DB_NAME:', process.env.DB_NAME);
+console.log('DB_HOST:', process.env.DB_HOST);
+
+import mysql from 'mysql2/promise';
 
 export const db = mysql.createPool({
-  host: dbHost,
-  user: dbUser,
-  password: dbPassword,
-  database: dbName,
-  port: dbPort,
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || 'pass',
+  database: process.env.DB_NAME || 'evangadi_ai_forum',
 });
 
 const ensureParams = (params) => {
