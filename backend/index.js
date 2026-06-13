@@ -1,4 +1,5 @@
-/*import express from 'express';
+import 'dotenv/config';
+import express from 'express';
 import { db } from './db/config.js';
 import { mainRouter } from './src/api/routes.js';
 import { errorHandler } from './src/middleware/error-handler.js';
@@ -52,7 +53,13 @@ startServer();*/
 
     /*app.listen(port, err => {
       if (err) {
-        console.error('Failed to start the server:', err.message);
+        if (err.code === 'EADDRINUSE') {
+          console.error(
+            `Port ${port} is already in use. Try setting a different PORT in backend/.env or start the server with PORT=<port> node index.js`,
+          );
+        } else {
+          console.error('Failed to start the server:', err.message);
+        }
         process.exit(1);
       }
       console.log(`Server running on port http://localhost:${port}`);
