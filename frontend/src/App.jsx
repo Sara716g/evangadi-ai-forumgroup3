@@ -11,6 +11,8 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import Auth from './pages/Auth/Auth';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Landing from './pages/Landing/Landing';
+import QuestionDetail from './pages/QuestionDetail/QuestionDetail';
+import PostQuestion from './pages/PostQuestion/PostQuestion';
 
 function App() {
   return (
@@ -35,7 +37,7 @@ function App() {
               path='/questions/ask'
               element={
                 <ProtectedRoute>
-                  <h1>Ask a Question Page</h1>
+                  <PostQuestion/>
                 </ProtectedRoute>
               }
             />
@@ -51,7 +53,7 @@ function App() {
               path='/question/:id'
               element={
                 <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
+                  <QuestionDetail />
                 </ProtectedRoute>
               }
             />
