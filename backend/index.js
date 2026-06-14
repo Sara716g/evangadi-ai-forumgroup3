@@ -13,12 +13,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+// Base Route (Fixes the "Cannot GET /" error)
+app.get("/", (req, res) => {
+  res.send(
+    "Welcome to the Evangadi AI Forum Backend! Server is running smoothly.",
+  );
 });
 
-app.use('/api', mainRouter);
+// Health check
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date() });
+});
+
+app.use("/api", mainRouter);
 
 app.use(errorHandler);
 
@@ -28,10 +35,10 @@ const startServer = async () => {
     // Test database connection
     const connection = await db.getConnection();
 
-    console.log('Database connection established successfully.');
+    console.log("Database connection established successfully.");
     connection.release();
 
-    app.listen(port, err => {
+    app.listen(port, (err) => {
       if (err) {
         if (err.code === 'EADDRINUSE') {
           console.error(
@@ -46,7 +53,7 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error(
-      'Failed to connect to the database. Server not started.',
+      "Failed to connect to the database. Server not started.",
       error.message,
     );
     process.exit(1);
