@@ -4,16 +4,11 @@ import { apiClient } from "../../services/core/api.client.js";
 // ── Service layer ─────────────────────────────────────────────────────────────
 const questionService = {
   generateQuestionDraftCoach: async ({ title, content }) => {
-    const res = await fetch("/api/questions/draft-coach", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content }),
+    const response = await apiClient.post("/api/questions/draft-coach", {
+      title,
+      content,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Server error ${res.status}`);
-    }
-    return res.json();
+    return response.data;
   },
 
   createQuestion: async ({ title, content }) => {
@@ -102,8 +97,9 @@ export default function PostQuestion() {
       const result = await questionService.generateQuestionDraftCoach(formData);
       setCoachFeedback(result);
       setShowCoach(true);
-    } catch {
-      setCoachError("Could not reach AI service. Please try again.");
+    } catch (err) {
+      const errorMsg = err?.response?.data?.msg || "Could not reach AI service. Please try again.";
+      setCoachError(errorMsg);
     } finally {
       setIsCoaching(false);
     }

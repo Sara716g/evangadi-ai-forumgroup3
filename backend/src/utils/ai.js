@@ -1,12 +1,13 @@
 // backend/src/utils/ai.js
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { BadRequestError, ServiceUnavailableError } from './errors/index.js';
 
 dotenv.config();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
-const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash-lite';
+const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.0-flash-lite';
 
 // Initialize the client instance using the standard SDK
 export const aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
@@ -20,12 +21,12 @@ const parsePartsText = (content) => {
 
 export const generateEmbedding = async (text) => {
   if (!text || typeof text !== 'string') {
-    throw new Error('Text is required for embedding generation.');
+    throw new BadRequestError('Text is required for embedding generation.');
   }
 
   const normalizedText = text.trim();
   if (!normalizedText) {
-    throw new Error('Text must not be empty for embedding generation.');
+    throw new BadRequestError('Text must not be empty for embedding generation.');
   }
 
   const result = await aiClient.models.embedContent({
@@ -43,16 +44,28 @@ export const generateEmbedding = async (text) => {
 
 export const generateText = async (prompt) => {
   if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt is required for text generation.');
+    throw new BadRequestError('Prompt is required for text generation.');
   }
 
-  const response = await aiClient.models.generateContent({
-    model: GEMINI_TEXT_MODEL,
-    contents: prompt,
-    config: {
-      maxOutputTokens: 250,
-    },
-  });
+  let response;
+  try {
+    response = await aiClient.models.generateContent({
+      model: GEMINI_TEXT_MODEL,
+      contents: prompt,
+      config: {
+        maxOutputTokens: 250,
+      },
+    });
+  } catch (err) {
+    const msg = err?.message || '';
+    if (msg.includes('429') || msg.includes('quota')) {
+      throw new ServiceUnavailableError('AI service quota exceeded. Please try again later.');
+    }
+    if (msg.includes('404') || msg.includes('not found')) {
+      throw new ServiceUnavailableError(`AI model "${GEMINI_TEXT_MODEL}" is not available. Check GEMINI_TEXT_MODEL in .env.`);
+    }
+    throw new ServiceUnavailableError('AI service is temporarily unavailable. Please try again later.');
+  }
 
   const candidate = response.candidates?.[0];
   if (!candidate?.content) {

@@ -215,8 +215,9 @@ export default function QuestionDetail() {
     try {
       const result = await assessAnswerFit(id, answerText);
       setFitResult(result);
-    } catch {
-      setFitResult({ level: "weak", note: "Could not evaluate fit. Please try again." });
+    } catch (err) {
+      const errorMsg = err?.response?.data?.msg || "Could not evaluate fit. Please try again.";
+      setFitResult({ level: "weak", note: errorMsg });
     } finally {
       setIsChecking(false);
     }
