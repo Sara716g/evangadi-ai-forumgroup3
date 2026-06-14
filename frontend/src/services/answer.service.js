@@ -8,11 +8,11 @@ export async function postAnswer(questionId, content) {
   return res.data;
 }
 
-export async function assessAnswerFit(questionHash, content) {
+export async function assessAnswerFit(questionHash, answerText) {
   const res = await apiClient.post(
     `/api/questions/${questionHash}/answer-fit`,
     {
-      content,
+      answerText,
     },
   );
   return res.data;
