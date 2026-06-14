@@ -9,10 +9,10 @@ export const questionService = {
     return response.data;
   },
 
-  getQuestions: async (search = "") => {
-    const response = await apiClient.get("/api/questions", {
-      params: { search },
-    });
+  getQuestions: async (search = "", mine = false) => {
+    const params = { search };
+    if (mine) params.mine = true;
+    const response = await apiClient.get("/api/questions", { params });
     return response.data.data;
   },
 

@@ -21,7 +21,7 @@ export default function MyQuestions() {
       try {
         setLoading(true);
         setError(null);
-        const data = await questionServic.getQuestions({ mine: true });
+        const data = await questionService.getQuestions("", true);
         setQuestions(data);
       } catch (err) {
         setError(err.message || "Failed to fetch questions.");
