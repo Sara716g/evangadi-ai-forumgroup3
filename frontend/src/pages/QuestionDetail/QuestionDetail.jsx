@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import { getSingleQuestion } from "../../services/";
+import { getSingleQuestion, getSimilarQuestions } from "../../services/";
 import { postAnswer, assessAnswerFit } from "../../services/answer.service";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -161,6 +161,7 @@ export default function QuestionDetail() {
 
   const [question,   setQuestion]  = useState(null);
   const [answers,    setAnswers]   = useState([]);
+  const [similarQuestions, setSimilarQuestions] = useState([]);
   const [isLoading,  setIsLoading] = useState(true);
   const [loadError,  setLoadError] = useState(false);
 
@@ -182,6 +183,11 @@ export default function QuestionDetail() {
         const data = await getSingleQuestion(id);
         setQuestion(data.question ?? data);
         setAnswers(data.answers ?? []);
+
+        // Fetch similar questions in the background (non-blocking)
+        getSimilarQuestions(id)
+          .then((res) => setSimilarQuestions(res.data ?? []))
+          .catch(() => setSimilarQuestions([]));
       } catch {
         setLoadError(true);
       } finally {
@@ -283,7 +289,10 @@ export default function QuestionDetail() {
   const isOwnQuestion = false;
 
   return (
-    <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 20px" }}>
+    <div style={{ display: "flex", gap: 28, maxWidth: 1160, margin: "0 auto", padding: "24px 20px", alignItems: "flex-start" }}>
+
+      {/* ── main column ── */}
+      <div style={{ flex: 1, minWidth: 0 }}>
 
       {/* back link */}
       <Link
@@ -488,6 +497,76 @@ export default function QuestionDetail() {
           </div>
         </div>
       )}
+
+      </div>
+
+      {/* ── sidebar ── */}
+      <aside
+        style={{
+          width: 280,
+          flexShrink: 0,
+          position: "sticky",
+          top: 24,
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #e8e8e8",
+            borderRadius: 10,
+            padding: "18px 16px",
+          }}
+        >
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#1a1a1a" }}>
+            Related Questions
+          </h3>
+
+          {similarQuestions.length === 0 ? (
+            <p style={{ color: "#999", fontSize: 13 }}>
+              No related questions found.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {similarQuestions.map((sq) => (
+                <Link
+                  key={sq.questionHash || sq.id}
+                  to={`/question/${sq.questionHash || sq.id}`}
+                  style={{
+                    display: "block",
+                    padding: "10px 12px",
+                    background: "#fafafa",
+                    border: "1px solid #f0f0f0",
+                    borderRadius: 8,
+                    textDecoration: "none",
+                    transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#e67e22")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#f0f0f0")}
+                >
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#e67e22",
+                      marginBottom: 4,
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {sq.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#888" }}>
+                    {sq.author?.firstName || ""} {sq.author?.lastName || ""}{" "}
+                    <span style={{ float: "right" }}>
+                      {sq.createdAt ? formatDate(sq.createdAt) : ""}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+
     </div>
   );
 }

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { SquarePen, Library, BookOpen } from "lucide-react";
 import { questionService } from "../../services/question/question.service.js";
 import { useAuth } from "../../contexts/AuthContext";
@@ -22,11 +22,20 @@ export default function Dashboard() {
   // -----------------------------
   // STATE MANAGEMENT
   // -----------------------------
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get("q") || "";
+  const urlSemantic = searchParams.get("semantic") || "";
+  const isSemantic = urlSemantic.length > 0;
+
   const [questions, setQuestions] = useState([]);
-  const [query, setQuery] = useState("");
-  const [searchMode, setSearchMode] = useState("keyword"); // "keyword" or "semantic"
+  const [searchMode, setSearchMode] = useState(isSemantic ? "semantic" : "keyword");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Sync searchMode and query from URL params
+  useEffect(() => {
+    setSearchMode(isSemantic ? "semantic" : "keyword");
+  }, [isSemantic]);
 
   // -----------------------------
   // REFACTORED DATA FETCHING LAYER
@@ -38,7 +47,6 @@ export default function Dashboard() {
         setError(null);
 
         let data;
-        // 2. USE THE SERVICE COMPONENT METHOD INSTEAD OF AXIOS CODES
         if (searchMode === "keyword") {
           data = await questionService.getQuestions(searchQuery);
         } else {
@@ -62,18 +70,9 @@ export default function Dashboard() {
   );
 
   useEffect(() => {
-    fetchQuestions();
-  }, [fetchQuestions]);
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    fetchQuestions(query);
-  };
-
-  const handleReset = () => {
-    setQuery("");
-    fetchQuestions("");
-  };
+    const activeQuery = isSemantic ? urlSemantic : urlQuery;
+    fetchQuestions(activeQuery);
+  }, [fetchQuestions, urlQuery, urlSemantic, isSemantic]);
 
   // -----------------------------
   // STATS CALCULATIONS

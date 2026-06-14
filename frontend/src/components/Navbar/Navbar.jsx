@@ -75,9 +75,10 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
           type='text'
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          placeholder='Search questions by keyword…'
+          placeholder='Search questions by keyword...'
           className={styles['navbar__search-input']}
           aria-label='Search questions by keyword'
+          style={{ paddingRight: searchTerm.length >= 3 ? '7.5rem' : '1.25rem' }}
         />
         {searchTerm.length >= 3 && (
           <button
@@ -93,23 +94,25 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
       </form>
 
       <div className={styles.navbar__actions}>
-        <div className={styles.navbar__user}>
-          <span className={styles['navbar__user-name']}>
-            {user ? `${user.firstName} ${user.lastName}` : 'Guest'}
-          </span>
-          <div className={styles['navbar__user-avatar']}>
-            <img
-              src={
-                user?.avatar ||
-                `https://ui-avatars.com/api/?name=${
-                  user?.firstName || 'User'
-                }+${user?.lastName || ''}&background=random`
-              }
-              alt='avatar'
-              referrerPolicy='no-referrer'
-            />
+        {user && (
+          <div className={styles.navbar__user}>
+            <span className={styles['navbar__user-name']}>
+              {user.firstName} {user.lastName}
+            </span>
+            <div className={styles['navbar__user-avatar']}>
+              <img
+                src={
+                  user?.avatar ||
+                  `https://ui-avatars.com/api/?name=${
+                    user?.firstName || 'User'
+                  }+${user?.lastName || ''}&background=random`
+                }
+                alt='avatar'
+                referrerPolicy='no-referrer'
+              />
+            </div>
           </div>
-        </div>
+        )}
         {user && (
           <button
             type='button'
@@ -118,7 +121,7 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
             aria-label='Logout'
             title='Logout'
           >
-            <LogOut size={20} />
+            <LogOut size={18} />
           </button>
         )}
       </div>
