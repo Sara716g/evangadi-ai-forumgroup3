@@ -53,7 +53,7 @@ export const generateText = async (prompt) => {
       model: GEMINI_TEXT_MODEL,
       contents: prompt,
       config: {
-        maxOutputTokens: 250,
+        maxOutputTokens: 1024,
       },
     });
   } catch (err) {

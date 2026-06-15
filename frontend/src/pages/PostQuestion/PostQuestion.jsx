@@ -8,7 +8,7 @@ const questionService = {
       title,
       content,
     });
-    return response.data;
+    return response.data.data;
   },
 
   createQuestion: async ({ title, content }) => {
