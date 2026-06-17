@@ -1,7 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { BadRequestError } from '../../utils/errors/index.js';
+import { BadRequestError } from '../../../utils/errors/index.js';
 
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'rag');
 fs.mkdirSync(UPLOAD_BASE_DIR, { recursive: true });

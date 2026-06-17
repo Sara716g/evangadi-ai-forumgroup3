@@ -15,7 +15,7 @@ import {
   queryDocumentController,
   searchInDocumentController,
 } from '../controller/rag.controller.js';
-import { uploadDocument, createDocumentMulterErrorHandler } from '../rag.upload.config.js';
+import { uploadDocument, createDocumentMulterErrorHandler } from '../config/rag.upload.config.js';
 
 const router = express.Router();
 

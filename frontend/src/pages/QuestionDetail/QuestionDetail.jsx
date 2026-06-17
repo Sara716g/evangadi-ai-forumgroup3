@@ -266,7 +266,7 @@ export default function QuestionDetail() {
           Failed to load question details.
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/dashboard")}
           style={{
             background: "#e67e22",
             color: "#fff",
@@ -296,7 +296,7 @@ export default function QuestionDetail() {
 
       {/* back link */}
       <Link
-        to="/"
+        to="/dashboard"
         style={{
           display: "inline-flex",
           alignItems: "center",

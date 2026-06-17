@@ -73,12 +73,14 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
       return { success: true, status: 'ready' };
     }
 
+    console.error('[Embedding] Empty vector returned from Gemini');
     await safeExecute(
       `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
       [questionId],
     );
     return { success: false, error: 'Embedding generation returned empty vector' };
   } catch (error) {
+    console.error('[Embedding] Failed to generate embedding:', error);
     await safeExecute(
       `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
       [questionId],

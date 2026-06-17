@@ -32,6 +32,9 @@ export const generateEmbedding = async (text) => {
   const result = await aiClient.models.embedContent({
     model: GEMINI_EMBEDDING_MODEL,
     contents: [normalizedText],
+    config: {
+      taskType: 'RETRIEVAL_DOCUMENT',
+    },
   });
 
   const values = result.embeddings?.[0]?.values;
@@ -53,23 +56,28 @@ export const generateText = async (prompt) => {
       model: GEMINI_TEXT_MODEL,
       contents: prompt,
       config: {
-        maxOutputTokens: 1024,
+        maxOutputTokens: 4096,
       },
     });
   } catch (err) {
-    const msg = err?.message || '';
+    console.error('[Gemini generateText] Full error:', err);
+    const msg = err?.message || String(err);
     if (msg.includes('429') || msg.includes('quota')) {
-      throw new ServiceUnavailableError('AI service quota exceeded. Please try again later.');
+      throw new ServiceUnavailableError(`AI service quota exceeded: ${msg}`);
     }
     if (msg.includes('404') || msg.includes('not found')) {
-      throw new ServiceUnavailableError(`AI model "${GEMINI_TEXT_MODEL}" is not available. Check GEMINI_TEXT_MODEL in .env.`);
+      throw new ServiceUnavailableError(`AI model "${GEMINI_TEXT_MODEL}" is not available: ${msg}`);
     }
-    throw new ServiceUnavailableError('AI service is temporarily unavailable. Please try again later.');
+    throw new ServiceUnavailableError(`AI service error: ${msg}`);
   }
 
   const candidate = response.candidates?.[0];
   if (!candidate?.content) {
     throw new Error('Failed to generate text from Gemini.');
+  }
+
+  if (candidate.finishReason === 'MAX_TOKENS') {
+    console.warn('[Gemini generateText] Response truncated: hit maxOutputTokens limit');
   }
 
   return parsePartsText(candidate.content);

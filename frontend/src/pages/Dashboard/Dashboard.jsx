@@ -119,7 +119,7 @@ export default function Dashboard() {
 
         {/* QUICK HUD GRID NAVIGATION ACTION CARDS */}
         <div className={styles.quickCardsGrid}>
-          <div className={styles.actionCard} onClick={() => navigate("/ask")}>
+          <div className={styles.actionCard} onClick={() => navigate("/questions/ask")}>
             <div className={`${styles.cardIcon} ${styles.iconOrange}`}>
               <SquarePen size={20} />
             </div>
@@ -131,7 +131,7 @@ export default function Dashboard() {
 
           <div
             className={styles.actionCard}
-            onClick={() => navigate("/my-topics")}
+            onClick={() => navigate("/my-questions")}
           >
             <div className={`${styles.cardIcon} ${styles.iconOrange}`}>
               <Library />
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
           <div
             className={styles.actionCard}
-            onClick={() => navigate("/knowledge-base")}
+            onClick={() => navigate("/rag-documents")}
           >
             <div className={`${styles.cardIcon} ${styles.iconOrange}`}>
               <BookOpen size={20} />
