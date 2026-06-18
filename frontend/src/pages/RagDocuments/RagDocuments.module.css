@@ -1,0 +1,402 @@
+/* ─── Page Wrapper ──────────────────────────────────────────────────────────── */
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ─── Page Header ───────────────────────────────────────────────────────────── */
+.pageHeader {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.breadcrumb {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #ea580c;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0.25rem 0 0.5rem;
+  line-height: 1.2;
+}
+
+.pageDescription {
+  font-size: 0.875rem;
+  color: #475569;
+  line-height: 1.6;
+  max-width: 52rem;
+  margin: 0;
+}
+
+/* ─── Two-Column Layout ─────────────────────────────────────────────────────── */
+.columns {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left column shell — friend fills the interior */
+.leftColumn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  min-height: 120px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Right column shell — my 3-tab reader renders inside */
+.rightColumn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  align-self: start;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MY STYLES — 3-tab active view: Ask AI, Semantic Search, PDF Preview
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Empty state — outer padding + inner gray card */
+.emptyStateOuter {
+  padding: 1.25rem;
+}
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.emptyState p {
+  font-size: 0.875rem;
+  color: #64748b;
+  max-width: 38rem;
+  line-height: 1.625;
+  margin: 0;
+}
+
+/* Processing state */
+.processingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.processingState h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 1rem 0 0.5rem;
+}
+
+.processingState p {
+  font-size: 0.8125rem;
+  color: #64748b;
+  max-width: 28rem;
+  line-height: 1.5;
+}
+
+.largeSpin {
+  width: 32px;
+  height: 32px;
+}
+
+/* Spin animation */
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Reader container */
+.readerContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab bar */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+  border-radius: 0.75rem 0.75rem 0 0;
+  overflow: hidden;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease,
+    background-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+.tabBtnActive {
+  color: #ea580c !important;
+  border-bottom-color: #ea580c !important;
+  background-color: #ffffff !important;
+}
+
+/* Tab panel & content */
+.tabPanel {
+  padding: 1.5rem;
+}
+
+.tabContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Section title / subtitle */
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.sectionSubtitle {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0.25rem 0 1rem;
+}
+
+/* Form elements */
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.textInput {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background-color: #ffffff;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.textInput:focus {
+  outline: none;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.textInput::placeholder { color: #94a3b8; }
+
+.textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background-color: #ffffff;
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.textarea::placeholder { color: #94a3b8; }
+
+/* Buttons */
+.searchBtn,
+.askBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background-color: #ea580c;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  align-self: flex-start;
+}
+
+.searchBtn:hover:not(:disabled),
+.askBtn:hover:not(:disabled) { background-color: #c2410c; }
+
+.searchBtn:disabled,
+.askBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Error banner */
+.errorBanner {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #dc2626;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  margin-top: 0.75rem;
+}
+
+/* Search results */
+.resultsContainer { margin-top: 1rem; }
+
+.resultsTitle {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.75rem;
+}
+
+.resultCard {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.resultHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.resultIndex {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.similarityBadge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #16a34a;
+  background-color: #dcfce7;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.resultContent {
+  font-size: 0.8125rem;
+  color: #334155;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.resultPage {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* AI answer */
+.answerContainer {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-top: 1rem;
+}
+
+/* PDF preview */
+.previewArea {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.previewLoading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.previewError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem;
+  font-size: 0.875rem;
+  color: #dc2626;
+  background-color: #fef2f2;
+  border-radius: 0.5rem;
+  width: 100%;
+}
+
+.pdfIframe {
+  width: 100%;
+  height: 500px;
+  border: none;
+  border-radius: 0.5rem;
+  display: block;
+}
