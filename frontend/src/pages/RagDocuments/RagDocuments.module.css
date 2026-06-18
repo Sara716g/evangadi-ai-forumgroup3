@@ -1,0 +1,58 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-6, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6, 24px);
+}
+
+.intro {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--space-6, 24px);
+}
+
+.eyebrow {
+  color: var(--border-focus);
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 0 8px 0;
+}
+
+.title {
+  margin: 0 0 12px 0;
+}
+
+.description {
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 720px;
+}
+
+.columns {
+  display: flex;
+  gap: var(--space-6, 24px);
+  align-items: flex-start;
+}
+
+.readerPlaceholder {
+  flex: 1;
+  background: var(--text-placeholder-bg, #f1f5f9);
+  border-radius: 12px;
+  padding: var(--space-6, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  text-align: center;
+}
+
+.readerPlaceholder p {
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 520px;
+}

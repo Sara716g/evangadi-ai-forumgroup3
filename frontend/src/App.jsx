@@ -3,6 +3,7 @@
  * Add new `<Route>` entries here, then wire navigation in `Sidebar.jsx` and
  * `Layout.jsx` (`getTitle` / `getSubtitle`) so the shell stays in sync.
  */
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
@@ -14,7 +15,7 @@ import Landing from './pages/Landing/Landing';
 import QuestionDetail from './pages/QuestionDetail/QuestionDetail';
 import PostQuestion from './pages/PostQuestion/PostQuestion';
 import MyQuestions from './pages/MyQuestions/MyQuestions';
-
+import RagDocuments from './pages/RagDocuments/RagDocuments';
 function App() {
   return (
     <BrowserRouter>
@@ -34,6 +35,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+
+
             <Route
               path='/questions/ask'
               element={
@@ -62,7 +66,7 @@ function App() {
               path='/rag-documents'
               element={
                 <ProtectedRoute>
-                  <h1>RAG Documents Page</h1>
+                  <RagDocuments />
                 </ProtectedRoute>
               }
             />
