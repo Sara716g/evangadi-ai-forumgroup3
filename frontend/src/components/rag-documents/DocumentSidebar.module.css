@@ -1,0 +1,90 @@
+.sidebar {
+  width: 380px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--space-6, 24px);
+}
+
+.heading {
+  margin: 0 0 4px 0;
+}
+
+.subheading {
+  color: var(--text-tertiary);
+  margin: 0 0 16px 0;
+  font-size: var(--text-sm, 13px);
+}
+
+.statusMessage {
+  color: var(--text-secondary);
+  margin-top: 16px;
+}
+
+.errorMessage {
+  color: var(--error);
+  background: var(--error-light);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.list {
+  list-style: none;
+  margin: 16px 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.docCard {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.docCard:hover {
+  border-color: var(--border-hover);
+}
+
+.docCardSelected {
+  border-color: var(--border-focus);
+}
+
+.docName {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.badge--ready {
+  color: var(--success);
+  background: var(--success-light);
+}
+
+.badge--processing {
+  color: var(--warning);
+  background: var(--warning-light);
+}

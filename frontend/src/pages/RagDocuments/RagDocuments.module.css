@@ -49,16 +49,16 @@
   }
 }
 
-/* Left column shell — friend fills the interior */
+/* Left column — empty placeholder, friend fills interior */
 .leftColumn {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
-  min-height: 120px;
+  min-height: 200px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Right column shell — my 3-tab reader renders inside */
+/* Right column — my 3-tab reader renders inside */
 .rightColumn {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
@@ -72,7 +72,7 @@
    MY STYLES — 3-tab active view: Ask AI, Semantic Search, PDF Preview
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* Empty state — outer padding + inner gray card */
+/* Empty state */
 .emptyStateOuter {
   padding: 1.25rem;
 }
@@ -120,15 +120,10 @@
   line-height: 1.5;
 }
 
-.largeSpin {
-  width: 32px;
-  height: 32px;
-}
+.largeSpin { width: 32px; height: 32px; }
 
 /* Spin animation */
-.spinIcon {
-  animation: spin 1s linear infinite;
-}
+.spinIcon { animation: spin 1s linear infinite; }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
@@ -163,8 +158,7 @@
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.15s ease, border-color 0.15s ease,
-    background-color 0.15s ease;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
   white-space: nowrap;
 }
 
@@ -180,9 +174,7 @@
 }
 
 /* Tab panel & content */
-.tabPanel {
-  padding: 1.5rem;
-}
+.tabPanel { padding: 1.5rem; }
 
 .tabContent {
   display: flex;
@@ -320,11 +312,7 @@
   margin-bottom: 0.5rem;
 }
 
-.resultIndex {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #64748b;
-}
+.resultIndex { font-size: 0.75rem; font-weight: 600; color: #64748b; }
 
 .similarityBadge {
   font-size: 0.6875rem;
@@ -335,12 +323,7 @@
   border-radius: 0.25rem;
 }
 
-.resultContent {
-  font-size: 0.8125rem;
-  color: #334155;
-  line-height: 1.5;
-  margin: 0;
-}
+.resultContent { font-size: 0.8125rem; color: #334155; line-height: 1.5; margin: 0; }
 
 .resultPage {
   display: inline-block;

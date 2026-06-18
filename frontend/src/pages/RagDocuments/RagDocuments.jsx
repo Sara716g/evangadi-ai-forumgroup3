@@ -17,19 +17,11 @@ const TABS = [
   { id: "preview", label: "Preview", Icon: Eye      },
 ];
 
-/**
- * RagDocuments — Knowledge Base page
- *
- * MY TASK  → right column: 3-tab active view (Ask AI, Semantic Search, PDF Preview)
- * FRIEND'S TASK → left column: library sidebar, upload, document list
- *
- * `activeDocument` will be lifted here once the friend integrates the sidebar.
- * Expected shape: { id: string, status: "ready" | "processing", ... }
- */
 export default function RagDocuments() {
 
-  // Shared state — friend will wire this up via the library sidebar
-  const [activeDocument] = useState(null);
+  // activeDocument is set by the left-column library (friend's task).
+  // Shape: { id, status: "ready" | "processing", name, ... }
+  const [activeDocument, setActiveDocument] = useState(null);
 
   // ── My state: 3-tab reader ────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("ask");
@@ -75,7 +67,7 @@ export default function RagDocuments() {
     return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
   }, [pdfUrl]);
 
-  // ─── Service calls ────────────────────────────────────────────────────────
+  // ─── My service calls ─────────────────────────────────────────────────────
 
   async function loadPdfPreview(docId) {
     try {
@@ -124,7 +116,7 @@ export default function RagDocuments() {
     }
   }
 
-  // ─── Right column content ─────────────────────────────────────────────────
+  // ─── Right column: empty state / processing / tabs ───────────────────────
 
   function renderRightColumn() {
     if (!activeDocument) {
@@ -156,7 +148,6 @@ export default function RagDocuments() {
 
     return (
       <div className={styles.readerContainer}>
-        {/* Tab bar */}
         <div className={styles.tabBar}>
           {TABS.map(({ id, label, Icon }) => (
             <button
@@ -169,8 +160,6 @@ export default function RagDocuments() {
             </button>
           ))}
         </div>
-
-        {/* Tab panels */}
         <div className={styles.tabPanel}>
           {activeTab === "ask"     && renderAskAI()}
           {activeTab === "search"  && renderSearch()}
@@ -275,9 +264,7 @@ export default function RagDocuments() {
     return (
       <div className={styles.tabContent}>
         <h3 className={styles.sectionTitle}>Reader</h3>
-        <p className={styles.sectionSubtitle}>
-          Inline preview of the selected PDF.
-        </p>
+        <p className={styles.sectionSubtitle}>Inline preview of the selected PDF.</p>
         <div className={styles.previewArea}>
           {pdfLoading ? (
             <div className={styles.previewLoading}>
@@ -321,7 +308,7 @@ export default function RagDocuments() {
       {/* Two-column layout */}
       <div className={styles.columns}>
 
-        {/* Left column — friend's task: library sidebar, upload, document list */}
+        {/* Left column — friend's task: document list + upload dropzone */}
         <aside className={styles.leftColumn} />
 
         {/* Right column — my task: 3-tab active view */}
