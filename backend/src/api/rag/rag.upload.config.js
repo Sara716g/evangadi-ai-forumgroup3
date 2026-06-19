@@ -1,4 +1,3 @@
-import fs from "fs";
 import path from "path";
 
 // This function returns the absolute path to the root of the uploads directory.
