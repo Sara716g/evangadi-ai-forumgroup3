@@ -1,7 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
+import { fileURLToPath } from "url";
 import { safeExecute } from "../../../../db/config.js";
 import { NotFoundError } from "../../../utils/errors/index.js";
+import { uploadRoot } from "../rag.upload.config.js";
+
 
 /**
  * Look up a document in the database, but only return it if it belongs
