@@ -1,73 +1,45 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Sparkles,
   Loader2,
   AlertCircle,
-  Eye,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Download,
+  Maximize,
 } from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
 import { ragService } from "../../services/rag/rag.service.js";
 import RagAnswerBody from "../../components/RagAnswerBody/RagAnswerBody.jsx";
 import styles from "./RagDocuments.module.css";
 
-// ─── Tab definitions ──────────────────────────────────────────────────────────
-const TABS = [
-  { id: "ask",     label: "Ask AI",  Icon: Sparkles },
-  { id: "search",  label: "Search",  Icon: Search   },
-  { id: "preview", label: "Preview", Icon: Eye      },
-];
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-export default function RagDocuments() {
-
-  // activeDocument is set by the left-column library (friend's task).
-  // Shape: { id, status: "ready" | "processing", name, ... }
-  const [activeDocument, setActiveDocument] = useState(null);
-
-  // ── My state: 3-tab reader ────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState("ask");
-
-  const [aiQuery,   setAiQuery]   = useState("");
-  const [aiAnswer,  setAiAnswer]  = useState("");
+function ReaderPanel({ activeDocument }) {
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiError,   setAiError]   = useState(null);
+  const [aiError, setAiError] = useState(null);
 
-  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError,   setSearchError]   = useState(null);
+  const [searchError, setSearchError] = useState(null);
 
-  const [pdfUrl,     setPdfUrl]     = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [pdfError,   setPdfError]   = useState(false);
-
-  // ─── Reset reader state when selected document changes ────────────────────
-  useEffect(() => {
-    setActiveTab("ask");
-    setAiQuery("");
-    setAiAnswer("");
-    setAiError(null);
-    setSearchQuery("");
-    setSearchResults([]);
-    setSearchError(null);
-    setPdfError(false);
-
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
-    }
-
-    if (activeDocument?.status === "ready") {
-      loadPdfPreview(activeDocument.id);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDocument?.id]);
-
-  // ─── Revoke blob URL on unmount ───────────────────────────────────────────
-  useEffect(() => {
-    return () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); };
-  }, [pdfUrl]);
-
-  // ─── My service calls ─────────────────────────────────────────────────────
+  const [pdfError, setPdfError] = useState(false);
+  const [numPages, setNumPages] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [scale, setScale] = useState(0.67);
+  const [rotation, setRotation] = useState(0);
+  const containerRef = useRef(null);
 
   async function loadPdfPreview(docId) {
     try {
@@ -82,6 +54,56 @@ export default function RagDocuments() {
     } finally {
       setPdfLoading(false);
     }
+  }
+
+  useEffect(() => {
+    if (activeDocument?.status === "ready") {
+      /* eslint-disable-next-line react-hooks/set-state-in-effect */
+      loadPdfPreview(activeDocument.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function onDocumentLoadSuccess({ numPages: total }) {
+    setNumPages(total);
+    setCurrentPage(1);
+  }
+
+  function goToPrevPage() {
+    setCurrentPage((p) => Math.max(p - 1, 1));
+  }
+
+  function goToNextPage() {
+    setCurrentPage((p) => Math.min(p + 1, numPages || 1));
+  }
+
+  function zoomIn() {
+    setScale((s) => Math.min(s + 0.15, 3));
+  }
+
+  function zoomOut() {
+    setScale((s) => Math.max(s - 0.15, 0.3));
+  }
+
+  function rotateRight() {
+    setRotation((r) => (r + 90) % 360);
+  }
+
+  function toggleFullscreen() {
+    if (!containerRef.current) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      containerRef.current.requestFullscreen();
+    }
+  }
+
+  function downloadPdf() {
+    if (!pdfUrl) return;
+    const a = document.createElement("a");
+    a.href = pdfUrl;
+    a.download = activeDocument?.name || "document.pdf";
+    a.click();
   }
 
   async function handleAskAI() {
@@ -116,62 +138,145 @@ export default function RagDocuments() {
     }
   }
 
-  // ─── Right column: empty state / processing / tabs ───────────────────────
+  return (
+    <div className={styles.readerStack}>
+      <section className={styles.readerSection}>
+        <h3 className={styles.sectionTitle}>Reader</h3>
+        <p className={styles.sectionSubtitle}>
+          Inline preview of the selected PDF.
+        </p>
+        <div className={styles.pdfViewerWrap} ref={containerRef}>
+          {/* Dark toolbar */}
+          <div className={styles.pdfToolbar}>
+            <span className={styles.pdfFileName}>
+              {activeDocument?.name || "document.pdf"}
+            </span>
+            <div className={styles.pdfToolbarCenter}>
+              <button className={styles.toolbarBtn} onClick={goToPrevPage} disabled={currentPage <= 1}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className={styles.pageInfo}>{currentPage} / {numPages || "–"}</span>
+              <button className={styles.toolbarBtn} onClick={goToNextPage} disabled={currentPage >= (numPages || 1)}>
+                <ChevronRight size={16} />
+              </button>
+              <div className={styles.toolbarDivider} />
+              <button className={styles.toolbarBtn} onClick={zoomOut}>
+                <ZoomOut size={16} />
+              </button>
+              <span className={styles.zoomInfo}>{Math.round(scale * 100)}%</span>
+              <button className={styles.toolbarBtn} onClick={zoomIn}>
+                <ZoomIn size={16} />
+              </button>
+            </div>
+            <div className={styles.pdfToolbarRight}>
+              <button className={styles.toolbarBtn} onClick={rotateRight}><RotateCw size={16} /></button>
+              <button className={styles.toolbarBtn} onClick={toggleFullscreen}><Maximize size={16} /></button>
+              <button className={styles.toolbarBtn} onClick={downloadPdf}><Download size={16} /></button>
+            </div>
+          </div>
 
-  function renderRightColumn() {
-    if (!activeDocument) {
-      return (
-        <div className={styles.emptyStateOuter}>
-          <div className={styles.emptyState}>
-            <p>
-              Choose a document from the library to open the reader, run
-              semantic search over its text, and ask questions with AI-assisted
-              answers grounded in that file.
-            </p>
+          {/* PDF content */}
+          <div className={styles.pdfContent}>
+            {pdfLoading ? (
+              <div className={styles.previewLoading}>
+                <Loader2 size={20} className={styles.spinIcon} />
+                <span>Loading document preview…</span>
+              </div>
+            ) : pdfError ? (
+              <div className={styles.previewError}>
+                <AlertCircle size={20} />
+                <span>Failed to load PDF preview.</span>
+              </div>
+            ) : pdfUrl ? (
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={<div className={styles.previewLoading}><Loader2 size={20} className={styles.spinIcon} /><span>Loading PDF…</span></div>}
+                error={<div className={styles.previewError}><AlertCircle size={20} /><span>Failed to load PDF.</span></div>}
+              >
+                <Page
+                  pageNumber={currentPage}
+                  scale={scale}
+                  rotation={rotation}
+                  renderTextLayer={true}
+                  renderAnnotationLayer={true}
+                />
+              </Document>
+            ) : (
+              <div className={styles.previewLoading}>
+                <Loader2 size={20} className={styles.spinIcon} />
+                <span>Loading…</span>
+              </div>
+            )}
           </div>
         </div>
-      );
-    }
+      </section>
 
-    if (activeDocument.status !== "ready") {
-      return (
-        <div className={styles.processingState}>
-          <Loader2 size={32} className={`${styles.spinIcon} ${styles.largeSpin}`} />
-          <h3>Processing document…</h3>
-          <p>
-            Your document is being indexed. This may take a few moments.
-            Please wait or check back later.
-          </p>
+      <section className={styles.readerSection}>
+        <h3 className={styles.sectionTitle}>Semantic search</h3>
+        <p className={styles.sectionSubtitle}>
+          Finds passages by meaning (embeddings), not only exact keywords.
+        </p>
+        <div className={styles.inputGroup}>
+          <label className={styles.inputLabel}>Search query</label>
+          <input
+            type="text"
+            className={styles.textInput}
+            placeholder="Describe the topic or phrase you are looking for"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+          />
+          <button
+            className={styles.searchBtn}
+            onClick={handleSearch}
+            disabled={searchLoading || !searchQuery.trim()}
+          >
+            {searchLoading ? (
+              <Loader2 size={16} className={styles.spinIcon} />
+            ) : (
+              <Search size={16} />
+            )}
+            Search
+          </button>
         </div>
-      );
-    }
+        {searchError && (
+          <div className={styles.errorBanner}>{searchError}</div>
+        )}
+        {searchResults.length > 0 && (
+          <div className={styles.resultsContainer}>
+            <h4 className={styles.resultsTitle}>
+              Results ({searchResults.length})
+            </h4>
+            {searchResults.map((result, index) => (
+              <div key={index} className={styles.resultCard}>
+                <div className={styles.resultHeader}>
+                  <span className={styles.resultIndex}>
+                    Chunk {index + 1}
+                  </span>
+                  {result.score !== undefined && (
+                    <span className={styles.similarityBadge}>
+                      {(result.score * 100).toFixed(1)}% match
+                    </span>
+                  )}
+                </div>
+                <p className={styles.resultContent}>
+                  {result.content || result.text || result.chunk}
+                </p>
+                {result.page && (
+                  <span className={styles.resultPage}>
+                    Page {result.page}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
-    return (
-      <div className={styles.readerContainer}>
-        <div className={styles.tabBar}>
-          {TABS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              className={`${styles.tabBtn} ${activeTab === id ? styles.tabBtnActive : ""}`}
-              onClick={() => setActiveTab(id)}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
-        </div>
-        <div className={styles.tabPanel}>
-          {activeTab === "ask"     && renderAskAI()}
-          {activeTab === "search"  && renderSearch()}
-          {activeTab === "preview" && renderPreview()}
-        </div>
-      </div>
-    );
-  }
-
-  function renderAskAI() {
-    return (
-      <div className={styles.tabContent}>
+      <section className={styles.readerSection}>
         <h3 className={styles.sectionTitle}>Ask with AI</h3>
         <p className={styles.sectionSubtitle}>
           Answers use only retrieved excerpts from this PDF, with citations
@@ -192,108 +297,32 @@ export default function RagDocuments() {
             onClick={handleAskAI}
             disabled={aiLoading || !aiQuery.trim()}
           >
-            {aiLoading ? <Loader2 size={16} className={styles.spinIcon} /> : <Sparkles size={16} />}
+            {aiLoading ? (
+              <Loader2 size={16} className={styles.spinIcon} />
+            ) : (
+              <Sparkles size={16} />
+            )}
             Ask
           </button>
         </div>
-        {aiError && <div className={styles.errorBanner}>{aiError}</div>}
+        {aiError && (
+          <div className={styles.errorBanner}>{aiError}</div>
+        )}
         {aiAnswer && (
           <div className={styles.answerContainer}>
             <RagAnswerBody answer={aiAnswer} />
           </div>
         )}
-      </div>
-    );
-  }
+      </section>
+    </div>
+  );
+}
 
-  function renderSearch() {
-    return (
-      <div className={styles.tabContent}>
-        <h3 className={styles.sectionTitle}>Semantic search</h3>
-        <p className={styles.sectionSubtitle}>
-          Finds passages by meaning (embeddings), not only exact keywords.
-        </p>
-        <div className={styles.inputGroup}>
-          <label className={styles.inputLabel}>Search query</label>
-          <input
-            type="text"
-            className={styles.textInput}
-            placeholder="Describe the topic or phrase you are looking for"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-          />
-          <button
-            className={styles.searchBtn}
-            onClick={handleSearch}
-            disabled={searchLoading || !searchQuery.trim()}
-          >
-            {searchLoading ? <Loader2 size={16} className={styles.spinIcon} /> : <Search size={16} />}
-            Search
-          </button>
-        </div>
-        {searchError && <div className={styles.errorBanner}>{searchError}</div>}
-        {searchResults.length > 0 && (
-          <div className={styles.resultsContainer}>
-            <h4 className={styles.resultsTitle}>Results ({searchResults.length})</h4>
-            {searchResults.map((result, index) => (
-              <div key={index} className={styles.resultCard}>
-                <div className={styles.resultHeader}>
-                  <span className={styles.resultIndex}>Chunk {index + 1}</span>
-                  {result.score !== undefined && (
-                    <span className={styles.similarityBadge}>
-                      {(result.score * 100).toFixed(1)}% match
-                    </span>
-                  )}
-                </div>
-                <p className={styles.resultContent}>
-                  {result.content || result.text || result.chunk}
-                </p>
-                {result.page && (
-                  <span className={styles.resultPage}>Page {result.page}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+export default function RagDocuments() {
+  const [activeDocument] = useState(null);
 
-  function renderPreview() {
-    return (
-      <div className={styles.tabContent}>
-        <h3 className={styles.sectionTitle}>Reader</h3>
-        <p className={styles.sectionSubtitle}>Inline preview of the selected PDF.</p>
-        <div className={styles.previewArea}>
-          {pdfLoading ? (
-            <div className={styles.previewLoading}>
-              <Loader2 size={20} className={styles.spinIcon} />
-              <span>Loading document preview…</span>
-            </div>
-          ) : pdfError ? (
-            <div className={styles.previewError}>
-              <AlertCircle size={20} />
-              <span>Failed to load PDF preview.</span>
-            </div>
-          ) : pdfUrl ? (
-            <iframe src={pdfUrl} className={styles.pdfIframe} title="PDF Preview" />
-          ) : (
-            <div className={styles.previewLoading}>
-              <Loader2 size={20} className={styles.spinIcon} />
-              <span>Loading…</span>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Page render ──────────────────────────────────────────────────────────
   return (
     <div className={styles.pageWrapper}>
-
-      {/* Page header */}
       <div className={styles.pageHeader}>
         <span className={styles.breadcrumb}>KNOWLEDGE BASE</span>
         <h1 className={styles.pageTitle}>Private PDF library</h1>
@@ -305,17 +334,31 @@ export default function RagDocuments() {
         </p>
       </div>
 
-      {/* Two-column layout */}
       <div className={styles.columns}>
-
-        {/* Left column — friend's task: document list + upload dropzone */}
         <aside className={styles.leftColumn} />
 
-        {/* Right column — my task: 3-tab active view */}
         <main className={styles.rightColumn}>
-          {renderRightColumn()}
+          {!activeDocument ? (
+            <div className={styles.emptyState}>
+              <p>
+                Choose a document from the library to open the reader, run
+                semantic search over its text, and ask questions with AI-assisted
+                answers grounded in that file.
+              </p>
+            </div>
+          ) : activeDocument.status !== "ready" ? (
+            <div className={styles.processingState}>
+              <Loader2 size={32} className={`${styles.spinIcon} ${styles.largeSpin}`} />
+              <h3>Processing document…</h3>
+              <p>
+                Your document is being indexed. This may take a few moments.
+                Please wait or check back later.
+              </p>
+            </div>
+          ) : (
+            <ReaderPanel key={activeDocument.id} activeDocument={activeDocument} />
+          )}
         </main>
-
       </div>
     </div>
   );
