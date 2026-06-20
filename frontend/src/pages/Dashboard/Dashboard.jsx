@@ -3,7 +3,7 @@
  * Data: `questionService` (keyword `q`, semantic `semantic`, or full list).
  */
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { SquarePen, Library, BookOpen } from "lucide-react";
 import { questionService } from "../../services/question/question.service.js";
@@ -28,51 +28,57 @@ export default function Dashboard() {
   const isSemantic = urlSemantic.length > 0;
 
   const [questions, setQuestions] = useState([]);
-  const [searchMode, setSearchMode] = useState(isSemantic ? "semantic" : "keyword");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Sync searchMode and query from URL params
-  useEffect(() => {
-    setSearchMode(isSemantic ? "semantic" : "keyword");
-  }, [isSemantic]);
+  // Derive searchMode directly from URL params (no useState needed)
+  const searchMode = isSemantic ? "semantic" : "keyword";
 
   // -----------------------------
   // REFACTORED DATA FETCHING LAYER
   // -----------------------------
-  const fetchQuestions = useCallback(
-    async (searchQuery = "") => {
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadQuestions() {
       try {
         setLoading(true);
         setError(null);
 
+        const activeQuery = isSemantic ? urlSemantic : urlQuery;
         let data;
         if (searchMode === "keyword") {
-          data = await questionService.getQuestions(searchQuery);
+          data = await questionService.getQuestions(activeQuery);
         } else {
-          data = await questionService.getSemanticQuestions(searchQuery);
+          data = await questionService.getSemanticQuestions(activeQuery);
         }
 
         console.log(`${searchMode.toUpperCase()} service fetched data:`, data);
-        setQuestions(Array.isArray(data) ? data : []);
+        if (!cancelled) {
+          setQuestions(Array.isArray(data) ? data : []);
+        }
       } catch (err) {
         console.error(err);
-        setError(
-          err.response?.data?.message ||
-            "Failed to load questions from server.",
-        );
-        setQuestions([]);
+        if (!cancelled) {
+          setError(
+            err.response?.data?.message ||
+              "Failed to load questions from server.",
+          );
+          setQuestions([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    },
-    [searchMode],
-  );
+    }
 
-  useEffect(() => {
-    const activeQuery = isSemantic ? urlSemantic : urlQuery;
-    fetchQuestions(activeQuery);
-  }, [fetchQuestions, urlQuery, urlSemantic, isSemantic]);
+    loadQuestions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchMode, urlQuery, urlSemantic, isSemantic]);
 
   // -----------------------------
   // STATS CALCULATIONS

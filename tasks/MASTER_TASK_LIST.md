@@ -157,3 +157,101 @@ _Advanced AI feature allowing users to upload PDFs, perform semantic searches wi
 - **Task Name**: RAG Documents Page (`T-24` & `T-25`)
   - **Description**: Build the `/rag-documents` page featuring a document list sidebar, PDF upload dropzone, and a 3-tab active view interface (Ask AI, Semantic Search, PDF Preview).
   - **Reference**: `/rag-documents/task-rag-documents.md`
+
+---
+
+## Milestone 4: Enhanced Forum Features
+
+_Improved community features including file uploads, voting, notifications, and AI assistance._
+
+### Backend Tasks
+
+- **Task Name**: Attachments (`T-26`)
+  - **Description**: Implement file upload/download/delete endpoints for images and documents (max 10MB).
+  - **Reference**: `/attachment/`
+
+- **Task Name**: Voice Messages (`T-27`)
+  - **Description**: Implement audio upload/streaming endpoints for voice messages.
+  - **Reference**: `/voice-message/`
+
+- **Task Name**: Voting & Comments (`T-28`)
+  - **Description**: Implement upvote/downvote for answers, plus add/list comments on answers.
+  - **Reference**: `/vote/`, `/comment/`
+
+- **Task Name**: Notifications (`T-29`)
+  - **Description**: Implement CRUD for notifications (create, list, mark as read).
+  - **Reference**: `/notification/`
+
+- **Task Name**: AI Assistant (`T-30`)
+  - **Description**: Implement AI-powered answer generation for questions.
+  - **Reference**: `/ai-assistant/answer.md`
+
+- **Task Name**: Duplicate Detection (`T-31`)
+  - **Description**: Implement endpoint to detect similar existing questions using AI.
+  - **Reference**: `/duplicate/check-duplicate.md`
+
+- **Task Name**: Categories (`T-32`)
+  - **Description**: Implement category listing and filter questions by category.
+  - **Reference**: `/category/`
+
+- **Task Name**: External Forum Search (`T-33`)
+  - **Description**: Implement endpoint to search questions from external forums (StackOverflow, Dev.to).
+  - **Reference**: `/community/external-forums.md`
+
+- **Task Name**: Bookmarks (`T-34`)
+  - **Description**: Implement save/unsave questions and list user bookmarks.
+  - **Reference**: `/bookmark/`
+
+- **Task Name**: User Profiles (`T-35`)
+  - **Description**: Implement get/update profile, upload avatar, and profile stats.
+  - **Reference**: `/profile/`
+
+- **Task Name**: Admin - Manage Users (`T-37`)
+  - **Description**: Implement admin endpoints to list users, update status (ban/unban), and get stats.
+  - **Reference**: `/admin/`
+
+- **Task Name**: Admin - Manage Questions (`T-37`)
+  - **Description**: Implement admin endpoints to delete questions and answers.
+  - **Reference**: `/admin/`
+
+### Frontend Tasks
+
+- **Task Name**: File Upload Component (`T-26`)
+  - **Description**: Build drag-and-drop file upload with preview for images/documents.
+  - **Reference**: `/attachment/task-attachment.md`
+
+- **Task Name**: Voice Recorder (`T-27`)
+  - **Description**: Build audio recording component with playback controls.
+  - **Reference**: `/voice-message/task-voice.md`
+
+- **Task Name**: Voting & Comments UI (`T-28`)
+  - **Description**: Build upvote/downvote buttons and comment section for answers.
+  - **Reference**: `/voting/task-voting.md`
+
+- **Task Name**: Notifications (`T-29`)
+  - **Description**: Build notifications page and bell icon with unread count.
+  - **Reference**: `/notifications/`
+
+- **Task Name**: Duplicate Warning (`T-31`)
+  - **Description**: Build duplicate question detection UI when posting new questions.
+  - **Reference**: `/duplicate/task-duplicate.md`
+
+- **Task Name**: Category Sidebar (`T-32`)
+  - **Description**: Build category filter sidebar for dashboard page.
+  - **Reference**: `/categories/task-categories.md`
+
+- **Task Name**: Bookmarks Page (`T-34`)
+  - **Description**: Build bookmarks page and bookmark button component.
+  - **Reference**: `/bookmark/`
+
+- **Task Name**: User Profile (`T-35`)
+  - **Description**: Build profile page with edit form and avatar upload.
+  - **Reference**: `/profile/`
+
+- **Task Name**: Dark Mode (`T-36`)
+  - **Description**: Implement dark mode toggle with CSS variables and localStorage.
+  - **Reference**: `/theme/task-dark-mode.md`
+
+- **Task Name**: Admin Dashboard (`T-37`)
+  - **Description**: Build admin dashboard with stats and management pages for users and questions.
+  - **Reference**: `/admin/`
