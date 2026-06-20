@@ -2,14 +2,21 @@ import express from 'express';
 import authRoutes from './auth/routes/auth.routes.js';
 import questionRoutes from './question/routes/question.routes.js';
 import answerRoutes from './answer/routes/answer.routes.js';
+import ragRouter from './rag/routes/rag.routes.js';
 
-export const mainRouter = express.Router();
+const router = express.Router();
 
 // Authentication routes
-mainRouter.use('/auth', authRoutes);
+router.use('/auth', authRoutes);
 
 // Question routes
-mainRouter.use('/questions', questionRoutes);
+router.use('/questions', questionRoutes);
 
 // Answer routes
-mainRouter.use('/answers', answerRoutes);
+router.use('/answers', answerRoutes);
+
+// Mount your RAG routes under /api/rag
+router.use('/rag', ragRouter);
+
+export default router;
+export { router as mainRouter };
