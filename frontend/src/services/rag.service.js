@@ -2,7 +2,7 @@ import { apiClient } from "./core/api.client.js";
 
 const BASE_PATH = "/api/rag/documents";
 
-export async function uploadDocument(file) {
+export async function uploadPdf(file) {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -22,37 +22,40 @@ export async function getDocument(documentId) {
   return res.data;
 }
 
-// Not an apiClient call — builds a direct URL for <iframe>/<embed> PDF preview.
-export function getDocumentFileUrl(documentId) {
-  const baseURL = apiClient.defaults.baseURL;
-  return `${baseURL}${BASE_PATH}/${documentId}/file`;
-}
-
 export async function deleteDocument(documentId) {
   const res = await apiClient.delete(`${BASE_PATH}/${documentId}`);
   return res.data;
 }
 
-export async function searchDocument(documentId, query) {
+export async function searchInDocument(documentId, query) {
   const res = await apiClient.get(`${BASE_PATH}/${documentId}/search`, {
     params: { query },
   });
   return res.data;
 }
 
-export async function askDocument(documentId, question) {
+export async function queryDocument(documentId, query) {
   const res = await apiClient.post(`${BASE_PATH}/${documentId}/query`, {
-    question,
+    query,
   });
   return res.data;
 }
 
-export default {
-  uploadDocument,
+export async function fetchPdfObjectUrl(documentId) {
+  const res = await apiClient.get(`${BASE_PATH}/${documentId}/file`, {
+    responseType: "blob",
+  });
+  return URL.createObjectURL(res.data);
+}
+
+export const ragService = {
+  uploadPdf,
   listDocuments,
   getDocument,
-  getDocumentFileUrl,
   deleteDocument,
-  searchDocument,
-  askDocument,
+  searchInDocument,
+  queryDocument,
+  fetchPdfObjectUrl,
 };
+
+export default ragService;

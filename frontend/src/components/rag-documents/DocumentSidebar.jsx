@@ -6,7 +6,7 @@ const STATUS_LABELS = {
   processing: 'PROCESSING',
 };
 
-function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect }) {
+function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, onUploadComplete }) {
   return (
     <aside className={styles.sidebar}>
       <h2 className={styles.heading}>Library</h2>
@@ -14,7 +14,7 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect }) 
         Add PDFs here. Processing runs once per upload.
       </p>
 
-      <PdfUploadDropzone />
+      <PdfUploadDropzone onUploadComplete={onUploadComplete} />
 
       {isLoading && (
         <p className={styles.statusMessage}>Loading your library...</p>
@@ -40,7 +40,7 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect }) 
                 className={`${styles.docCard} ${
                   doc.id === selectedId ? styles.docCardSelected : ''
                 }`}
-                onClick={() => onSelect(doc.id)}
+                onClick={() => onSelect(doc)}
               >
                 <span className={styles.docName}>{doc.name}</span>
                 <span
