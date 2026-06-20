@@ -16,6 +16,7 @@
 import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError, ServiceUnavailableError } from '../../../utils/errors/index.js';
 import { generateEmbedding, generateText } from '../../../utils/ai.js';
+import { embedSearchQuery } from '../../../utils/gemini/embedding.service.js';
 import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
 
@@ -251,7 +252,7 @@ export const searchQuestionsSemanticService = async ({ query, k, threshold }) =>
   const limit = Number(k ?? DEFAULT_K);
   const minSimilarity = Number(threshold ?? DEFAULT_RECOMMEND_THRESHOLD);
 
-  const vector = await generateEmbedding(query);
+  const vector = await embedSearchQuery(query);
   const queryVector = normalizeEmbedding(vector);
   if (queryVector.length === 0) {
     throw new ServiceUnavailableError('Semantic search embedding failed');
