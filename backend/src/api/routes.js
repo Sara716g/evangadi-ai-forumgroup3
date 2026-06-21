@@ -9,6 +9,9 @@ const mainRouter = express.Router();
 // Authentication routes
 mainRouter.use('/auth', authRoutes);
 
+// RAG routes
+mainRouter.use('/rag', ragRoutes);
+
 // Question routes
 mainRouter.use('/questions', questionRoutes);
 
