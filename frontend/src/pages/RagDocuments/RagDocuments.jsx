@@ -11,17 +11,20 @@ import {
   RotateCw,
   Download,
   Maximize,
+  Trash2,
 } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { ragService } from "../../services/rag/rag.service.js";
 import RagAnswerBody from "../../components/RagAnswerBody/RagAnswerBody.jsx";
+import DocumentSidebar from "../../components/rag-documents/DocumentSidebar.jsx";
 import styles from "./RagDocuments.module.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-function ReaderPanel({ activeDocument }) {
+function ReaderPanel({ activeDocument, onDelete }) {
+  const [activeTab, setActiveTab] = useState("preview");
   const [aiQuery, setAiQuery] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -105,7 +108,7 @@ function ReaderPanel({ activeDocument }) {
     if (!pdfUrl) return;
     const a = document.createElement("a");
     a.href = pdfUrl;
-    a.download = activeDocument?.name || "document.pdf";
+    a.download = activeDocument?.title || "document.pdf";
     a.click();
   }
 
@@ -142,187 +145,271 @@ function ReaderPanel({ activeDocument }) {
   }
 
   return (
-    <div className={styles.readerStack}>
-      <section className={styles.readerSection}>
-        <h3 className={styles.sectionTitle}>Reader</h3>
-        <p className={styles.sectionSubtitle}>
-          Inline preview of the selected PDF.
-        </p>
-        <div className={styles.pdfViewerWrap} ref={containerRef}>
-          {/* Dark toolbar */}
-          <div className={styles.pdfToolbar}>
-            <span className={styles.pdfFileName}>
-              {activeDocument?.name || "document.pdf"}
-            </span>
-            <div className={styles.pdfToolbarCenter}>
-              <button className={styles.toolbarBtn} onClick={goToPrevPage} disabled={currentPage <= 1}>
-                <ChevronLeft size={16} />
-              </button>
-              <span className={styles.pageInfo}>{currentPage} / {numPages || "–"}</span>
-              <button className={styles.toolbarBtn} onClick={goToNextPage} disabled={currentPage >= (numPages || 1)}>
-                <ChevronRight size={16} />
-              </button>
-              <div className={styles.toolbarDivider} />
-              <button className={styles.toolbarBtn} onClick={zoomOut}>
-                <ZoomOut size={16} />
-              </button>
-              <span className={styles.zoomInfo}>{Math.round(scale * 100)}%</span>
-              <button className={styles.toolbarBtn} onClick={zoomIn}>
-                <ZoomIn size={16} />
-              </button>
-            </div>
-            <div className={styles.pdfToolbarRight}>
-              <button className={styles.toolbarBtn} onClick={rotateRight}><RotateCw size={16} /></button>
-              <button className={styles.toolbarBtn} onClick={toggleFullscreen}><Maximize size={16} /></button>
-              <button className={styles.toolbarBtn} onClick={downloadPdf}><Download size={16} /></button>
-            </div>
-          </div>
+    <div className={styles.readerPanel}>
+      {/* Document header */}
+      <div className={styles.docHeader}>
+        <h2 className={styles.docTitle}>{activeDocument?.title || activeDocument?.name || "Document"}</h2>
+        <button
+          className={styles.deleteBtn}
+          onClick={() => onDelete(activeDocument.id)}
+          title="Delete document"
+        >
+          <Trash2 size={16} />
+          Delete
+        </button>
+      </div>
 
-          {/* PDF content */}
-          <div className={styles.pdfContent}>
-            {pdfLoading ? (
-              <div className={styles.previewLoading}>
-                <Loader2 size={20} className={styles.spinIcon} />
-                <span>Loading document preview…</span>
-              </div>
-            ) : pdfError ? (
-              <div className={styles.previewError}>
-                <AlertCircle size={20} />
-                <span>Failed to load PDF preview.</span>
-              </div>
-            ) : pdfUrl ? (
-              <Document
-                file={pdfUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                loading={<div className={styles.previewLoading}><Loader2 size={20} className={styles.spinIcon} /><span>Loading PDF…</span></div>}
-                error={<div className={styles.previewError}><AlertCircle size={20} /><span>Failed to load PDF.</span></div>}
-              >
-                <Page
-                  pageNumber={currentPage}
-                  scale={scale}
-                  rotation={rotation}
-                  renderTextLayer={true}
-                  renderAnnotationLayer={true}
-                />
-              </Document>
-            ) : (
-              <div className={styles.previewLoading}>
-                <Loader2 size={20} className={styles.spinIcon} />
-                <span>Loading…</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Tab navigation */}
+      <div className={styles.tabBar}>
+        <button
+          className={`${styles.tab} ${activeTab === "preview" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("preview")}
+        >
+          Preview
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "search" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("search")}
+        >
+          Search
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === "ask" ? styles.tabActive : ""}`}
+          onClick={() => setActiveTab("ask")}
+        >
+          Ask AI
+        </button>
+      </div>
 
-      <section className={styles.readerSection}>
-        <h3 className={styles.sectionTitle}>Semantic search</h3>
-        <p className={styles.sectionSubtitle}>
-          Finds passages by meaning (embeddings), not only exact keywords.
-        </p>
-        <div className={styles.inputGroup}>
-          <label className={styles.inputLabel}>Search query</label>
-          <input
-            type="text"
-            className={styles.textInput}
-            placeholder="Describe the topic or phrase you are looking for"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSearch();
-            }}
-          />
-          <button
-            className={styles.searchBtn}
-            onClick={handleSearch}
-            disabled={searchLoading || !searchQuery.trim()}
-          >
-            {searchLoading ? (
-              <Loader2 size={16} className={styles.spinIcon} />
-            ) : (
-              <Search size={16} />
-            )}
-            Search
-          </button>
-        </div>
-        {searchError && (
-          <div className={styles.errorBanner}>{searchError}</div>
-        )}
-        {searchResults.length > 0 && (
-          <div className={styles.resultsContainer}>
-            <h4 className={styles.resultsTitle}>
-              Results ({searchResults.length})
-            </h4>
-            {searchResults.map((result, index) => (
-              <div key={index} className={styles.resultCard}>
-                <div className={styles.resultHeader}>
-                  <span className={styles.resultIndex}>
-                    Chunk {index + 1}
-                  </span>
-                  {result.score !== undefined && (
-                    <span className={styles.similarityBadge}>
-                      {(result.score * 100).toFixed(1)}% match
-                    </span>
-                  )}
+      {/* Tab content */}
+      <div className={styles.tabContent}>
+        {activeTab === "preview" && (
+          <div className={styles.pdfViewerWrap} ref={containerRef}>
+            <div className={styles.pdfToolbar}>
+              <span className={styles.pdfFileName}>
+                {activeDocument?.title || activeDocument?.name || "document.pdf"}
+              </span>
+              <div className={styles.pdfToolbarCenter}>
+                <button className={styles.toolbarBtn} onClick={goToPrevPage} disabled={currentPage <= 1}>
+                  <ChevronLeft size={16} />
+                </button>
+                <span className={styles.pageInfo}>{currentPage} / {numPages || "–"}</span>
+                <button className={styles.toolbarBtn} onClick={goToNextPage} disabled={currentPage >= (numPages || 1)}>
+                  <ChevronRight size={16} />
+                </button>
+                <div className={styles.toolbarDivider} />
+                <button className={styles.toolbarBtn} onClick={zoomOut}>
+                  <ZoomOut size={16} />
+                </button>
+                <span className={styles.zoomInfo}>{Math.round(scale * 100)}%</span>
+                <button className={styles.toolbarBtn} onClick={zoomIn}>
+                  <ZoomIn size={16} />
+                </button>
+              </div>
+              <div className={styles.pdfToolbarRight}>
+                <button className={styles.toolbarBtn} onClick={rotateRight}><RotateCw size={16} /></button>
+                <button className={styles.toolbarBtn} onClick={toggleFullscreen}><Maximize size={16} /></button>
+                <button className={styles.toolbarBtn} onClick={downloadPdf}><Download size={16} /></button>
+              </div>
+            </div>
+
+            <div className={styles.pdfContent}>
+              {pdfLoading ? (
+                <div className={styles.previewLoading}>
+                  <Loader2 size={20} className={styles.spinIcon} />
+                  <span>Loading document preview…</span>
                 </div>
-                <p className={styles.resultContent}>
-                  {result.content || result.text || result.chunk}
-                </p>
-                {result.page && (
-                  <span className={styles.resultPage}>
-                    Page {result.page}
-                  </span>
-                )}
-              </div>
-            ))}
+              ) : pdfError ? (
+                <div className={styles.previewError}>
+                  <AlertCircle size={20} />
+                  <span>Failed to load PDF preview.</span>
+                </div>
+              ) : pdfUrl ? (
+                <Document
+                  file={pdfUrl}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  loading={<div className={styles.previewLoading}><Loader2 size={20} className={styles.spinIcon} /><span>Loading PDF…</span></div>}
+                  error={<div className={styles.previewError}><AlertCircle size={20} /><span>Failed to load PDF.</span></div>}
+                >
+                  <Page
+                    pageNumber={currentPage}
+                    scale={scale}
+                    rotation={rotation}
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
+              ) : (
+                <div className={styles.previewLoading}>
+                  <Loader2 size={20} className={styles.spinIcon} />
+                  <span>Loading…</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
-      </section>
 
-      <section className={styles.readerSection}>
-        <h3 className={styles.sectionTitle}>Ask with AI</h3>
-        <p className={styles.sectionSubtitle}>
-          Answers use only retrieved excerpts from this PDF, with citations
-          where possible. When the document includes code, the reply may show
-          it in formatted blocks you can copy.
-        </p>
-        <div className={styles.inputGroup}>
-          <label className={styles.inputLabel}>Question</label>
-          <textarea
-            className={styles.textarea}
-            placeholder="Ask a clear question in plain language. If the document does not cover it, the model should say so."
-            value={aiQuery}
-            onChange={(e) => setAiQuery(e.target.value)}
-            rows={3}
-          />
-          <button
-            className={styles.askBtn}
-            onClick={handleAskAI}
-            disabled={aiLoading || !aiQuery.trim()}
-          >
-            {aiLoading ? (
-              <Loader2 size={16} className={styles.spinIcon} />
-            ) : (
-              <Sparkles size={16} />
+        {activeTab === "search" && (
+          <div className={styles.tabSection}>
+            <h3 className={styles.sectionTitle}>Semantic search</h3>
+            <p className={styles.sectionSubtitle}>
+              Finds passages by meaning (embeddings), not only exact keywords.
+            </p>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Search query</label>
+              <input
+                type="text"
+                className={styles.textInput}
+                placeholder="Describe the topic or phrase you are looking for"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+              />
+              <button
+                className={styles.searchBtn}
+                onClick={handleSearch}
+                disabled={searchLoading || !searchQuery.trim()}
+              >
+                {searchLoading ? (
+                  <Loader2 size={16} className={styles.spinIcon} />
+                ) : (
+                  <Search size={16} />
+                )}
+                Search
+              </button>
+            </div>
+            {searchError && (
+              <div className={styles.errorBanner}>{searchError}</div>
             )}
-            Ask
-          </button>
-        </div>
-        {aiError && (
-          <div className={styles.errorBanner}>{aiError}</div>
-        )}
-        {aiAnswer && (
-          <div className={styles.answerContainer}>
-            <RagAnswerBody answer={aiAnswer} />
+            {searchResults.length > 0 && (
+              <div className={styles.resultsContainer}>
+                <h4 className={styles.resultsTitle}>
+                  Results ({searchResults.length})
+                </h4>
+                {searchResults.map((result, index) => (
+                  <div key={index} className={styles.resultCard}>
+                    <div className={styles.resultHeader}>
+                      <span className={styles.resultIndex}>
+                        Chunk {index + 1}
+                      </span>
+                      {result.score !== undefined && (
+                        <span className={styles.similarityBadge}>
+                          {(result.score * 100).toFixed(1)}% match
+                        </span>
+                      )}
+                    </div>
+                    <p className={styles.resultContent}>
+                      {result.content || result.text || result.chunk}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-      </section>
+
+        {activeTab === "ask" && (
+          <div className={styles.tabSection}>
+            <h3 className={styles.sectionTitle}>Ask with AI</h3>
+            <p className={styles.sectionSubtitle}>
+              Answers use only retrieved excerpts from this PDF, with citations
+              where possible.
+            </p>
+            <div className={styles.inputGroup}>
+              <label className={styles.inputLabel}>Question</label>
+              <textarea
+                className={styles.textarea}
+                placeholder="Ask a clear question in plain language. If the document does not cover it, the model should say so."
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                rows={3}
+              />
+              <button
+                className={styles.askBtn}
+                onClick={handleAskAI}
+                disabled={aiLoading || !aiQuery.trim()}
+              >
+                {aiLoading ? (
+                  <Loader2 size={16} className={styles.spinIcon} />
+                ) : (
+                  <Sparkles size={16} />
+                )}
+                Ask
+              </button>
+            </div>
+            {aiError && (
+              <div className={styles.errorBanner}>{aiError}</div>
+            )}
+            {aiAnswer && (
+              <div className={styles.answerContainer}>
+                <RagAnswerBody answer={aiAnswer} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 export default function RagDocuments() {
-  const [activeDocument] = useState(null);
+  const [documents, setDocuments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [activeDocument, setActiveDocument] = useState(null);
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  async function loadDocuments() {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const data = await ragService.listDocuments();
+      const docs = (data.data || data || []).map((doc) => ({
+        id: doc.document_id || doc.id,
+        name: doc.title || doc.name,
+        title: doc.title || doc.name,
+        status: doc.status,
+      }));
+      setDocuments(docs);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+      setLoadError("Could not load documents.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleSelectDocument(doc) {
+    setActiveDocument(doc);
+  }
+
+  function handleUploadComplete(uploadedDoc) {
+    const doc = {
+      id: uploadedDoc.document_id || uploadedDoc.id,
+      name: uploadedDoc.title || uploadedDoc.name,
+      title: uploadedDoc.title || uploadedDoc.name,
+      status: uploadedDoc.status,
+    };
+    setDocuments((prev) => [doc, ...prev]);
+    setActiveDocument(doc);
+  }
+
+  async function handleDeleteDocument(documentId) {
+    try {
+      await ragService.deleteDocument(documentId);
+      setDocuments((prev) => prev.filter((d) => d.id !== documentId));
+      if (activeDocument?.id === documentId) {
+        setActiveDocument(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete document:", err);
+    }
+  }
 
   return (
     <div className={styles.pageWrapper}>
@@ -332,13 +419,21 @@ export default function RagDocuments() {
         <p className={styles.pageDescription}>
           Upload study or reference PDFs to your own workspace. Each file is
           indexed for semantic search and optional AI answers that cite passages
-          from that document only. File size limits apply on the server; other
-          users never see your uploads.
+          from that document only.
         </p>
       </div>
 
       <div className={styles.columns}>
-        <aside className={styles.leftColumn} />
+        <aside className={styles.leftColumn}>
+          <DocumentSidebar
+            documents={documents}
+            isLoading={isLoading}
+            error={loadError}
+            selectedId={activeDocument?.id}
+            onSelect={handleSelectDocument}
+            onUploadComplete={handleUploadComplete}
+          />
+        </aside>
 
         <main className={styles.rightColumn}>
           {!activeDocument ? (
@@ -359,7 +454,11 @@ export default function RagDocuments() {
               </p>
             </div>
           ) : (
-            <ReaderPanel key={activeDocument.id} activeDocument={activeDocument} />
+            <ReaderPanel
+              key={activeDocument.id}
+              activeDocument={activeDocument}
+              onDelete={handleDeleteDocument}
+            />
           )}
         </main>
       </div>
