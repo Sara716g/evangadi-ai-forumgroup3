@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { uploadPdf } from '../../services/rag.service.js';
+import { ragService } from '../../services/rag/rag.service.js';
 import styles from './PdfUploadDropzone.module.css';
 
 function PdfUploadDropzone({ onUploadComplete }) {
@@ -20,7 +20,7 @@ function PdfUploadDropzone({ onUploadComplete }) {
     setUploadError(null);
 
     try {
-      const uploadedDoc = await uploadPdf(selectedFile);
+      const uploadedDoc = await ragService.uploadPdf(selectedFile);
       setSelectedFile(null);
       if (onUploadComplete) {
         onUploadComplete(uploadedDoc);

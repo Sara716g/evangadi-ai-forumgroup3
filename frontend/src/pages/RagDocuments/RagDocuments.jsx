@@ -119,7 +119,8 @@ function ReaderPanel({ activeDocument, onDelete }) {
       setAiError(null);
       setAiAnswer("");
       const data = await ragService.queryDocument(activeDocument.id, aiQuery.trim());
-      setAiAnswer(data.answer || data.response || "");
+      const answerData = data.data || data;
+      setAiAnswer(answerData.answer || answerData.response || "");
     } catch (err) {
       console.error(err);
       setAiError("Could not get an answer.");
@@ -135,7 +136,8 @@ function ReaderPanel({ activeDocument, onDelete }) {
       setSearchError(null);
       setSearchResults([]);
       const data = await ragService.searchInDocument(activeDocument.id, searchQuery.trim());
-      setSearchResults(data.results || data.chunks || data || []);
+      const searchData = data.data || data;
+      setSearchResults(searchData.results || searchData.chunks || []);
     } catch (err) {
       console.error(err);
       setSearchError("Search failed.");
@@ -301,7 +303,7 @@ function ReaderPanel({ activeDocument, onDelete }) {
                       )}
                     </div>
                     <p className={styles.resultContent}>
-                      {result.content || result.text || result.chunk}
+                      {result.excerpt || result.content || result.text || result.chunk}
                     </p>
                   </div>
                 ))}

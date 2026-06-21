@@ -23,7 +23,7 @@ export const ragService = {
 
   searchInDocument(documentId, query) {
     return apiClient
-      .get(`/api/rag/documents/${documentId}/search`, { params: { q: query } })
+      .get(`/api/rag/documents/${documentId}/search`, { params: { query } })
       .then((r) => r.data);
   },
 

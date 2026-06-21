@@ -260,13 +260,15 @@ export const searchInDocumentService = async (
   await assertOwnedDocument(documentId, userId, { requireReady: true });
   const rankedChunks = await rankDocumentChunks(documentId, query, k);
 
-  return rankedChunks.map((chunk) => ({
-    chunkId: chunk.chunkId,
-    chunkIndex: chunk.chunkIndex,
-    content: chunk.content,
-    text: chunk.content,
-    score: chunk.score,
-  }));
+  return {
+    query,
+    results: rankedChunks.map((chunk) => ({
+      chunkId: chunk.chunkId,
+      chunkIndex: chunk.chunkIndex,
+      excerpt: chunk.content,
+      score: chunk.score,
+    })),
+  };
 };
 
 export const queryDocumentService = async (documentId, userId, query) => {
@@ -277,6 +279,8 @@ export const queryDocumentService = async (documentId, userId, query) => {
     return {
       answer:
         "I could not find relevant passages in this document to answer your question.",
+      citations: [],
+      chunksUsed: [],
     };
   }
 
@@ -313,7 +317,14 @@ export const queryDocumentService = async (documentId, userId, query) => {
         .join("")
         .trim() || "I could not generate an answer from this document.";
 
-    return { answer };
+    const citations = rankedChunks.map((chunk) => ({
+      ref: `[${chunk.chunkIndex}]`,
+      chunkIndex: chunk.chunkIndex,
+    }));
+
+    const chunksUsed = rankedChunks.map((chunk) => chunk.chunkIndex);
+
+    return { answer, citations, chunksUsed };
   } catch (error) {
     console.error("RAG query generation failed:", error);
     throw new ServiceUnavailableError(

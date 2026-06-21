@@ -76,14 +76,18 @@ export const searchInDocumentController = async (req, res, next) => {
     const query = req.query.query;
     const k = req.query.k;
 
-    const results = await ragService.searchInDocumentService(
+    const result = await ragService.searchInDocumentService(
       documentId,
       userId,
       query,
       k,
     );
 
-    return res.status(200).json(results);
+    return res.status(200).json({
+      success: true,
+      message: "Search results fetched successfully.",
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
@@ -101,7 +105,11 @@ export const queryDocumentController = async (req, res, next) => {
       query,
     );
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      success: true,
+      message: "Answer and citations",
+      data: result,
+    });
   } catch (error) {
     next(error);
   }
