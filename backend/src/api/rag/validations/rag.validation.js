@@ -1,4 +1,14 @@
+import { param } from "express-validator";
 import { BadRequestError } from "../../../utils/errors/index.js";
+
+export const documentIdParamValidation = [
+  param("documentId")
+    .exists({ checkFalsy: true })
+    .withMessage("documentId param is required.")
+    .isInt({ min: 1 })
+    .withMessage("documentId must be a positive integer.")
+    .toInt(),
+];
 
 export const parseDocumentIdParam = (req, res, next) => {
   const documentId = Number(req.params.documentId);

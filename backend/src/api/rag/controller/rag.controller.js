@@ -37,6 +37,22 @@ export const getDocumentsController = async (req, res, next) => {
   }
 };
 
+export const getDocumentMetaController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const documentId = req.params.documentId;
+    const data = await ragService.getDocumentMetaService(documentId, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Document fetched successfully.",
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;

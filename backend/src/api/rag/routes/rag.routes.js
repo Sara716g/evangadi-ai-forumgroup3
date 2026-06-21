@@ -3,6 +3,7 @@ import {
   createDocumentController,
   deleteDocumentController,
   getDocumentFileController,
+  getDocumentMetaController,
   getDocumentsController,
   queryDocumentController,
   searchInDocumentController,
@@ -12,6 +13,7 @@ import {
   uploadDocument,
 } from "../config/rag.upload.config.js";
 import {
+  documentIdParamValidation,
   parseDocumentIdParam,
   validateQueryBody,
   validateSearchQuery,
@@ -27,6 +29,12 @@ router.post(
   uploadDocument.single("file"),
   createDocumentMulterErrorHandler,
   createDocumentController,
+);
+router.get(
+  "/documents/:documentId",
+  authenticateUser,
+  documentIdParamValidation,
+  getDocumentMetaController,
 );
 router.delete(
   "/documents/:documentId",
