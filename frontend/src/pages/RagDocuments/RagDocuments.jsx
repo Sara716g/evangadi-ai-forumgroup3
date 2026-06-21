@@ -58,11 +58,14 @@ function ReaderPanel({ activeDocument }) {
 
   useEffect(() => {
     if (activeDocument?.status === "ready") {
-      /* eslint-disable-next-line react-hooks/set-state-in-effect */
       loadPdfPreview(activeDocument.id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [activeDocument?.id]);
 
   function onDocumentLoadSuccess({ numPages: total }) {
     setNumPages(total);
