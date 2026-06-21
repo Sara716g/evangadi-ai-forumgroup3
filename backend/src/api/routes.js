@@ -15,7 +15,7 @@ mainRouter.use('/questions', questionRoutes);
 // Answer routes
 mainRouter.use('/answers', answerRoutes);
 
-// Add this line after your other routes
+// RAG routes
 mainRouter.use('/rag', ragRoutes);
 
 export default mainRouter;
