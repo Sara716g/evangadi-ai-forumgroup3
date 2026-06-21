@@ -1,10 +1,10 @@
 .sidebar {
-  width: 380px;
-  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
   background: #ffffff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border, #e2e8f0);
   border-radius: 12px;
-  padding: var(--space-6, 24px);
+  padding: 1.25rem;
 }
 
 .heading {
