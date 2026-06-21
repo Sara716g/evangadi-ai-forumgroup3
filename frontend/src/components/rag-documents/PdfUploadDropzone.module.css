@@ -1,14 +1,15 @@
 .dropzone {
-  border: 1px dashed var(--border);
+  border: 1px dashed #d1d5db;
   border-radius: 10px;
   padding: 16px;
-  background: #f8fafc;
+  background: #f9fafb;
 }
 
 .hint {
-  color: var(--text-tertiary);
-  font-size: var(--text-sm, 13px);
+  color: #6b7280;
+  font-size: 0.8125rem;
   margin: 0 0 12px 0;
+  line-height: 1.4;
 }
 
 .buttonRow {
@@ -22,12 +23,17 @@
   align-items: center;
   gap: 6px;
   background: #ffffff;
-  border: 1px solid var(--border);
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: var(--text-sm, 14px);
-  color: var(--text-primary);
+  font-size: 0.8125rem;
+  color: #374151;
   cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.chooseFileButton:hover {
+  border-color: #9ca3af;
 }
 
 .hiddenInput {
@@ -42,13 +48,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--border-focus);
+  background: #ea580c;
   color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
-  font-size: var(--text-sm, 14px);
+  font-size: 0.8125rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.uploadButton:hover:not(:disabled) {
+  background: #c2410c;
 }
 
 .uploadButton:disabled {
@@ -59,30 +71,37 @@
 .fileInfo {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   background: #ffffff;
-  border: 1px solid var(--border);
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 8px 12px;
-  font-size: var(--text-sm, 13px);
+  font-size: 0.8125rem;
 }
 
 .fileName {
-  color: var(--text-primary);
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 8px;
 }
 
 .fileSize {
-  color: var(--text-tertiary);
+  color: #94a3b8;
+  flex-shrink: 0;
 }
 
 .noFileText {
-  color: var(--text-placeholder);
-  font-size: var(--text-sm, 13px);
+  color: #94a3b8;
+  font-size: 0.8125rem;
   font-style: italic;
   margin: 0;
 }
 
 .errorText {
-  color: var(--error);
-  font-size: var(--text-sm, 13px);
+  color: #dc2626;
+  font-size: 0.8125rem;
   margin: 8px 0 0 0;
 }
