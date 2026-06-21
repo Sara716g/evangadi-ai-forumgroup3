@@ -5,6 +5,10 @@ export const ragService = {
     return apiClient.get("/api/rag/documents").then((r) => r.data);
   },
 
+  getDocument(documentId) {
+    return apiClient.get(`/api/rag/documents/${documentId}`).then((r) => r.data);
+  },
+
   uploadPdf(file) {
     const formData = new FormData();
     formData.append("file", file);

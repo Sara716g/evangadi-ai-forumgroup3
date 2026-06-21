@@ -33,8 +33,8 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
 
       {!isLoading && !error && documents.length > 0 && (
         <ul className={styles.list}>
-          {documents.map((doc) => (
-            <li key={doc.id}>
+          {documents.map((doc, index) => (
+            <li key={doc.id || `doc-${index}`}>
               <button
                 type="button"
                 className={`${styles.docCard} ${

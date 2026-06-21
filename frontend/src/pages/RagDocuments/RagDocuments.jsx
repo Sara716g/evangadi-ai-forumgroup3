@@ -366,6 +366,36 @@ export default function RagDocuments() {
     loadDocuments();
   }, []);
 
+  useEffect(() => {
+    if (!activeDocument || activeDocument.status === "ready") return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const data = await ragService.getDocument(activeDocument.id);
+        const doc = data.data || data;
+        const updatedStatus = doc.status;
+
+        if (updatedStatus === "ready" || updatedStatus === "failed") {
+          clearInterval(pollInterval);
+          const updatedDoc = {
+            id: doc.document_id || doc.id,
+            name: doc.title || doc.name,
+            title: doc.title || doc.name,
+            status: updatedStatus,
+          };
+          setActiveDocument(updatedDoc);
+          setDocuments((prev) =>
+            prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d))
+          );
+        }
+      } catch (err) {
+        console.error("Polling failed:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [activeDocument?.id, activeDocument?.status]);
+
   async function loadDocuments() {
     try {
       setIsLoading(true);
