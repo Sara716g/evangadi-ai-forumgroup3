@@ -3,3 +3,4 @@ export { getSingleQuestion, getSimilarQuestions } from "./question/question.serv
 export * from "./answer.service.js";
 
 export * from "./rag.service.js";
+export { ragService } from "./rag/rag.service.js";
