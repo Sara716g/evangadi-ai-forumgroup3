@@ -1,24 +1,5 @@
 import { useState } from "react";
-import { apiClient } from "../../services/core/api.client.js";
-
-// ── Service layer ─────────────────────────────────────────────────────────────
-const questionService = {
-  generateQuestionDraftCoach: async ({ title, content }) => {
-    const response = await apiClient.post("/api/questions/draft-coach", {
-      title,
-      content,
-    });
-    return response.data.data;
-  },
-
-  createQuestion: async ({ title, content }) => {
-    const response = await apiClient.post("/api/questions", {
-      title,
-      content,
-    });
-    return response.data;
-  },
-};
+import { questionService } from "../../services/question/question.service.js";
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validate(title, content) {

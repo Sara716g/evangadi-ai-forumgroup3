@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
-import { postAnswer, assessAnswerFit } from "../../services/answer.service";
+import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

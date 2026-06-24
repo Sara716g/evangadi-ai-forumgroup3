@@ -15,14 +15,21 @@ export const ragService = {
     return apiClient
       .post("/api/rag/documents", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
       })
-      .then((r) => r.data);
+      .then((r) => r.data.data || r.data);
   },
 
   deleteDocument(documentId) {
     return apiClient
       .delete(`/api/rag/documents/${documentId}`)
       .then((r) => r.data);
+  },
+
+  retryDocument(documentId) {
+    return apiClient
+      .post(`/api/rag/documents/${documentId}/retry`)
+      .then((r) => r.data.data || r.data);
   },
 
   searchInDocument(documentId, query) {
@@ -39,7 +46,10 @@ export const ragService = {
 
   fetchPdfObjectUrl(documentId) {
     return apiClient
-      .get(`/api/rag/documents/${documentId}/file`, { responseType: "blob" })
+      .get(`/api/rag/documents/${documentId}/file`, { 
+        responseType: "blob",
+        timeout: 60000,
+      })
       .then((r) => {
         const blob = new Blob([r.data], { type: "application/pdf" });
         return URL.createObjectURL(blob);

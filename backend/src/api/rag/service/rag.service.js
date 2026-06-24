@@ -150,24 +150,46 @@ const processUploadedPdf = async (documentId, filePath) => {
 
   const chunks = chunkText(text);
 
-  for (const [index, content] of chunks.entries()) {
-    const chunkResult = await safeExecute(
-      "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
-      [documentId, index, content],
-    );
+  try {
+    for (const [index, content] of chunks.entries()) {
+      const chunkResult = await safeExecute(
+        "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
+        [documentId, index, content],
+      );
 
-    const embedding = await generateDocumentEmbedding(content);
+      const embedding = await generateDocumentEmbedding(content);
+
+      await safeExecute(
+        "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
+        [chunkResult.insertId, content, JSON.stringify(embedding)],
+      );
+    }
 
     await safeExecute(
-      "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
-      [chunkResult.insertId, content, JSON.stringify(embedding)],
+      "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = ?",
+      [documentId],
+    );
+  } catch (error) {
+    console.error("Document processing error:", error);
+    await safeExecute(
+      "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = ?)",
+      [documentId],
+    );
+    await safeExecute(
+      "DELETE FROM document_chunks WHERE document_id = ?",
+      [documentId],
+    );
+    await safeExecute(
+      "UPDATE documents SET status = 'failed', error_message = ? WHERE document_id = ?",
+      [error.message || "Processing failed", documentId],
     );
   }
+};
 
-  await safeExecute(
-    "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = ?",
-    [documentId],
-  );
+const processPdfBackground = (documentId, filePath) => {
+  processUploadedPdf(documentId, filePath).catch((err) => {
+    console.error("[RAG] Background processing crashed:", err);
+  });
 };
 
 export const createDocumentFromUploadService = async (file, userId) => {
@@ -187,15 +209,7 @@ export const createDocumentFromUploadService = async (file, userId) => {
 
   const documentId = insertResult.insertId;
 
-  try {
-    await processUploadedPdf(documentId, file.path);
-  } catch (error) {
-    console.error("Document processing error:", error);
-    await safeExecute(
-      "UPDATE documents SET status = 'failed', error_message = ? WHERE document_id = ?",
-      [error.message || "Unknown error", documentId],
-    );
-  }
+  setImmediate(() => processPdfBackground(documentId, file.path));
 
   const rows = await safeExecute(
     "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
@@ -342,4 +356,42 @@ export const getDocumentFilePathService = async (documentId, userId) => {
     absolutePath: resolveStorageAbsolutePath(document.storage_path),
     title: document.title,
   };
+};
+
+export const retryDocumentService = async (documentId, userId) => {
+  const document = await assertOwnedDocument(documentId, userId);
+
+  if (document.status !== "failed") {
+    throw new BadRequestError("Only failed documents can be retried.");
+  }
+
+  const absolutePath = resolveStorageAbsolutePath(document.storage_path);
+
+  try {
+    await fs.access(absolutePath);
+  } catch {
+    throw new NotFoundError("Document file not found on disk.");
+  }
+
+  await safeExecute(
+    "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = ?)",
+    [documentId],
+  );
+  await safeExecute(
+    "DELETE FROM document_chunks WHERE document_id = ?",
+    [documentId],
+  );
+  await safeExecute(
+    "UPDATE documents SET status = 'processing', error_message = NULL WHERE document_id = ?",
+    [documentId],
+  );
+
+  setImmediate(() => processPdfBackground(documentId, absolutePath));
+
+  const rows = await safeExecute(
+    "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
+    [documentId],
+  );
+
+  return rows[0];
 };

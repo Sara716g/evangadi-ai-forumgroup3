@@ -9,6 +9,14 @@ export const questionService = {
     return response.data;
   },
 
+  generateQuestionDraftCoach: async ({ title, content }) => {
+    const response = await apiClient.post("/api/questions/draft-coach", {
+      title,
+      content,
+    });
+    return response.data.data;
+  },
+
   getQuestions: async (search = "", mine = false) => {
     const params = { search };
     if (mine) params.mine = true;

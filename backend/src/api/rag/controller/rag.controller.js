@@ -139,3 +139,19 @@ export const getDocumentFileController = async (req, res, next) => {
     next(error);
   }
 };
+
+export const retryDocumentController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const documentId = req.params.documentId;
+    const document = await ragService.retryDocumentService(documentId, userId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Document reprocessing started.",
+      data: document,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

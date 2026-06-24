@@ -271,7 +271,7 @@ export default function Dashboard() {
                         <span>•</span>
                         <span>
                           {q.timeAgo ||
-                            `Asked by ${q.author?.username || "anonymous"}`}
+                            `Asked by ${q.author?.username || q.author?.firstName || "anonymous"}`}
                         </span>
                       </div>
                     </div>

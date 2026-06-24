@@ -1,4 +1,4 @@
-import { apiClient } from "./core/api.client.js";
+import { apiClient } from "../core/api.client.js";
 
 export async function postAnswer(questionId, content) {
   const res = await apiClient.post("/api/answers", {
