@@ -3,6 +3,7 @@ import authRoutes from './auth/routes/auth.routes.js';
 import questionRoutes from './question/routes/question.routes.js';
 import answerRoutes from './answer/routes/answer.routes.js';
 import ragRoutes from "./rag/routes/rag.routes.js";
+import communityRoutes from './community/routes/community.routes.js';
 
 const mainRouter = express.Router();
 
@@ -18,5 +19,9 @@ mainRouter.use('/questions', questionRoutes);
 // Answer routes
 mainRouter.use('/answers', answerRoutes);
 
+// Community routes
+mainRouter.use('/community', communityRoutes);
+
 export default mainRouter;
 export { mainRouter };
+

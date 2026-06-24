@@ -15,6 +15,7 @@ import QuestionDetail from "./pages/QuestionDetail/QuestionDetail";
 import PostQuestion from "./pages/PostQuestion/PostQuestion";
 import MyQuestions from "./pages/MyQuestions/MyQuestions";
 import RagDocuments from "./pages/RagDocuments/RagDocuments";
+import ExternalSearch from "./pages/ExternalSearch/ExternalSearch";
 
 function App() {
   return (
@@ -67,6 +68,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RagDocuments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community-search"
+              element={
+                <ProtectedRoute>
+                  <ExternalSearch />
                 </ProtectedRoute>
               }
             />
