@@ -128,8 +128,10 @@ const rankDocumentChunks = async (documentId, query, k = DEFAULT_K) => {
     }))
     .filter((item) => item.score >= DEFAULT_THRESHOLD)
     .sort((a, b) => b.score - a.score)
-    .slice(0, Number(k) || DEFAULT_K);
+    .slice(0, Math.min(Number(k) || DEFAULT_K, 50));
 };
+
+const EMBEDDING_BATCH_SIZE = 5;
 
 const processUploadedPdf = async (documentId, filePath) => {
   const pdfBuffer = await fs.readFile(filePath);
@@ -150,18 +152,38 @@ const processUploadedPdf = async (documentId, filePath) => {
 
   const chunks = chunkText(text);
 
+  const chunkIds = [];
   for (const [index, content] of chunks.entries()) {
     const chunkResult = await safeExecute(
       "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
       [documentId, index, content],
     );
+    chunkIds.push({ id: chunkResult.insertId, content });
+  }
 
-    const embedding = await generateDocumentEmbedding(content);
-
-    await safeExecute(
-      "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
-      [chunkResult.insertId, content, JSON.stringify(embedding)],
+  for (let i = 0; i < chunkIds.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = chunkIds.slice(i, i + EMBEDDING_BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map((chunk) =>
+        generateDocumentEmbedding(chunk.content).then((embedding) => ({
+          chunkId: chunk.id,
+          content: chunk.content,
+          embedding,
+        })),
+      ),
     );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { chunkId, content: srcText, embedding } = result.value;
+        await safeExecute(
+          "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
+          [chunkId, srcText, JSON.stringify(embedding)],
+        );
+      } else {
+        console.error("Embedding batch item failed:", result.reason);
+      }
+    }
   }
 
   await safeExecute(
@@ -195,6 +217,13 @@ export const createDocumentFromUploadService = async (file, userId) => {
       "UPDATE documents SET status = 'failed', error_message = ? WHERE document_id = ?",
       [error.message || "Unknown error", documentId],
     );
+    try {
+      await fs.unlink(file.path);
+    } catch (cleanupErr) {
+      if (cleanupErr.code !== "ENOENT") {
+        console.error("Failed to clean up orphaned file:", cleanupErr);
+      }
+    }
   }
 
   const rows = await safeExecute(
@@ -296,10 +325,13 @@ export const queryDocumentService = async (documentId, userId, query) => {
     "If the excerpts do not contain enough information, say you cannot find it in the document.",
     "When you use information from an excerpt, cite it inline as [chunk_index].",
     "",
-    "Document excerpts:",
+    "--- DOCUMENT EXCERPTS ---",
     contextBlock,
+    "--- END DOCUMENT EXCERPTS ---",
     "",
-    `Question: ${query}`,
+    "--- USER QUESTION ---",
+    `${query}`,
+    "--- END USER QUESTION ---",
   ].join("\n");
 
   try {

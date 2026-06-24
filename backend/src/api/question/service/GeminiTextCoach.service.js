@@ -14,10 +14,23 @@ Respond with valid JSON only, no markdown. Use this exact structure:
   "improvedBody": "An improved version of the question body"
 }`;
 
-  const raw = await generateText(prompt);
+  let raw;
+  try {
+    raw = await generateText(prompt);
+  } catch (err) {
+    console.error('[GeminiTextCoach] AI call failed:', err.message);
+    throw err;
+  }
+
+  // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
 
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(jsonStr);
     return {
       overall: parsed.overall || '',
       tips: Array.isArray(parsed.tips) ? parsed.tips : [],

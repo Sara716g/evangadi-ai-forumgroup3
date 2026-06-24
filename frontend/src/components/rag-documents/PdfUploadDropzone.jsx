@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { ragService } from '../../services/rag/rag.service.js';
 import styles from './PdfUploadDropzone.module.css';
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 function PdfUploadDropzone({ onUploadComplete }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -9,6 +11,11 @@ function PdfUploadDropzone({ onUploadComplete }) {
 
   function handleFileChange(event) {
     const file = event.target.files[0] || null;
+    if (file && file.size > MAX_FILE_SIZE) {
+      setUploadError(`File is too large. Maximum size is 10 MB. Your file is ${formatFileSize(file.size)}.`);
+      setSelectedFile(null);
+      return;
+    }
     setSelectedFile(file);
     setUploadError(null);
   }

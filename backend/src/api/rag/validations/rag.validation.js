@@ -21,11 +21,17 @@ export const parseDocumentIdParam = (req, res, next) => {
   return next();
 };
 
+const MAX_QUERY_LENGTH = 5000;
+
 export const validateSearchQuery = (req, res, next) => {
   const query = req.query.query?.trim();
 
   if (!query) {
     return next(new BadRequestError("Search query is required."));
+  }
+
+  if (query.length > MAX_QUERY_LENGTH) {
+    return next(new BadRequestError(`Search query must be ${MAX_QUERY_LENGTH} characters or fewer.`));
   }
 
   req.query.query = query;
@@ -37,6 +43,10 @@ export const validateQueryBody = (req, res, next) => {
 
   if (!query) {
     return next(new BadRequestError("Query is required."));
+  }
+
+  if (query.length > MAX_QUERY_LENGTH) {
+    return next(new BadRequestError(`Query must be ${MAX_QUERY_LENGTH} characters or fewer.`));
   }
 
   req.body.query = query;

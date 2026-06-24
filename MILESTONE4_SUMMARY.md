@@ -2,48 +2,48 @@
 
 ## Overview
 
-This document explains all Milestone 4 features, who does what, and where to add new code.
+This document explains all Milestone 4 features, and where to add new code.
 
 ---
 
 ## Feature List
 
-| Task | Feature | Owner | Time Est. |
-|------|---------|-------|-----------|
-| T-26 | File Attachments | Bini | 2-3 days |
-| T-27 | Voice Messages | Melat | 2-3 days |
-| T-28 | Voting & Comments | Melese | 3-4 days |
-| T-29 | Notifications | You | 3-4 days |
-| T-30 | AI Assistant | Beza | 2-3 days |
-| T-31 | Duplicate Detection | Abubaker | 2 days |
-| T-32 | Categories | Abubaker | 2 days |
-| T-33 | External Forum Search | Tsi | 2 days |
-| T-34 | Bookmarks | Melese | 1-2 days |
-| T-35 | User Profiles | You | 2-3 days |
-| T-36 | Dark Mode | Bini | 1 day |
+  Task                      Feature 
 
----
+ T-26                 File Attachments 
+ T-27                 Voice Messages 
+ T-28                 Voting & Comments
+ T-29                 Notification
+ T-30                 AI Assistant 
+ T-31                 Duplicate Detection
+ T-32                 Categories 
+ T-33                 External Forum Search 
+ T-34                 Bookmarks 
+ T-35                 User Profiles 
+ T-36                 Dark Mode 
+
+
 
 ## Folder Structure
 
 ### Backend - Where to Add New Code
 
-```
+
 backend/src/api/
 ├── auth/              (Milestone 1 - done)
 ├── question/          (Milestone 2 - done)
 ├── answer/            (Milestone 2 - done)
 ├── rag/               (Milestone 3 - done)
-├── attachment/        (NEW - T-26) ← Bini creates
-├── voice-message/     (NEW - T-27) ← Melat creates
-├── vote/              (NEW - T-28) ← Melese creates
-├── comment/           (NEW - T-28) ← Melese creates
-├── notification/      (NEW - T-29) ← You creates
-├── ai-assistant/      (NEW - T-30) ← Beza creates
-├── duplicate/         (NEW - T-31) ← Abubaker creates
-├── category/          (NEW - T-32) ← Abubaker creates
-├── bookmark/          (NEW - T-34) ← Melese creates
-├── profile/           (NEW - T-35) ← You creates
+├── attachment/        (NEW - T-26) ← 
+├── voice-message/     (NEW - T-27) ← 
+├── vote/              (NEW - T-28) ← 
+├── comment/           (NEW - T-28) ← 
+├── notification/      (NEW - T-29) ← 
+├── ai-assistant/      (NEW - T-30) ← 
+├── duplicate/         (NEW - T-31) ← 
+├── category/          (NEW - T-32) ← 
+├── bookmark/          (NEW - T-34) ← 
+├── profile/           (NEW - T-35) ←
 └── routes.js          (UPDATE - add new routes)
 ```
 
@@ -55,22 +55,22 @@ frontend/src/
 │   ├── Layout/        (done)
 │   ├── Navbar/        (UPDATE - add notification bell)
 │   ├── Sidebar/       (UPDATE - add categories)
-│   ├── Attachment/    (NEW - T-26) ← Bini creates
-│   ├── VoiceRecorder/ (NEW - T-27) ← Melat creates
-│   ├── Voting/        (NEW - T-28) ← Melese creates
-│   ├── Comment/       (NEW - T-28) ← Melese creates
-│   ├── Notification/  (NEW - T-29) ← You creates
-│   ├── Duplicate/     (NEW - T-31) ← Abubaker creates
-│   ├── Bookmark/      (NEW - T-34) ← Melese creates
-│   ├── Profile/       (NEW - T-35) ← You creates
-│   └── ThemeToggle/   (NEW - T-36) ← Bini creates
+│   ├── Attachment/    (NEW - T-26) ← 
+│   ├── VoiceRecorder/ (NEW - T-27) ← 
+│   ├── Voting/        (NEW - T-28) ← 
+│   ├── Comment/       (NEW - T-28) ← 
+│   ├── Notification/  (NEW - T-29) ←
+│   ├── Duplicate/     (NEW - T-31) ← 
+│   ├── Bookmark/      (NEW - T-34) ← 
+│   ├── Profile/       (NEW - T-35) ← 
+│   └── ThemeToggle/   (NEW - T-36) ← 
 │
 ├── pages/
 │   ├── Dashboard/     (done)
 │   ├── Auth/          (done)
-│   ├── Notifications/ (NEW - T-29) ← You creates
-│   ├── Bookmarks/     (NEW - T-34) ← Melese creates
-│   └── Profile/       (NEW - T-35) ← You creates
+│   ├── Notifications/ (NEW - T-29) ← 
+│   ├── Bookmarks/     (NEW - T-34) ← 
+│   └── Profile/       (NEW - T-35) ← 
 │
 ├── services/          (UPDATE - add API calls)
 │   ├── attachment.service.js    (NEW)
@@ -89,7 +89,7 @@ frontend/src/
 
 ## What Each Person Needs to Do
 
-### Bini (T-26 + T-36)
+(T-26 + T-36)
 
 **Backend:**
 1. Create `backend/src/api/attachment/` folder
@@ -107,7 +107,7 @@ frontend/src/
 
 ---
 
-### Melat (T-27)
+### (T-27)
 
 **Backend:**
 1. Create `backend/src/api/voice-message/` folder
@@ -122,7 +122,7 @@ frontend/src/
 
 ---
 
-### Melese (T-28 + T-34)
+### (T-28 + T-34)
 
 **Backend:**
 1. Create `backend/src/api/vote/` folder
@@ -145,7 +145,7 @@ frontend/src/
 
 ---
 
-### You (T-29 + T-35)
+### (T-29 + T-35)
 
 **Backend:**
 1. Create `backend/src/api/notification/` folder
@@ -168,7 +168,7 @@ frontend/src/
 
 ---
 
-### Beza (T-30)
+### (T-30)
 
 **Backend:**
 1. Create `backend/src/api/ai-assistant/` folder
@@ -179,7 +179,7 @@ frontend/src/
 
 ---
 
-### Abubaker (T-31 + T-32)
+###  (T-31 + T-32)
 
 **Backend:**
 1. Create `backend/src/api/duplicate/` folder
@@ -196,7 +196,7 @@ frontend/src/
 
 ---
 
-### Tsi (T-33)
+### (T-33)
 
 **Backend:**
 1. Create `backend/src/api/community/` folder

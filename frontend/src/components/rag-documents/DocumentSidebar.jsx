@@ -1,12 +1,14 @@
+import { Trash2 } from 'lucide-react';
 import PdfUploadDropzone from './PdfUploadDropzone';
 import styles from './DocumentSidebar.module.css';
 
 const STATUS_LABELS = {
   ready: 'READY',
   processing: 'PROCESSING',
+  failed: 'FAILED',
 };
 
-function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, onUploadComplete }) {
+function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, onUploadComplete, onDelete }) {
   return (
     <aside className={styles.sidebar}>
       <h2 className={styles.heading}>Library</h2>
@@ -42,14 +44,28 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
                 }`}
                 onClick={() => onSelect(doc)}
               >
-                <span className={styles.docName}>{doc.name}</span>
-                <span
-                  className={`${styles.badge} ${
-                    styles[`badge--${doc.status}`]
-                  }`}
-                >
-                  {STATUS_LABELS[doc.status] || doc.status}
-                </span>
+                <div className={styles.docCardBody}>
+                  <span className={styles.docName}>{doc.name}</span>
+                  <span
+                    className={`${styles.badge} ${
+                      styles[`badge--${doc.status}`]
+                    }`}
+                  >
+                    {STATUS_LABELS[doc.status] || doc.status}
+                  </span>
+                </div>
+                {onDelete && (
+                  <span
+                    className={styles.deleteIcon}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(doc.id);
+                    }}
+                    title="Delete document"
+                  >
+                    <Trash2 size={14} />
+                  </span>
+                )}
               </button>
             </li>
           ))}

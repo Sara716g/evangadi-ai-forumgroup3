@@ -354,26 +354,43 @@ export const assessAnswerAgainstQuestionService = async ({ questionHash, answerT
 
   const question = rows[0];
   const prompt = `You are a skilled forum moderator.
-Evaluate the answer below against the question content. Provide:
-1) A short judgment whether the answer is relevant and on-topic.
-2) A relevance score from 0 to 100.
-3) Two improvement suggestions for the answer.
-4) If the answer misses the main point, explain what is missing.
+Evaluate the answer below against the question content.
+Determine if the answer is "strong", "partial", or "weak":
+- "strong": answer directly addresses the question with clear, accurate information
+- "partial": answer is related but incomplete or misses key points
+- "weak": answer is off-topic, incorrect, or insufficient
+
+Respond with valid JSON only, no markdown. Use this exact structure:
+{
+  "level": "strong" or "partial" or "weak",
+  "note": "A brief 1-2 sentence explanation of your assessment"
+}
 
 Question Title: ${question.title}
 Question Content: ${question.content}
-Answer: ${answerText}
+Answer: ${answerText}`;
 
-Respond clearly in plain text.`;
+  const raw = await generateText(prompt);
 
-  const assessment = await generateText(prompt);
-  return {
-    question: {
-      id: question.question_id,
-      title: question.title,
-      content: question.content,
-    },
-    answerText,
-    assessment,
-  };
+  // Strip markdown code fences if present
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return {
+      level: ['strong', 'partial', 'weak'].includes(parsed.level) ? parsed.level : 'partial',
+      note: parsed.note || '',
+    };
+  } catch {
+    // Fallback: try to detect level from raw text
+    const lower = raw.toLowerCase();
+    let level = 'partial';
+    if (lower.includes('strong')) level = 'strong';
+    else if (lower.includes('weak')) level = 'weak';
+    return { level, note: raw };
+  }
 };
