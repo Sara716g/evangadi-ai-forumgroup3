@@ -4,3 +4,5 @@ export * from "./answer.service.js";
 
 export * from "./rag.service.js";
 export { ragService } from "./rag/rag.service.js";
+export { notificationService } from "./notification.service.js";
+export { profileService } from "./profile.service.js";

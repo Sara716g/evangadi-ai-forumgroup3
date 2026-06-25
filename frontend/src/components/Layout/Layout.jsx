@@ -20,6 +20,8 @@ export default function Layout() {
     if (path === '/questions/ask') return 'Ask a question';
     if (path.startsWith('/question/')) return 'Discussion';
     if (path === '/rag-documents') return 'Knowledge base';
+    if (path === '/notifications') return 'Notifications';
+    if (path === '/profile') return 'My Profile';
     return 'Forum';
   };
 
@@ -36,6 +38,10 @@ export default function Layout() {
       return 'Read the thread, review related topics, and reply with markdown if you can help.';
     if (path === '/rag-documents')
       return 'Private PDF library: reader, semantic search, and AI answers with citations per document.';
+    if (path === '/notifications')
+      return 'Stay updated with activity on your questions and answers.';
+    if (path === '/profile')
+      return 'Manage your public profile information.';
     return '';
   };
 

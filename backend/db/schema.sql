@@ -131,4 +131,39 @@ CREATE TABLE `document_chunk_vectors` (
     UNIQUE KEY `uniq_chunk_vectors_chunk_id` (`chunk_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- 7. Notifications Table
+-- Stores in-app notifications for users.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `notifications`;
+CREATE TABLE `notifications` (
+    `notification_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `type` VARCHAR(50) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `message` TEXT NOT NULL,
+    `link` VARCHAR(500) NULL,
+    `is_read` BOOLEAN DEFAULT FALSE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    INDEX `idx_notifications_user_read` (`user_id`, `is_read`),
+    INDEX `idx_notifications_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 8. Profiles Table
+-- Stores extended profile information for users.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `profiles`;
+CREATE TABLE `profiles` (
+    `profile_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL UNIQUE,
+    `bio` TEXT NULL,
+    `avatar_url` VARCHAR(500) NULL,
+    `location` VARCHAR(100) NULL,
+    `website` VARCHAR(255) NULL,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
