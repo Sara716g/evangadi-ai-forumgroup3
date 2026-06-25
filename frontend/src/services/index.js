@@ -4,3 +4,4 @@ export * from "./answer.service.js";
 
 export * from "./rag.service.js";
 export { ragService } from "./rag/rag.service.js";
+export { adminService } from "./admin.service.js";

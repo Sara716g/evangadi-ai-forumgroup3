@@ -90,7 +90,7 @@ export const registerService = async ({
 export const loginService = async ({ email, password }) => {
   const normalizedEmail = normalizeEmail(email);
   const sql =
-    'SELECT user_id, first_name, last_name, email, password_hash FROM users WHERE email = ? LIMIT 1';
+    'SELECT user_id, first_name, last_name, email, password_hash, role, status FROM users WHERE email = ? LIMIT 1';
   const rows = await safeExecute(sql, [normalizedEmail]);
 
   if (rows.length === 0) {
@@ -98,6 +98,15 @@ export const loginService = async ({ email, password }) => {
   }
 
   const user = rows[0];
+
+  if (user.status === 'banned') {
+    throw new UnauthenticatedError('Your account has been banned.');
+  }
+
+  if (user.status === 'suspended') {
+    throw new UnauthenticatedError('Your account has been suspended.');
+  }
+
   const isMatch = await bcrypt.compare(password, user.password_hash);
 
   if (!isMatch) {
@@ -108,6 +117,7 @@ export const loginService = async ({ email, password }) => {
     id: user.user_id,
     firstName: user.first_name,
     lastName: user.last_name,
+    role: user.role,
   };
 
   const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -118,6 +128,7 @@ export const loginService = async ({ email, password }) => {
       firstName: user.first_name,
       lastName: user.last_name,
       email: user.email,
+      role: user.role,
     },
     token,
   };
