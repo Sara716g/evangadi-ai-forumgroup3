@@ -2,7 +2,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import styles from "./RagAnswerBody.module.css";
 
-export default function RagAnswerBody({ answer }) {
+export default function RagAnswerBody({ answer, citations }) {
   if (!answer) return null;
 
   return (
@@ -42,6 +42,16 @@ export default function RagAnswerBody({ answer }) {
       >
         {answer}
       </ReactMarkdown>
+      {citations && citations.length > 0 && (
+        <div className={styles.citationsSection}>
+          <span className={styles.citationsLabel}>Sources: </span>
+          {citations.map((cite, idx) => (
+            <span key={idx} className={styles.citationTag}>
+              {cite.ref || `[${cite.chunkIndex}]`}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

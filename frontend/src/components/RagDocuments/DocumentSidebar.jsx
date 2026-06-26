@@ -37,14 +37,14 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
         <ul className={styles.list}>
           {documents.map((doc, index) => (
             <li key={doc.id || `doc-${index}`}>
-              <div className={`${styles.docCard} ${
-                doc.id === selectedId ? styles.docCardSelected : ''
-              }`}>
-                <button
-                  type="button"
-                  className={styles.docCardBtn}
-                  onClick={() => onSelect(doc)}
-                >
+              <button
+                type="button"
+                className={`${styles.docCard} ${
+                  doc.id === selectedId ? styles.docCardSelected : ''
+                }`}
+                onClick={() => onSelect(doc)}
+              >
+                <div className={styles.docCardBody}>
                   <span className={styles.docName}>{doc.name}</span>
                   <span
                     className={`${styles.badge} ${
@@ -53,11 +53,10 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
                   >
                     {STATUS_LABELS[doc.status] || doc.status}
                   </span>
-                </button>
+                </div>
                 {onDelete && (
-                  <button
-                    type="button"
-                    className={styles.deleteBtn}
+                  <span
+                    className={styles.deleteIcon}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(doc.id);
@@ -65,9 +64,9 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
                     title="Delete document"
                   >
                     <Trash2 size={14} />
-                  </button>
+                  </span>
                 )}
-              </div>
+              </button>
             </li>
           ))}
         </ul>

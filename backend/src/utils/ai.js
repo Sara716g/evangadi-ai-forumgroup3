@@ -63,12 +63,15 @@ export const generateText = async (prompt) => {
     console.error('[Gemini generateText] Full error:', err);
     const msg = err?.message || String(err);
     if (msg.includes('429') || msg.includes('quota')) {
-      throw new ServiceUnavailableError(`AI service quota exceeded: ${msg}`);
+      throw new ServiceUnavailableError('AI service quota exceeded. Please try again later.');
     }
     if (msg.includes('404') || msg.includes('not found')) {
-      throw new ServiceUnavailableError(`AI model "${GEMINI_TEXT_MODEL}" is not available: ${msg}`);
+      throw new ServiceUnavailableError(`AI model "${GEMINI_TEXT_MODEL}" is not available.`);
     }
-    throw new ServiceUnavailableError(`AI service error: ${msg}`);
+    if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('overloaded') || msg.includes('high demand')) {
+      throw new ServiceUnavailableError('AI service is temporarily busy. Please try again in a moment.');
+    }
+    throw new ServiceUnavailableError('AI service is temporarily unavailable. Please try again later.');
   }
 
   const candidate = response.candidates?.[0];

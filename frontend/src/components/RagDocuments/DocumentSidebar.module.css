@@ -45,7 +45,6 @@
 }
 
 .docCard {
-  position: relative;
   width: 100%;
   display: flex;
   align-items: center;
@@ -53,77 +52,40 @@
   gap: 8px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-left: 3.5px solid #ea580c;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 14px;
+  cursor: pointer;
   text-align: left;
+  font: inherit;
   transition: border-color 0.15s ease;
 }
 
 .docCard:hover {
   border-color: #cbd5e1;
-  border-left-color: #ea580c;
 }
 
 .docCardSelected {
-  border-color: #e2e8f0;
-  border-left-color: #ea580c;
-}
-
-.docCardBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  flex: 1;
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-  font: inherit;
+  border-color: #2563eb;
+  background-color: #f0f7ff;
 }
 
 .docName {
   color: #0f172a;
-  font-weight: 700;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.8125rem;
-}
-
-.deleteBtn {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: 1.5px solid #dc2626;
-  border-radius: 50%;
-  cursor: pointer;
-  color: #dc2626;
-  transition: background-color 0.15s ease;
-  flex-shrink: 0;
-}
-
-.deleteBtn:hover {
-  background-color: #fef2f2;
+  flex: 1;
+  font-size: 0.875rem;
 }
 
 .badge {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: 4px;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 6px;
   flex-shrink: 0;
-  text-transform: uppercase;
 }
 
 .badge--ready {
@@ -138,5 +100,31 @@
 
 .badge--failed {
   color: #dc2626;
-  background: #fef2f2;
+  background: #fee2e2;
+}
+
+.docCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.deleteIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.deleteIcon:hover {
+  color: #dc2626;
+  background: #fee2e2;
 }

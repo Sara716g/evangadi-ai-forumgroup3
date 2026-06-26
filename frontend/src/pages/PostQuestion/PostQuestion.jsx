@@ -1,5 +1,40 @@
 import { useState } from "react";
-import { questionService } from "../../services/question/question.service.js";
+import { useNavigate } from "react-router-dom";
+import { apiClient } from "../../services/core/api.client.js";
+
+// ── Service layer ─────────────────────────────────────────────────────────────
+const questionService = {
+  generateQuestionDraftCoach: async ({ title, content }, retries = 2) => {
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await apiClient.post(
+          "/api/questions/draft-coach",
+          { title, content },
+          { timeout: 30000 }
+        );
+        return response.data.data;
+      } catch (err) {
+        lastError = err;
+        const status = err?.response?.status;
+        if (status === 503 && attempt < retries) {
+          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  },
+
+  createQuestion: async ({ title, content }) => {
+    const response = await apiClient.post("/api/questions", {
+      title,
+      content,
+    });
+    return response.data;
+  },
+};
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validate(title, content) {
@@ -35,6 +70,7 @@ function ToolbarBtn({ label, children, onClick }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PostQuestion() {
+  const navigate = useNavigate();
   const [formData, setFormData]       = useState({ title: "", content: "" });
   const [errors, setErrors]           = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +79,7 @@ export default function PostQuestion() {
   const [showCoach, setShowCoach]     = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [createdQuestionHash, setCreatedQuestionHash] = useState(null);
   const [coachError, setCoachError]   = useState("");
 
   const charCount = formData.content.length;
@@ -79,7 +116,19 @@ export default function PostQuestion() {
       setCoachFeedback(result);
       setShowCoach(true);
     } catch (err) {
-      const errorMsg = err?.response?.data?.msg || "Could not reach AI service. Please try again.";
+      console.error('[AI Coach] Error:', err);
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.msg;
+      let errorMsg;
+      if (status === 503) {
+        errorMsg = "AI service is experiencing high demand. Please try again in a few moments.";
+      } else if (status === 500) {
+        errorMsg = "AI service encountered an internal error. Please try again later.";
+      } else if (!err.response || err.code === 'ECONNABORTED') {
+        errorMsg = "Request timed out. The AI service may be slow right now. Please try again.";
+      } else {
+        errorMsg = serverMsg || "Could not reach AI service. Please try again.";
+      }
       setCoachError(errorMsg);
     } finally {
       setIsCoaching(false);
@@ -100,7 +149,9 @@ export default function PostQuestion() {
     setIsSubmitting(true);
     setSubmitError("");
     try {
-      await questionService.createQuestion(formData);
+      const result = await questionService.createQuestion(formData);
+      const data = result.data || result;
+      setCreatedQuestionHash(data.questionHash || data.id);
       setSubmitSuccess(true);
     } catch (err) {
       setSubmitError(err.message || "Failed to post question. Please try again.");
@@ -350,6 +401,18 @@ export default function PostQuestion() {
         .pq-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .pq-ai-hint { font-size: 0.8rem; color: #aaa; }
         .pq-ai-error { font-size: 0.8rem; color: #dc2626; }
+        .pq-ai-error-banner {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-size: 0.82rem;
+          color: #b91c1c;
+          margin-top: 8px;
+        }
 
         /* ── AI COACH PANEL ── */
         .pq-coach {
@@ -539,8 +602,8 @@ export default function PostQuestion() {
                 link in study groups, or stay on the thread to answer follow-up questions from peers.
               </p>
               <div className="pq-success-actions">
-                <button className="pq-btn-cancel">Back to Dashboard</button>
-                <button className="pq-btn-post">
+                <button className="pq-btn-cancel" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+                <button className="pq-btn-post" onClick={() => createdQuestionHash && navigate(`/question/${createdQuestionHash}`)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
@@ -663,11 +726,20 @@ export default function PostQuestion() {
                     </>
                   )}
                 </button>
-                {coachError
-                  ? <span className="pq-ai-error">{coachError}</span>
-                  : <span className="pq-ai-hint">Suggestions only. You still choose what to post.</span>
-                }
+                {!coachError && (
+                  <span className="pq-ai-hint">Suggestions only. You still choose what to post.</span>
+                )}
               </div>
+              {coachError && (
+                <div className="pq-ai-error-banner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span>{coachError}</span>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="pq-actions">

@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { SquarePen, Library, BookOpen } from "lucide-react";
 import { questionService } from "../../services/question/question.service.js";
 import { useAuth } from "../../contexts/AuthContext";
+import { timeAgo } from "../../lib/utils.js";
 import styles from "./Dashboard.module.css";
 
 export default function Dashboard() {
@@ -268,10 +269,12 @@ export default function Dashboard() {
                           <i className="fa-regular fa-comment"></i>{" "}
                           {q.answerCount || 0} replies
                         </span>
-                        <span>•</span>
+                        <span>&bull;</span>
                         <span>
-                          {q.timeAgo ||
-                            `Asked by ${q.author?.username || q.author?.firstName || "anonymous"}`}
+                          {timeAgo(q.createdAt)} by{" "}
+                          {isUserOwnedThread
+                            ? "You"
+                            : `${q.author?.firstName || ""} ${q.author?.lastName || ""}`.trim() || "anonymous"}
                         </span>
                       </div>
                     </div>
