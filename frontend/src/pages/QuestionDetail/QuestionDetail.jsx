@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { Square, Volume2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
 import { postAnswer, assessAnswerFit } from "../../services/answer.service";
@@ -41,6 +42,16 @@ function Avatar({ name = "", size = 36 }) {
   );
 }
 
+function getReadableAnswerText(content = "") {
+  return content
+    .replace(/```[\s\S]*?```/g, " code block. ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[#>*_~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // ── AI fit panel ─────────────────────────────────────────────────────────────
 
 const FIT_META = {
@@ -71,7 +82,7 @@ function FitPanel({ level, note }) {
 
 // ── answer card ──────────────────────────────────────────────────────────────
 
-function AnswerCard({ answer }) {
+function AnswerCard({ answer, isSpeaking, onToggleRead }) {
   const name = answer.author?.username || answer.author?.name || "new user";
   return (
     <div
@@ -83,12 +94,38 @@ function AnswerCard({ answer }) {
         marginBottom: 12,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <Avatar name={name} />
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>{formatDate(answer.createdAt)}</div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <Avatar name={name} />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
+            <div style={{ fontSize: 12, color: "#888" }}>{formatDate(answer.createdAt)}</div>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => onToggleRead(answer)}
+          aria-pressed={isSpeaking}
+          title={isSpeaking ? "Stop reading answer" : "Read answer aloud"}
+          style={{
+            ...ghostBtn,
+            flexShrink: 0,
+            padding: "6px 10px",
+            color: isSpeaking ? "#e67e22" : "#555",
+            borderColor: isSpeaking ? "#e67e22" : "#d9d9d9",
+          }}
+        >
+          {isSpeaking ? <Square size={14} /> : <Volume2 size={15} />}
+          {isSpeaking ? "Stop" : "Read aloud"}
+        </button>
       </div>
       <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
         <ReactMarkdown>{answer.content}</ReactMarkdown>
@@ -175,6 +212,8 @@ export default function QuestionDetail() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [fitResult,  setFitResult]  = useState(null); // { level, note }
+  const [speakingAnswerId, setSpeakingAnswerId] = useState(null);
+  const [speechMessage, setSpeechMessage] = useState("");
 
   // fetch on mount
   useEffect(() => {
@@ -198,6 +237,12 @@ export default function QuestionDetail() {
     }
     load();
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
 
   function handleTextChange(e) {
     setAnswerText(e.target.value);
@@ -249,6 +294,45 @@ export default function QuestionDetail() {
     } finally {
       setIsPosting(false);
     }
+  }
+
+  function handleToggleReadAnswer(answer) {
+    if (!("speechSynthesis" in window)) {
+      setSpeechMessage("Read aloud is not supported in this browser.");
+      return;
+    }
+
+    if (speakingAnswerId === answer.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingAnswerId(null);
+      setSpeechMessage("");
+      return;
+    }
+
+    const text = getReadableAnswerText(answer.content);
+    if (!text) {
+      setSpeechMessage("This answer has no readable text.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      setSpeakingAnswerId((currentId) =>
+        currentId === answer.id ? null : currentId,
+      );
+    };
+    utterance.onerror = () => {
+      setSpeakingAnswerId(null);
+      setSpeechMessage("Could not read this answer aloud.");
+    };
+
+    setSpeechMessage("");
+    setSpeakingAnswerId(answer.id);
+    window.speechSynthesis.speak(utterance);
   }
 
   // ── loading ───────────────────────────────────────────────────────────────
@@ -356,6 +440,11 @@ export default function QuestionDetail() {
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
         Community Answers ({answers.length})
       </h2>
+      {speechMessage && (
+        <p style={{ color: "#cf1322", fontSize: 13, margin: "-6px 0 14px" }}>
+          {speechMessage}
+        </p>
+      )}
 
       {answers.length === 0 ? (
         <div
@@ -377,7 +466,12 @@ export default function QuestionDetail() {
       ) : (
         <div style={{ marginBottom: 28 }}>
           {answers.map((a) => (
-            <AnswerCard key={a.id} answer={a} />
+            <AnswerCard
+              key={a.id}
+              answer={a}
+              isSpeaking={speakingAnswerId === a.id}
+              onToggleRead={handleToggleReadAnswer}
+            />
           ))}
         </div>
       )}

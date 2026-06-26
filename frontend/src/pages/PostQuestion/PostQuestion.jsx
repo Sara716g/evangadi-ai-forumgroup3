@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import MicButton from "../../components/MicButton/MicButton.jsx";
 import { apiClient } from "../../services/core/api.client.js";
+import styles from "./PostQuestion.module.css";
 
 // ── Service layer ─────────────────────────────────────────────────────────────
 const questionService = {
@@ -86,6 +88,25 @@ export default function PostQuestion() {
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (submitError) setSubmitError("");
+  };
+
+  const appendVoiceText = (field) => (spokenText) => {
+    const cleaned = spokenText.trim();
+    if (!cleaned) return;
+
+    setFormData((prev) => {
+      const current = prev[field] || "";
+      const separator = current.trim().length > 0 ? " " : "";
+      const nextValue = `${current.trimEnd()}${separator}${cleaned}`;
+
+      return {
+        ...prev,
+        [field]: field === "title" ? nextValue.slice(0, 255) : nextValue,
+      };
+    });
+
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     if (submitError) setSubmitError("");
   };
@@ -652,7 +673,14 @@ export default function PostQuestion() {
 
               {/* Title */}
               <div className="pq-field">
-                <div className="pq-label">Title</div>
+                <div className={styles.fieldHeader}>
+                  <div className="pq-label">Title</div>
+                  <MicButton
+                    className={styles.voiceControl}
+                    label="voice input for the title"
+                    onTranscript={appendVoiceText("title")}
+                  />
+                </div>
                 <div className="pq-hint">Be specific and imagine you're asking a question to another person.</div>
                 <input
                   type="text"
@@ -667,7 +695,14 @@ export default function PostQuestion() {
 
               {/* Body */}
               <div className="pq-field">
-                <div className="pq-label">What are the details of your problem?</div>
+                <div className={styles.fieldHeader}>
+                  <div className="pq-label">What are the details of your problem?</div>
+                  <MicButton
+                    className={styles.voiceControl}
+                    label="voice input for the question details"
+                    onTranscript={appendVoiceText("content")}
+                  />
+                </div>
                 <div className="pq-hint">Introduce the problem and expand on what you put in the title. Minimum 10 characters.</div>
                 <div className={`pq-editor${errors.content ? " error" : ""}`}>
                   <div className="pq-toolbar">
