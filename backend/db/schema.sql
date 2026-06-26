@@ -16,6 +16,8 @@ CREATE TABLE `users` (
     `password_hash` VARCHAR(255) NOT NULL,
     `role` ENUM('user', 'admin') DEFAULT 'user',
     `status` ENUM('active', 'banned', 'suspended') DEFAULT 'active',
+    `bio` TEXT DEFAULT NULL,
+    `avatar_url` VARCHAR(500) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CHECK (`email` = LOWER(`email`)),
@@ -150,6 +152,20 @@ CREATE TABLE `password_reset_tokens` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
     INDEX `idx_password_reset_tokens_token` (`token`),
     INDEX `idx_password_reset_tokens_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 8. User Credentials Table
+-- Stores profile credentials (employment, education, location).
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `user_credentials`;
+CREATE TABLE `user_credentials` (
+    `credential_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `credential_type` ENUM('employment', 'education', 'location') NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
