@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, LogOut, Sparkles, Bell, ChevronRight, MessageSquare, Bookmark, FileText, BarChart3 } from 'lucide-react';
+import { Search, LogOut, Sparkles, ChevronRight, MessageSquare, Bookmark, FileText, BarChart3 } from 'lucide-react';
+import NotificationBell from '../NotificationBell/NotificationBell';
 import styles from './Navbar.module.css';
 
 /**
@@ -112,17 +113,7 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
       </form>
 
       <div className={styles.navbar__actions}>
-        {user && (
-          <button
-            type='button'
-            className={styles.navbar__iconBtn}
-            onClick={() => navigate('/notifications')}
-            aria-label='Notifications'
-            title='Notifications'
-          >
-            <Bell size={18} />
-          </button>
-        )}
+        {user && <NotificationBell />}
         {user && (
           <div className={styles.navbar__userWrapper} ref={dropdownRef}>
             <div
