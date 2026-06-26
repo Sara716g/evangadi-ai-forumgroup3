@@ -32,7 +32,7 @@ function PdfUploadDropzone({ onUploadComplete }) {
       if (onUploadComplete) {
         onUploadComplete(uploadedDoc);
       }
-    } catch (err) {
+    } catch {
       setUploadError('Could not upload file. Please try again.');
     } finally {
       setIsUploading(false);

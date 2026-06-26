@@ -142,18 +142,19 @@
   flex-shrink: 0;
 }
 
-.navbar__notification {
-  position: relative;
+.navbar__iconBtn {
   padding: 0.5rem;
   color: var(--text-secondary);
-  transition: var(--transition-base);
   background: none;
   border: none;
   cursor: pointer;
   border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.navbar__notification:hover {
+.navbar__iconBtn:hover {
   color: var(--primary);
   background-color: var(--primary-light);
 }
@@ -164,6 +165,97 @@
   gap: 0.75rem;
   padding-left: var(--spacing-md);
   border-left: 1px solid var(--border);
+}
+
+.navbar__userWrapper {
+  position: relative;
+}
+
+.navbar__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 240px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.navbar__dropdownHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.navbar__dropdownHeader:hover {
+  background: #f9fafb;
+}
+
+.navbar__dropdownAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.navbar__dropdownAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.navbar__dropdownUserInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.navbar__dropdownName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #0f172a;
+}
+
+.navbar__dropdownArrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.navbar__dropdownDivider {
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.navbar__dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.navbar__dropdownItem:hover {
+  background: #f9fafb;
+}
+
+.navbar__dropdownItemLogout {
+  color: #dc2626;
+}
+
+.navbar__dropdownItemLogout:hover {
+  background: #fef2f2;
 }
 
 .navbar__user-name {

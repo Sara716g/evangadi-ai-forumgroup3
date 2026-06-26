@@ -10,16 +10,10 @@ export default function ManageUsers() {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [search, setSearch] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [pagination.page, search]);
 
   async function fetchUsers() {
     try {
-      setIsLoading(true);
       setError(null);
       const data = await adminService.getUsers({
         page: pagination.page,
@@ -32,10 +26,12 @@ export default function ManageUsers() {
     } catch (err) {
       console.error('Failed to fetch users:', err);
       setError('Could not load users.');
-    } finally {
-      setIsLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchUsers();
+  }, [pagination.page, search]);
 
   function handlePageChange(page) {
     setPagination((prev) => ({ ...prev, page }));

@@ -1,4 +1,4 @@
-import { Users, MessageSquare, AnswerIcon, Activity, UserPlus, HelpCircle } from 'lucide-react';
+import { Users, MessageSquare, Activity, UserPlus, HelpCircle } from 'lucide-react';
 import styles from './StatsCards.module.css';
 
 const CARDS = [
@@ -13,7 +13,7 @@ const CARDS = [
 export default function StatsCards({ stats }) {
   return (
     <div className={styles.grid}>
-      {CARDS.map(({ key, label, icon: Icon, color }) => (
+      {CARDS.map(({ key, label, icon: Icon, color }) => ( // eslint-disable-line no-unused-vars
         <div key={key} className={styles.card}>
           <div className={styles.iconWrap} style={{ backgroundColor: `${color}15`, color }}>
             <Icon size={22} />

@@ -12,10 +12,6 @@ export default function ManageQuestions() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
-
   async function fetchQuestions() {
     try {
       setIsLoading(true);
@@ -30,6 +26,10 @@ export default function ManageQuestions() {
       setIsLoading(false);
     }
   }
+
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
 
   async function handleDelete(hash) {
     if (!window.confirm('Are you sure you want to delete this question? This cannot be undone.')) return;

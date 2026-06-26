@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import { createAnswerService } from '../service/answer.service.js';
+import { createAnswerService, getAnswersService, getUserAnswersService } from '../service/answer.service.js';
 
 export const createAnswerController = async (req, res, next) => {
   try {
@@ -17,6 +17,23 @@ export const createAnswerController = async (req, res, next) => {
       message: 'Answer posted successfully',
       data: answer,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAnswersController = async (req, res, next) => {
+  try {
+    const { questionId, userId } = req.query;
+    let answers;
+    if (userId) {
+      answers = await getUserAnswersService(userId);
+    } else if (questionId) {
+      answers = await getAnswersService(questionId);
+    } else {
+      answers = await getAnswersService();
+    }
+    res.json({ success: true, data: answers });
   } catch (error) {
     next(error);
   }

@@ -134,16 +134,6 @@ function ReaderPanel({ activeDocument }) {
     setCurrentPage(1);
   }
 
-  function goToPrevPage() {
-    pushToUndo();
-    setCurrentPage((p) => Math.max(p - 1, 1));
-  }
-
-  function goToNextPage() {
-    pushToUndo();
-    setCurrentPage((p) => Math.min(p + 1, numPages || 1));
-  }
-
   function zoomIn() {
     pushToUndo();
     setScale((s) => Math.min(s + 0.15, 3));
@@ -553,6 +543,27 @@ export default function RagDocuments() {
   const [loadError, setLoadError] = useState(null);
   const [activeDocument, setActiveDocument] = useState(null);
 
+  async function loadDocuments() {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const data = await ragService.listDocuments();
+      const docs = (data.data || data || []).map((doc) => ({
+        id: doc.document_id || doc.id,
+        name: doc.title || doc.name,
+        title: doc.title || doc.name,
+        status: doc.status,
+        errorMessage: doc.error_message || null,
+      }));
+      setDocuments(docs);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+      setLoadError("Could not load documents.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadDocuments();
   }, []);
@@ -587,27 +598,6 @@ export default function RagDocuments() {
 
     return () => clearInterval(pollInterval);
   }, [activeDocument?.id, activeDocument?.status]);
-
-  async function loadDocuments() {
-    try {
-      setIsLoading(true);
-      setLoadError(null);
-      const data = await ragService.listDocuments();
-      const docs = (data.data || data || []).map((doc) => ({
-        id: doc.document_id || doc.id,
-        name: doc.title || doc.name,
-        title: doc.title || doc.name,
-        status: doc.status,
-        errorMessage: doc.error_message || null,
-      }));
-      setDocuments(docs);
-    } catch (err) {
-      console.error("Failed to load documents:", err);
-      setLoadError("Could not load documents.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   function handleSelectDocument(doc) {
     setActiveDocument(doc);
