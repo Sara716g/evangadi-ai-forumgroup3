@@ -24,6 +24,41 @@ import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
 const DEFAULT_K = 5;
 
+// ── SAFE JSON PARSER HELPER ──────────────────────────────────────────────────
+/**
+ * Safely parses stringified embedding vectors, repairing concatenated 
+ * JSON tokens or accidental formatting bugs gracefully.
+ */
+const safeJsonParse = (str, fallback = []) => {
+  if (!str) return fallback;
+  if (typeof str !== 'string') return str; // Already parsed by database layer
+
+  let cleanStr = str.trim();
+
+  // Strip unexpected markdown code blocks if present
+  if (cleanStr.startsWith("```json")) {
+    cleanStr = cleanStr.replace(/^```json/, "").replace(/```$/, "").trim();
+  } else if (cleanStr.startsWith("```")) {
+    cleanStr = cleanStr.replace(/^```/, "").replace(/```$/, "").trim();
+  }
+
+  try {
+    return JSON.parse(cleanStr);
+  } catch (e) {
+    try {
+      // Fix back-to-back concatenated json strings (e.g., {"id":1}{"id":2})
+      const structuralPatch = "[" + cleanStr.replace(/}\s*{/g, "},{") + "]";
+      return JSON.parse(structuralPatch);
+    } catch (secondError) {
+      console.error("── [Embedding Parse Failure] ───────────────────────────────");
+      console.error("Target String text context:", str);
+      console.error("Exception Message:", e.message);
+      console.error("────────────────────────────────────────────────────────────");
+      return fallback;
+    }
+  }
+};
+
 const mapQuestionRow = row => ({
   id: row.question_id,
   questionHash: row.question_hash,
@@ -92,18 +127,73 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
   }
 };
 
+/**
+ * Handles question publishing with strict vector duplicate checking logic.
+ */
 export const createQuestionWithVectorService = async ({ userId, title, content }) => {
-  const questionHash = generateHexString(16);
+   const sourceText = `${title}\n\n${content}`;
+  
+  // 1. Generate the vector embedding upfront for validation
+  const vector = await generateEmbedding(sourceText);
+  const incomingVector = normalizeEmbedding(vector);
+  
+  if (incomingVector.length > 0) {
+    // Prevent short selections from getting broken by MySQL default truncation boundaries
+    await safeExecute("SET SESSION group_concat_max_len = 1000000;", []);
 
+    // 2. Pull all existing ready question vectors to check for exact/near duplicates
+    const rows = await safeExecute(selectReadyQuestionVectorsSql, []);
+    
+    // Set a strict duplicate threshold (e.g., 0.85 similarity score or 85% match)
+    const DUPLICATE_THRESHOLD = 0.9;
+    
+    const duplicateMatch = rows
+      .map(row => {
+        const embedding = normalizeEmbedding(safeJsonParse(row.embedding, []));
+        
+        // Skip comparing against bad/un-indexed rows
+        if (embedding.length === 0) return { score: 0 };
+
+        return {
+          id: row.question_id,
+          title: row.title,
+          questionHash: row.question_hash,
+          score: cosineSimilarity(incomingVector, embedding),
+        };
+      })
+      .filter(item => item.score >= DUPLICATE_THRESHOLD)
+      .sort((a, b) => b.score - a.score)[0]; // Get the closest matching question
+
+    // 3. If a duplicate is found, abort creation and throw a clear exception
+    if (duplicateMatch && duplicateMatch.id) {
+      const error = new Error("A highly similar question already exists on the forum.");
+      error.statusCode = 409;
+      error.code = 'DuplicateDetected';
+      error.existingQuestion = {
+        id: duplicateMatch.id,
+        question_id: duplicateMatch.id, // Direct map fallback parameter
+        title: duplicateMatch.title,
+        hash: duplicateMatch.questionHash,
+        questionHash: duplicateMatch.questionHash,
+      };
+      throw error;
+    }
+  }
+
+  // 4. No Duplicate Found -> Proceed with normal insertion
+  const questionHash = generateHexString(16);
   const insertSql = `INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)`;
   const insertResult = await safeExecute(insertSql, [questionHash, userId, title, content]);
   const questionId = insertResult.insertId;
 
-  const sourceText = `${title}\n\n${content}`;
-  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
-  await safeExecute(vectorSql, [questionId, sourceText]);
+  // Save the pre-computed embedding safely right away to optimize system performance
+  // const sourceText = `${title}\n\n${content}`;
+  // const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
+  // await safeExecute(vectorSql, [questionId, sourceText]);
+  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, ?, 'ready')`;
+  await safeExecute(vectorSql, [questionId, sourceText, JSON.stringify(incomingVector)]);
 
-  await generateQuestionEmbeddingAsync({ questionId, sourceText });
+  // await generateQuestionEmbeddingAsync({ questionId, sourceText });
 
   return {
     id: questionId,
