@@ -56,7 +56,7 @@ function DocumentSidebar({ documents, isLoading, error, selectedId, onSelect, on
                 </div>
                 {onDelete && (
                   <span
-                    className={styles.deleteIcon}
+                    className={styles.deleteBtn}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete(doc.id);

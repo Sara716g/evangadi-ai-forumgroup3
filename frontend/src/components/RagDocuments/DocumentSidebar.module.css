@@ -5,27 +5,23 @@
   border-radius: 12px;
   padding: 1.25rem;
 }
-
 .heading {
   margin: 0 0 4px 0;
   font-size: 1.25rem;
   font-weight: 700;
   color: #0f172a;
 }
-
 .subheading {
   color: #64748b;
   margin: 0 0 16px 0;
   font-size: 0.8125rem;
 }
-
 .statusMessage {
   color: #64748b;
   margin-top: 16px;
   font-size: 0.875rem;
   line-height: 1.5;
 }
-
 .errorMessage {
   color: #dc2626;
   background: #fef2f2;
@@ -34,75 +30,31 @@
   margin-top: 16px;
   font-size: 0.875rem;
 }
-
 .list {
   list-style: none;
   margin: 16px 0 0 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
-
 .docCard {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #ea580c;
   border-radius: 10px;
-  padding: 12px 14px;
-  cursor: pointer;
+  padding: 10px 12px;
   text-align: left;
-  font: inherit;
-  transition: border-color 0.15s ease;
 }
-
-.docCard:hover {
-  border-color: #cbd5e1;
-}
-
 .docCardSelected {
-  border-color: #2563eb;
-  background-color: #f0f7ff;
+  border-color: #e5e7eb;
+  border-left-color: #ea580c;
 }
-
-.docName {
-  color: #0f172a;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  font-size: 0.875rem;
-}
-
-.badge {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  padding: 2px 8px;
-  border-radius: 6px;
-  flex-shrink: 0;
-}
-
-.badge--ready {
-  color: #16a34a;
-  background: #dcfce7;
-}
-
-.badge--processing {
-  color: #d97706;
-  background: #fef3c7;
-}
-
-.badge--failed {
-  color: #dc2626;
-  background: #fee2e2;
-}
-
 .docCardBody {
   display: flex;
   flex-direction: column;
@@ -110,21 +62,47 @@
   flex: 1;
   min-width: 0;
 }
-
-.deleteIcon {
+.docName {
+  color: #111827;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  width: fit-content;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.badge--ready {
+  color: #16a34a;
+  background: #dcfce7;
+}
+.badge--processing {
+  color: #d97706;
+  background: #fef3c7;
+}
+.badge--failed {
+  color: #dc2626;
+  background: #fef2f2;
+}
+.deleteBtn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
-  color: #94a3b8;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-  flex-shrink: 0;
-}
-
-.deleteIcon:hover {
   color: #dc2626;
-  background: #fee2e2;
+  flex-shrink: 0;
 }
