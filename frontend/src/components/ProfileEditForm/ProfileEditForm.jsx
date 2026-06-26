@@ -14,7 +14,6 @@ export default function ProfileEditForm({ profile, onUpdate }) {
     profile?.avatar_url || null
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState(null);
   const fileInputRef = useRef(null);
 
@@ -47,7 +46,6 @@ export default function ProfileEditForm({ profile, onUpdate }) {
     if (!avatarFile) return;
 
     try {
-      setIsUploading(true);
       const data = await profileService.uploadAvatar(avatarFile);
       const payload = data.data || data;
       setAvatarFile(null);
@@ -59,8 +57,6 @@ export default function ProfileEditForm({ profile, onUpdate }) {
     } catch (err) {
       console.error('Avatar upload failed:', err);
       setMessage({ type: 'error', text: 'Failed to upload avatar.' });
-    } finally {
-      setIsUploading(false);
     }
   }
 

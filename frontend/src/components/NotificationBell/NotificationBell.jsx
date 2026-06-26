@@ -11,6 +11,17 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
+  async function fetchNotifications() {
+    try {
+      const data = await notificationService.list();
+      const payload = data.data || data;
+      setNotifications(payload.notifications || []);
+      setUnreadCount(payload.unreadCount || 0);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    }
+  }
+
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
@@ -26,17 +37,6 @@ export default function NotificationBell() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  async function fetchNotifications() {
-    try {
-      const data = await notificationService.list();
-      const payload = data.data || data;
-      setNotifications(payload.notifications || []);
-      setUnreadCount(payload.unreadCount || 0);
-    } catch (err) {
-      console.error('Failed to fetch notifications:', err);
-    }
-  }
 
   async function handleMarkAsRead(id) {
     try {
