@@ -15,6 +15,11 @@ import QuestionDetail from "./pages/QuestionDetail/QuestionDetail";
 import PostQuestion from "./pages/PostQuestion/PostQuestion";
 import MyQuestions from "./pages/MyQuestions/MyQuestions";
 import RagDocuments from "./pages/RagDocuments/RagDocuments";
+import Notifications from "./pages/Notifications/Notifications";
+import Profile from "./pages/Profile/Profile";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import ManageUsers from "./pages/Admin/ManageUsers";
+import ManageQuestions from "./pages/Admin/ManageQuestions";
 
 function App() {
   return (
@@ -67,6 +72,46 @@ function App() {
               element={
                 <ProtectedRoute>
                   <RagDocuments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute>
+                  <ManageUsers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/questions"
+              element={
+                <ProtectedRoute>
+                  <ManageQuestions />
                 </ProtectedRoute>
               }
             />

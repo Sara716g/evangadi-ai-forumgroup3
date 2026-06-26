@@ -14,11 +14,15 @@ CREATE TABLE `users` (
     `last_name` VARCHAR(50) NOT NULL,
     `email` VARCHAR(320) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
+    `role` ENUM('user', 'admin') DEFAULT 'user',
+    `status` ENUM('active', 'banned', 'suspended') DEFAULT 'active',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CHECK (`email` = LOWER(`email`)),
     
-    INDEX `idx_users_email` (`email`)
+    INDEX `idx_users_email` (`email`),
+    INDEX `idx_users_role` (`role`),
+    INDEX `idx_users_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
