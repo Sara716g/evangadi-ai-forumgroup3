@@ -38,7 +38,9 @@ apiClient.interceptors.response.use(
     // Skip global 401 redirect for auth endpoints so components can handle login/register errors
     const isAuthEndpoint =
       error.config?.url?.includes('/api/auth/login') ||
-      error.config?.url?.includes('/api/auth/register');
+      error.config?.url?.includes('/api/auth/register') ||
+      error.config?.url?.includes('/api/auth/forgot-password') ||
+      error.config?.url?.includes('/api/auth/reset-password');
 
     if (error.response?.status === 401 && !isAuthEndpoint) {
       // Clear authentication data

@@ -135,4 +135,21 @@ CREATE TABLE `document_chunk_vectors` (
     UNIQUE KEY `uniq_chunk_vectors_chunk_id` (`chunk_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- 7. Password Reset Tokens Table
+-- Stores tokens for the forgot-password flow.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `password_reset_tokens`;
+CREATE TABLE `password_reset_tokens` (
+    `token_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `token` VARCHAR(64) NOT NULL UNIQUE,
+    `expires_at` DATETIME NOT NULL,
+    `used` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    INDEX `idx_password_reset_tokens_token` (`token`),
+    INDEX `idx_password_reset_tokens_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
