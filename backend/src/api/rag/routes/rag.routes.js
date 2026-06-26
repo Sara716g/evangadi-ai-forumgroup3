@@ -6,6 +6,7 @@ import {
   getDocumentMetaController,
   getDocumentsController,
   queryDocumentController,
+  retryDocumentController,
   searchInDocumentController,
 } from "../controller/rag.controller.js";
 import {
@@ -61,6 +62,12 @@ router.get(
   authenticateUser,
   parseDocumentIdParam,
   getDocumentFileController,
+);
+router.post(
+  "/documents/:documentId/retry",
+  authenticateUser,
+  parseDocumentIdParam,
+  retryDocumentController,
 );
 
 export default router;

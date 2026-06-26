@@ -22,7 +22,7 @@ export const embedSearchQuery = async text => {
   try {
     const response = await ai.models.embedContent({
       model: GEMINI_EMBEDDING_MODEL,
-      contents: text,
+      contents: [text],
       config: {
         taskType: 'RETRIEVAL_QUERY',
       },

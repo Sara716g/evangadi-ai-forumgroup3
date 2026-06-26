@@ -104,8 +104,14 @@ export const normalizeEmbedding = (vector) => {
  * Calculates the cosine similarity between two numerical arrays
  */
 export const cosineSimilarity = (vecA, vecB) => {
-  if (vecA.length !== vecB.length) {
-    throw new Error('Vectors must be of the same length to calculate similarity.');
+  if (
+    !Array.isArray(vecA) ||
+    !Array.isArray(vecB) ||
+    vecA.length === 0 ||
+    vecB.length === 0 ||
+    vecA.length !== vecB.length
+  ) {
+    return 0;
   }
   
   const dotProduct = vecA.reduce((sum, val, idx) => sum + (val * vecB[idx]), 0);

@@ -128,7 +128,7 @@ const rankDocumentChunks = async (documentId, query, k = DEFAULT_K) => {
     }))
     .filter((item) => item.score >= DEFAULT_THRESHOLD)
     .sort((a, b) => b.score - a.score)
-    .slice(0, Math.min(Number(k) || DEFAULT_K, 50));
+    .slice(0, Number(k) || DEFAULT_K);
 };
 
 const EMBEDDING_BATCH_SIZE = 5;
@@ -192,6 +192,12 @@ const processUploadedPdf = async (documentId, filePath) => {
   );
 };
 
+const processPdfBackground = (documentId, filePath) => {
+  processUploadedPdf(documentId, filePath).catch((err) => {
+    console.error("[RAG] Background processing crashed:", err);
+  });
+};
+
 export const createDocumentFromUploadService = async (file, userId) => {
   if (!file) {
     throw new BadRequestError("No file provided.");
@@ -209,22 +215,7 @@ export const createDocumentFromUploadService = async (file, userId) => {
 
   const documentId = insertResult.insertId;
 
-  try {
-    await processUploadedPdf(documentId, file.path);
-  } catch (error) {
-    console.error("Document processing error:", error);
-    await safeExecute(
-      "UPDATE documents SET status = 'failed', error_message = ? WHERE document_id = ?",
-      [error.message || "Unknown error", documentId],
-    );
-    try {
-      await fs.unlink(file.path);
-    } catch (cleanupErr) {
-      if (cleanupErr.code !== "ENOENT") {
-        console.error("Failed to clean up orphaned file:", cleanupErr);
-      }
-    }
-  }
+  setImmediate(() => processPdfBackground(documentId, file.path));
 
   const rows = await safeExecute(
     "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
@@ -325,13 +316,10 @@ export const queryDocumentService = async (documentId, userId, query) => {
     "If the excerpts do not contain enough information, say you cannot find it in the document.",
     "When you use information from an excerpt, cite it inline as [chunk_index].",
     "",
-    "--- DOCUMENT EXCERPTS ---",
+    "Document excerpts:",
     contextBlock,
-    "--- END DOCUMENT EXCERPTS ---",
     "",
-    "--- USER QUESTION ---",
-    `${query}`,
-    "--- END USER QUESTION ---",
+    `Question: ${query}`,
   ].join("\n");
 
   try {
@@ -374,4 +362,42 @@ export const getDocumentFilePathService = async (documentId, userId) => {
     absolutePath: resolveStorageAbsolutePath(document.storage_path),
     title: document.title,
   };
+};
+
+export const retryDocumentService = async (documentId, userId) => {
+  const document = await assertOwnedDocument(documentId, userId);
+
+  if (document.status !== "failed") {
+    throw new BadRequestError("Only failed documents can be retried.");
+  }
+
+  const absolutePath = resolveStorageAbsolutePath(document.storage_path);
+
+  try {
+    await fs.access(absolutePath);
+  } catch {
+    throw new NotFoundError("Document file not found on disk.");
+  }
+
+  await safeExecute(
+    "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = ?)",
+    [documentId],
+  );
+  await safeExecute(
+    "DELETE FROM document_chunks WHERE document_id = ?",
+    [documentId],
+  );
+  await safeExecute(
+    "UPDATE documents SET status = 'processing', error_message = NULL WHERE document_id = ?",
+    [documentId],
+  );
+
+  setImmediate(() => processPdfBackground(documentId, absolutePath));
+
+  const rows = await safeExecute(
+    "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
+    [documentId],
+  );
+
+  return rows[0];
 };

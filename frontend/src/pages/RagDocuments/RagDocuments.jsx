@@ -4,33 +4,33 @@ import {
   Sparkles,
   Loader2,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut,
-  RotateCw,
+  RotateCcw,
   Download,
-  Maximize,
-  List,
+  Menu,
+  Printer,
+  Undo2,
+  Redo2,
+  Pencil,
+  MoreVertical,
+  Square,
 } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import { ragService } from "../../services/rag/rag.service.js";
 import RagAnswerBody from "../../components/RagAnswerBody/RagAnswerBody.jsx";
-import DocumentSidebar from "../../components/rag-documents/DocumentSidebar.jsx";
+import DocumentSidebar from "../../components/RagDocuments/DocumentSidebar.jsx";
 import styles from "./RagDocuments.module.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 function ReaderPanel({ activeDocument }) {
-  const [aiQuery, setAiQuery] = useState('');
-  const [aiAnswer, setAiAnswer] = useState('');
-  const [aiCitations, setAiCitations] = useState([]);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
@@ -42,23 +42,32 @@ function ReaderPanel({ activeDocument }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(0.67);
   const [rotation, setRotation] = useState(0);
-  const [showThumbnails, setShowThumbnails] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [fitToWidth, setFitToWidth] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+
   const containerRef = useRef(null);
-  const pdfUrlRef = useRef(null);
+  const pdfContentRef = useRef(null);
+  const thumbnailContainerRef = useRef(null);
+  const moreMenuRef = useRef(null);
+  const canvasRef = useRef(null);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
+
+  const pdfPageWidth = 612;
 
   async function loadPdfPreview(docId) {
-    if (pdfUrlRef.current) {
-      URL.revokeObjectURL(pdfUrlRef.current);
-      pdfUrlRef.current = null;
-    }
     try {
       setPdfLoading(true);
       setPdfError(false);
       const url = await ragService.fetchPdfObjectUrl(docId);
-      pdfUrlRef.current = url;
       setPdfUrl(url);
     } catch (err) {
-      console.error('Failed to load PDF:', err);
+      console.error("Failed to load PDF:", err);
       setPdfUrl(null);
       setPdfError(true);
     } finally {
@@ -67,16 +76,58 @@ function ReaderPanel({ activeDocument }) {
   }
 
   useEffect(() => {
-    if (activeDocument?.status === 'ready') {
+    if (activeDocument?.status === "ready") {
       loadPdfPreview(activeDocument.id);
     }
     return () => {
-      if (pdfUrlRef.current) {
-        URL.revokeObjectURL(pdfUrlRef.current);
-        pdfUrlRef.current = null;
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
       }
     };
   }, [activeDocument?.id]);
+
+  useEffect(() => {
+    if (fitToWidth && pdfContentRef.current) {
+      const containerWidth = pdfContentRef.current.clientWidth - 40;
+      const newScale = containerWidth / pdfPageWidth;
+      setScale(parseFloat(newScale.toFixed(2)));
+    }
+  }, [fitToWidth, numPages]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) {
+        setShowMoreMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function pushToUndo() {
+    setUndoStack((prev) => [...prev, { scale, rotation, currentPage }]);
+    setRedoStack([]);
+  }
+
+  function handleUndo() {
+    if (undoStack.length === 0) return;
+    const prev = undoStack[undoStack.length - 1];
+    setRedoStack((r) => [...r, { scale, rotation, currentPage }]);
+    setUndoStack((u) => u.slice(0, -1));
+    setScale(prev.scale);
+    setRotation(prev.rotation);
+    setCurrentPage(prev.currentPage);
+  }
+
+  function handleRedo() {
+    if (redoStack.length === 0) return;
+    const next = redoStack[redoStack.length - 1];
+    setUndoStack((u) => [...u, { scale, rotation, currentPage }]);
+    setRedoStack((r) => r.slice(0, -1));
+    setScale(next.scale);
+    setRotation(next.rotation);
+    setCurrentPage(next.currentPage);
+  }
 
   function onDocumentLoadSuccess({ numPages: total }) {
     setNumPages(total);
@@ -84,58 +135,132 @@ function ReaderPanel({ activeDocument }) {
   }
 
   function goToPrevPage() {
+    pushToUndo();
     setCurrentPage((p) => Math.max(p - 1, 1));
   }
 
   function goToNextPage() {
+    pushToUndo();
     setCurrentPage((p) => Math.min(p + 1, numPages || 1));
   }
 
   function zoomIn() {
+    pushToUndo();
     setScale((s) => Math.min(s + 0.15, 3));
+    setFitToWidth(false);
   }
 
   function zoomOut() {
+    pushToUndo();
     setScale((s) => Math.max(s - 0.15, 0.3));
+    setFitToWidth(false);
   }
 
-  function rotateRight() {
-    setRotation((r) => (r + 90) % 360);
+  function rotateLeft() {
+    pushToUndo();
+    setRotation((r) => (r - 90 + 360) % 360);
   }
 
-  function toggleFullscreen() {
-    if (!containerRef.current) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      containerRef.current.requestFullscreen();
+  function toggleFitToWidth() {
+    pushToUndo();
+    setFitToWidth((f) => !f);
+  }
+
+  function toggleDrawing() {
+    setIsDrawing((d) => !d);
+  }
+
+  function handleMoreActions(action) {
+    setShowMoreMenu(false);
+    if (action === "properties") {
+      alert(`Document: ${activeDocument?.title}\nPages: ${numPages}\nStatus: ${activeDocument?.status}`);
+    } else if (action === "share") {
+      if (navigator.share) {
+        navigator.share({ title: activeDocument?.title, url: window.location.href });
+      }
     }
   }
 
   function downloadPdf() {
     if (!pdfUrl) return;
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = pdfUrl;
-    a.download = activeDocument?.title || 'document.pdf';
+    a.download = activeDocument?.title || "document.pdf";
     a.click();
   }
+
+  function printPdf() {
+    if (!pdfUrl) return;
+    window.open(pdfUrl, "_blank");
+  }
+
+  useEffect(() => {
+    if (!isDrawing || !canvasRef.current || !pdfContentRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const container = pdfContentRef.current;
+
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
+    }
+
+    function startDrawing(e) {
+      isDrawingRef.current = true;
+      lastPosRef.current = getPos(e);
+    }
+
+    function draw(e) {
+      if (!isDrawingRef.current) return;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = "#ea580c";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      lastPosRef.current = pos;
+    }
+
+    function stopDrawing() {
+      isDrawingRef.current = false;
+    }
+
+    canvas.addEventListener("mousedown", startDrawing);
+    canvas.addEventListener("mousemove", draw);
+    canvas.addEventListener("mouseup", stopDrawing);
+    canvas.addEventListener("mouseleave", stopDrawing);
+
+    return () => {
+      canvas.removeEventListener("mousedown", startDrawing);
+      canvas.removeEventListener("mousemove", draw);
+      canvas.removeEventListener("mouseup", stopDrawing);
+      canvas.removeEventListener("mouseleave", stopDrawing);
+    };
+  }, [isDrawing]);
 
   async function handleAskAI() {
     if (!activeDocument || !aiQuery.trim()) return;
     try {
       setAiLoading(true);
       setAiError(null);
-      setAiAnswer('');
-      setAiCitations([]);
+      setAiAnswer("");
       const data = await ragService.queryDocument(activeDocument.id, aiQuery.trim());
       const answerData = data.data || data;
-      setAiAnswer(answerData.answer || answerData.response || '');
-      if (answerData.citations) {
-        setAiCitations(answerData.citations);
-      }
+      setAiAnswer(answerData.answer || answerData.response || "");
     } catch (err) {
       console.error(err);
-      setAiError('Could not get an answer.');
+      setAiError("Could not get an answer.");
     } finally {
       setAiLoading(false);
     }
@@ -152,7 +277,7 @@ function ReaderPanel({ activeDocument }) {
       setSearchResults(searchData.results || searchData.chunks || []);
     } catch (err) {
       console.error(err);
-      setSearchError('Search failed.');
+      setSearchError("Search failed.");
     } finally {
       setSearchLoading(false);
     }
@@ -160,113 +285,169 @@ function ReaderPanel({ activeDocument }) {
 
   return (
     <div className={styles.readerPanel}>
-      {/* PDF Preview Section */}
-      <div className={styles.pdfViewerWrap} ref={containerRef}>
+      <div className={styles.pdfViewerContainer} ref={containerRef}>
         <div className={styles.pdfToolbar}>
           <div className={styles.pdfToolbarLeft}>
             <button
-              type="button"
-              className={`${styles.pdfMenuBtn} ${showThumbnails ? styles.pdfMenuBtnActive : ''}`}
-              onClick={() => setShowThumbnails((v) => !v)}
-              title={showThumbnails ? 'Hide thumbnails' : 'Show thumbnails'}
+              className={styles.toolbarBtn}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title="Toggle sidebar"
             >
-              <List size={16} />
+              <Menu size={18} />
             </button>
             <span className={styles.pdfFileName}>
-              {activeDocument?.title || activeDocument?.name || 'document.pdf'}
+              {activeDocument?.title || activeDocument?.name || "document.pdf"}
             </span>
           </div>
-
           <div className={styles.pdfToolbarCenter}>
-            <span className={styles.pageBadge}>
-              <span className={styles.pageInfo}>{currentPage} / {numPages || '–'}</span>
-            </span>
-            <button className={styles.toolbarBtn} onClick={goToPrevPage} disabled={currentPage <= 1}>
-              <ChevronLeft size={14} />
+            <button className={styles.toolbarBtn} onClick={zoomOut} title="Zoom out">
+              <span className={styles.zoomSymbol}>-</span>
             </button>
-            <button className={styles.toolbarBtn} onClick={goToNextPage} disabled={currentPage >= (numPages || 1)}>
-              <ChevronRight size={14} />
+            <span className={styles.zoomInfo}>{Math.round(scale * 100)}%</span>
+            <button className={styles.toolbarBtn} onClick={zoomIn} title="Zoom in">
+              <span className={styles.zoomSymbol}>+</span>
             </button>
             <div className={styles.toolbarDivider} />
-            <button className={styles.toolbarBtn} onClick={zoomOut}>
-              <ZoomOut size={14} />
+            <button 
+              className={`${styles.toolbarBtn} ${fitToWidth ? styles.toolbarBtnActive : ''}`} 
+              onClick={toggleFitToWidth} 
+              title="Fit to width"
+            >
+              <Square size={14} />
             </button>
-            <span className={styles.zoomBadge}>
-              <span className={styles.zoomInfo}>{Math.round(scale * 100)}%</span>
-            </span>
-            <button className={styles.toolbarBtn} onClick={zoomIn}>
-              <ZoomIn size={14} />
+            <button className={styles.toolbarBtn} onClick={rotateLeft} title="Rotate counter-clockwise">
+              <RotateCcw size={16} />
+            </button>
+            <button 
+              className={`${styles.toolbarBtn} ${isDrawing ? styles.toolbarBtnActive : ''}`} 
+              onClick={toggleDrawing} 
+              title="Toggle drawing mode"
+            >
+              <Pencil size={16} />
+            </button>
+            <button 
+              className={styles.toolbarBtn} 
+              onClick={handleUndo} 
+              title="Undo"
+              disabled={undoStack.length === 0}
+            >
+              <Undo2 size={16} />
+            </button>
+            <button 
+              className={styles.toolbarBtn} 
+              onClick={handleRedo} 
+              title="Redo"
+              disabled={redoStack.length === 0}
+            >
+              <Redo2 size={16} />
             </button>
           </div>
-
           <div className={styles.pdfToolbarRight}>
-            <button className={styles.toolbarBtn} onClick={rotateRight} title="Rotate"><RotateCw size={14} /></button>
-            <button className={styles.toolbarBtn} onClick={toggleFullscreen} title="Fullscreen"><Maximize size={14} /></button>
-            <button className={styles.toolbarBtn} onClick={downloadPdf} title="Download"><Download size={14} /></button>
+            <button className={styles.toolbarBtn} onClick={downloadPdf} title="Download">
+              <Download size={16} />
+            </button>
+            <button className={styles.toolbarBtn} onClick={printPdf} title="Print">
+              <Printer size={16} />
+            </button>
+            <div className={styles.moreMenuContainer} ref={moreMenuRef}>
+              <button 
+                className={styles.toolbarBtn} 
+                onClick={() => setShowMoreMenu(!showMoreMenu)} 
+                title="More actions"
+              >
+                <MoreVertical size={16} />
+              </button>
+              {showMoreMenu && (
+                <div className={styles.moreMenu}>
+                  <button className={styles.moreMenuItem} onClick={() => handleMoreActions("properties")}>
+                    Properties
+                  </button>
+                  <button className={styles.moreMenuItem} onClick={() => handleMoreActions("share")}>
+                    Share Link
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className={styles.pdfBody}>
-          {showThumbnails && numPages > 0 && (
-            <div className={styles.thumbnailPanel}>
-              {Array.from({ length: numPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={`${styles.thumbnailItem} ${page === currentPage ? styles.thumbnailItemActive : ''}`}
-                  onClick={() => setCurrentPage(page)}
+          {sidebarOpen && (
+            <div className={styles.thumbnailSidebar} ref={thumbnailContainerRef}>
+              {pdfUrl && numPages && Array.from({ length: Math.min(numPages, 20) }, (_, i) => i + 1).map((pageNum) => (
+                <div
+                  key={pageNum}
+                  className={`${styles.thumbnailItem} ${
+                    pageNum === currentPage ? styles.thumbnailActive : ""
+                  }`}
+                  onClick={() => { pushToUndo(); setCurrentPage(pageNum); }}
                 >
-                  <Document file={pdfUrl} loading={null} error={null}>
-                    <Page
-                      pageNumber={page}
-                      scale={0.2}
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      width={120}
-                    />
-                  </Document>
-                  <span className={styles.thumbnailLabel}>{page}</span>
-                </button>
+                  <div className={styles.thumbnailPreview}>
+                    <Document file={pdfUrl}>
+                      <Page
+                        pageNumber={pageNum}
+                        scale={0.2}
+                        rotation={rotation}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                      />
+                    </Document>
+                  </div>
+                  <span className={styles.thumbnailNumber}>{pageNum}</span>
+                </div>
               ))}
             </div>
           )}
 
-          <div className={styles.pdfContent}>
-          {pdfLoading ? (
-            <div className={styles.previewLoading}>
-              <span>Loading document preview…</span>
-            </div>
-          ) : pdfError ? (
-            <div className={styles.previewError}>
-              <AlertCircle size={20} />
-              <span>Failed to load PDF preview.</span>
-            </div>
-          ) : pdfUrl ? (
-            <Document
-              file={pdfUrl}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={<div className={styles.previewLoading}><span>Loading PDF…</span></div>}
-              error={<div className={styles.previewError}><AlertCircle size={20} /><span>Failed to load PDF.</span></div>}
-            >
-              <Page
-                pageNumber={currentPage}
-                scale={scale}
-                rotation={rotation}
-                renderTextLayer={true}
-                renderAnnotationLayer={true}
-              />
-            </Document>
-          ) : (
-            <div className={styles.previewLoading}>
-              <span>Loading…</span>
-            </div>
-          )}
-        </div>
+          <div 
+            className={`${styles.pdfContent} ${isDrawing ? styles.drawingMode : ''}`} 
+            ref={pdfContentRef}
+          >
+            {isDrawing && (
+              <canvas ref={canvasRef} className={styles.drawingCanvas} />
+            )}
+            {pdfLoading ? (
+              <div className={styles.previewLoading}>
+                <Loader2 size={20} className={styles.spinIcon} />
+                <span>Loading document preview...</span>
+              </div>
+            ) : pdfError ? (
+              <div className={styles.previewError}>
+                <AlertCircle size={20} />
+                <span>Failed to load PDF preview.</span>
+              </div>
+            ) : pdfUrl ? (
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={<div className={styles.previewLoading}><Loader2 size={20} className={styles.spinIcon} /><span>Loading PDF...</span></div>}
+                error={<div className={styles.previewError}><AlertCircle size={20} /><span>Failed to load PDF.</span></div>}
+                className={styles.pdfDocument}
+              >
+                {numPages && Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => (
+                  <div key={pageNum} className={styles.pdfPageWrapper}>
+                    <Page
+                      pageNumber={pageNum}
+                      scale={scale}
+                      rotation={rotation}
+                      renderTextLayer={!isDrawing}
+                      renderAnnotationLayer={true}
+                      className={styles.pdfPage}
+                    />
+                  </div>
+                ))}
+              </Document>
+            ) : (
+              <div className={styles.previewLoading}>
+                <Loader2 size={20} className={styles.spinIcon} />
+                <span>Loading...</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Semantic Search Section */}
-      <div className={styles.readerSection}>
+      <div className={styles.sectionCard}>
         <h3 className={styles.sectionTitle}>Semantic search</h3>
         <p className={styles.sectionSubtitle}>
           Finds passages by meaning (embeddings), not only exact keywords.
@@ -280,7 +461,7 @@ function ReaderPanel({ activeDocument }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSearch();
+              if (e.key === "Enter") handleSearch();
             }}
           />
           <button
@@ -325,13 +506,11 @@ function ReaderPanel({ activeDocument }) {
         )}
       </div>
 
-      {/* Ask with AI Section */}
-      <div className={styles.readerSection}>
+      <div className={styles.sectionCard}>
         <h3 className={styles.sectionTitle}>Ask with AI</h3>
         <p className={styles.sectionSubtitle}>
           Answers use only retrieved excerpts from this PDF, with citations
-          where possible. When the document includes code, the reply may show it in
-          formatted blocks you can copy.
+          where possible.
         </p>
         <div className={styles.inputGroup}>
           <label className={styles.inputLabel}>Question</label>
@@ -360,7 +539,7 @@ function ReaderPanel({ activeDocument }) {
         )}
         {aiAnswer && (
           <div className={styles.answerContainer}>
-            <RagAnswerBody answer={aiAnswer} citations={aiCitations} />
+            <RagAnswerBody answer={aiAnswer} />
           </div>
         )}
       </div>
@@ -394,6 +573,7 @@ export default function RagDocuments() {
             name: doc.title || doc.name,
             title: doc.title || doc.name,
             status: updatedStatus,
+            errorMessage: doc.error_message || null,
           };
           setActiveDocument(updatedDoc);
           setDocuments((prev) =>
@@ -418,6 +598,7 @@ export default function RagDocuments() {
         name: doc.title || doc.name,
         title: doc.title || doc.name,
         status: doc.status,
+        errorMessage: doc.error_message || null,
       }));
       setDocuments(docs);
     } catch (err) {
@@ -433,25 +614,37 @@ export default function RagDocuments() {
   }
 
   function handleUploadComplete(uploadedDoc) {
-    const raw = uploadedDoc.data || uploadedDoc;
     const doc = {
-      id: raw.document_id || raw.id,
-      name: raw.title || raw.name,
-      title: raw.title || raw.name,
-      status: raw.status,
+      id: uploadedDoc.document_id || uploadedDoc.id,
+      name: uploadedDoc.title || uploadedDoc.name,
+      title: uploadedDoc.title || uploadedDoc.name,
+      status: uploadedDoc.status || "processing",
+      errorMessage: uploadedDoc.error_message || null,
     };
     setDocuments((prev) => [doc, ...prev]);
     setActiveDocument(doc);
   }
 
-  function handleToggleSidebar() {
-    setSidebarOpen((prev) => !prev);
+  async function handleRetryDocument(documentId) {
+    try {
+      const doc = await ragService.retryDocument(documentId);
+      const updatedDoc = {
+        id: doc.document_id || doc.id,
+        name: doc.title || doc.name,
+        title: doc.title || doc.name,
+        status: doc.status || "processing",
+        errorMessage: null,
+      };
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === updatedDoc.id ? updatedDoc : d))
+      );
+      setActiveDocument(updatedDoc);
+    } catch (err) {
+      console.error("Failed to retry document:", err);
+    }
   }
 
   async function handleDeleteDocument(documentId) {
-    const confirmed = window.confirm("Are you sure you want to delete this document? This cannot be undone.");
-    if (!confirmed) return;
-
     try {
       await ragService.deleteDocument(documentId);
       setDocuments((prev) => prev.filter((d) => d.id !== documentId));
@@ -471,13 +664,10 @@ export default function RagDocuments() {
         <p className={styles.pageDescription}>
           Upload study or reference PDFs to your own workspace. Each file is
           indexed for semantic search and optional AI answers that cite passages
-          from that document only.
+          from that document only. File size limits apply on the server;
+          other users never see your uploads.
         </p>
       </div>
-
-      {loadError && (
-        <div className={styles.pageErrorBanner}>{loadError}</div>
-      )}
 
       <div className={styles.columns}>
         <aside className={styles.leftColumn}>
@@ -493,11 +683,6 @@ export default function RagDocuments() {
         </aside>
 
         <main className={styles.rightColumn}>
-          <div className={styles.readerHeader}>
-            <h2 className={styles.readerTitle}>Reader</h2>
-            <p className={styles.readerSubtitle}>Inline preview of the selected PDF.</p>
-          </div>
-
           {!activeDocument ? (
             <div className={styles.emptyState}>
               <p>
@@ -506,10 +691,28 @@ export default function RagDocuments() {
                 answers grounded in that file.
               </p>
             </div>
+          ) : activeDocument.status === "failed" ? (
+            <div className={styles.failedState}>
+              <AlertCircle size={32} />
+              <h3>Processing failed</h3>
+              <p>
+                There was an error processing this document. It may contain no
+                extractable text or the embedding service may be temporarily
+                unavailable.
+              </p>
+              <button
+                className={styles.retryBtn}
+                onClick={() => handleRetryDocument(activeDocument.id)}
+              >
+                <RotateCw size={16} />
+                Retry Processing
+              </button>
+            </div>
           ) : activeDocument.status !== "ready" ? (
             <div className={styles.processingState}>
+              <h3>This document is not ready for preview or AI tools.</h3>
               <p>
-                This document is not ready for preview or AI tools. Current status: <strong>{activeDocument.status}</strong>.
+                Current status: <strong>{activeDocument.status}</strong>
               </p>
             </div>
           ) : (

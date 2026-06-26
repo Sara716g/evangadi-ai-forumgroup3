@@ -19,6 +19,7 @@ import { generateEmbedding, generateText } from '../../../utils/ai.js';
 import { embedSearchQuery } from '../../../utils/gemini/embedding.service.js';
 import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
+import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
 
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
 const DEFAULT_K = 5;
@@ -35,6 +36,7 @@ const mapQuestionRow = row => ({
     id: row.author_id,
     firstName: row.first_name,
     lastName: row.last_name,
+    username: row.username || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'anonymous',
   },
 });
 
@@ -252,16 +254,24 @@ export const searchQuestionsSemanticService = async ({ query, k, threshold }) =>
   const limit = Number(k ?? DEFAULT_K);
   const minSimilarity = Number(threshold ?? DEFAULT_RECOMMEND_THRESHOLD);
 
-  const vector = await embedSearchQuery(query);
-  const queryVector = normalizeEmbedding(vector);
-  if (queryVector.length === 0) {
+  let queryVector;
+  try {
+    const vector = await embedSearchQuery(query);
+    queryVector = normalizeEmbedding(vector);
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new ServiceUnavailableError(`Embedding generation failed: ${error.message}`);
+  }
+
+  if (!Array.isArray(queryVector) || queryVector.length === 0) {
     throw new ServiceUnavailableError('Semantic search embedding failed');
   }
 
   const rows = await safeExecute(selectReadyQuestionVectorsSql, []);
+
   const results = rows
     .map(row => {
-      const embedding = normalizeEmbedding(JSON.parse(row.embedding || '[]'));
+      const embedding = normalizeEmbedding(parseEmbedding(row.embedding));
       return {
         ...mapQuestionRow(row),
         score: cosineSimilarity(queryVector, embedding),
@@ -302,7 +312,7 @@ export const getSimilarQuestionsService = async ({ questionHash, k, threshold })
     throw new NotFoundError('Question not found');
   }
 
-  const sourceEmbedding = normalizeEmbedding(JSON.parse(sourceRows[0].embedding || '[]'));
+  const sourceEmbedding = normalizeEmbedding(parseEmbedding(sourceRows[0].embedding));
   if (sourceEmbedding.length === 0) {
     throw new ServiceUnavailableError('Source question embedding is unavailable');
   }
@@ -310,7 +320,7 @@ export const getSimilarQuestionsService = async ({ questionHash, k, threshold })
   const rows = await safeExecute(`${selectReadyQuestionVectorsSql} AND q.question_id != ?`, [sourceRows[0].question_id]);
   const results = rows
     .map(row => {
-      const embedding = normalizeEmbedding(JSON.parse(row.embedding || '[]'));
+        const embedding = normalizeEmbedding(parseEmbedding(row.embedding));
       return {
         ...mapQuestionRow(row),
         score: cosineSimilarity(sourceEmbedding, embedding),
