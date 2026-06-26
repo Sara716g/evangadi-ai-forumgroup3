@@ -42,3 +42,31 @@ export const loginValidation = [
 
   validationErrorHandler,
 ];
+
+export const forgotPasswordValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email address is required')
+    .normalizeEmail(),
+
+  validationErrorHandler,
+];
+
+export const resetPasswordValidation = [
+  body('token')
+    .notEmpty()
+    .withMessage('Reset token is required')
+    .isString()
+    .withMessage('Reset token must be a string')
+    .isLength({ min: 64, max: 64 })
+    .withMessage('Invalid reset token format'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+
+  validationErrorHandler,
+];

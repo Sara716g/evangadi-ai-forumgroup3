@@ -8,82 +8,82 @@ This document explains all Milestone 4 features, and where to add new code.
 
 ## Feature List
 
-  Task                      Feature 
+Task Feature
 
- T-26                 File Attachments 
- T-27                 Voice Messages 
- T-28                 Voting & Comments
- T-29                 Notification
- T-30                 AI Assistant 
- T-31                 Duplicate Detection
- T-32                 Categories 
- T-33                 External Forum Search 
- T-34                 Bookmarks 
- T-35                 User Profiles 
- T-36                 Dark Mode 
-
-
+T-26 File Attachments
+T-27 Voice Messages
+T-28 Voting & Comments
+T-29 Notification
+T-30 AI Assistant
+T-31 Forgot Pssword
+T-32 Categories
+T-33 External Forum Search
+T-34 Bookmarks
+T-35 User Profiles
+T-36 Dark Mode
 
 ## Folder Structure
 
 ### Backend - Where to Add New Code
 
-
 backend/src/api/
-├── auth/              (Milestone 1 - done)
-├── question/          (Milestone 2 - done)
-├── answer/            (Milestone 2 - done)
-├── rag/               (Milestone 3 - done)
-├── attachment/        (NEW - T-26) ← 
-├── voice-message/     (NEW - T-27) ← 
-├── vote/              (NEW - T-28) ← 
-├── comment/           (NEW - T-28) ← 
-├── notification/      (NEW - T-29) ← 
-├── ai-assistant/      (NEW - T-30) ← 
-├── duplicate/         (NEW - T-31) ← 
-├── category/          (NEW - T-32) ← 
-├── bookmark/          (NEW - T-34) ← 
-├── profile/           (NEW - T-35) ←
-└── routes.js          (UPDATE - add new routes)
+├── auth/ (Milestone 1 - done)
+├── question/ (Milestone 2 - done)
+├── answer/ (Milestone 2 - done)
+├── rag/ (Milestone 3 - done)
+├── attachment/ (NEW - T-26) ←
+├── voice-message/ (NEW - T-27) ←
+├── vote/ (NEW - T-28) ←
+├── comment/ (NEW - T-28) ←
+├── notification/ (NEW - T-29) ←
+├── ai-assistant/ (NEW - T-30) ←
+├── forgot/ (NEW - T-31) ←
+├── category/ (NEW - T-32) ←
+├── bookmark/ (NEW - T-34) ←
+├── profile/ (NEW - T-35) ←
+└── routes.js (UPDATE - add new routes)
+
 ```
 
 ### Frontend - Where to Add New Code
 
 ```
+
 frontend/src/
 ├── components/
-│   ├── Layout/        (done)
-│   ├── Navbar/        (UPDATE - add notification bell)
-│   ├── Sidebar/       (UPDATE - add categories)
-│   ├── Attachment/    (NEW - T-26) ← 
-│   ├── VoiceRecorder/ (NEW - T-27) ← 
-│   ├── Voting/        (NEW - T-28) ← 
-│   ├── Comment/       (NEW - T-28) ← 
-│   ├── Notification/  (NEW - T-29) ←
-│   ├── Duplicate/     (NEW - T-31) ← 
-│   ├── Bookmark/      (NEW - T-34) ← 
-│   ├── Profile/       (NEW - T-35) ← 
-│   └── ThemeToggle/   (NEW - T-36) ← 
+│ ├── Layout/ (done)
+│ ├── Navbar/ (UPDATE - add notification bell)
+│ ├── Sidebar/ (UPDATE - add categories)
+│ ├── Attachment/ (NEW - T-26) ←
+│ ├── VoiceRecorder/ (NEW - T-27) ←
+│ ├── Voting/ (NEW - T-28) ←
+│ ├── Comment/ (NEW - T-28) ←
+│ ├── Notification/ (NEW - T-29) ←
+│ ├── forgot/ (NEW - T-31) ←
+│ ├── Bookmark/ (NEW - T-34) ←
+│ ├── Profile/ (NEW - T-35) ←
+│ └── ThemeToggle/ (NEW - T-36) ←
 │
 ├── pages/
-│   ├── Dashboard/     (done)
-│   ├── Auth/          (done)
-│   ├── Notifications/ (NEW - T-29) ← 
-│   ├── Bookmarks/     (NEW - T-34) ← 
-│   └── Profile/       (NEW - T-35) ← 
+│ ├── Dashboard/ (done)
+│ ├── Auth/ (done)
+│ ├── Notifications/ (NEW - T-29) ←
+│ ├── Bookmarks/ (NEW - T-34) ←
+│ └── Profile/ (NEW - T-35) ←
 │
-├── services/          (UPDATE - add API calls)
-│   ├── attachment.service.js    (NEW)
-│   ├── voice.service.js         (NEW)
-│   ├── vote.service.js          (NEW)
-│   ├── comment.service.js       (NEW)
-│   ├── notification.service.js  (NEW)
-│   ├── bookmark.service.js      (NEW)
-│   └── profile.service.js       (NEW)
+├── services/ (UPDATE - add API calls)
+│ ├── attachment.service.js (NEW)
+│ ├── voice.service.js (NEW)
+│ ├── vote.service.js (NEW)
+│ ├── comment.service.js (NEW)
+│ ├── notification.service.js (NEW)
+│ ├── bookmark.service.js (NEW)
+│ └── profile.service.js (NEW)
 │
 └── contexts/
-    └── ThemeContext.jsx  (NEW - T-36) ← Bini creates
-```
+└── ThemeContext.jsx (NEW - T-36) ← Bini creates
+
+````
 
 ---
 
@@ -225,13 +225,13 @@ git checkout -b feature/T-27-melat-voice
 git checkout -b feature/T-28-melese-voting
 git checkout -b feature/T-29-you-notifications
 git checkout -b feature/T-30-beza-ai
-git checkout -b feature/T-31-abubaker-duplicate
+git checkout -b feature/T-31-gebre-forgot
 git checkout -b feature/T-32-abubaker-categories
 git checkout -b feature/T-33-tsi-external
 git checkout -b feature/T-34-melese-bookmarks
 git checkout -b feature/T-35-you-profiles
 git checkout -b feature/T-36-bini-darkmode
-```
+````
 
 ---
 
@@ -240,6 +240,7 @@ git checkout -b feature/T-36-bini-darkmode
 All task details are in: `tasks/MASTER_TASK_LIST.md`
 
 Each task has detailed docs in:
+
 - `tasks/backend/[feature-name]/`
 - `tasks/frontend/[feature-name]/`
 
@@ -247,12 +248,12 @@ Each task has detailed docs in:
 
 ## Timeline
 
-| Week | Focus |
-|------|-------|
+| Week   | Focus                                              |
+| ------ | -------------------------------------------------- |
 | Week 1 | Setup branches, create folders, start backend APIs |
-| Week 2 | Complete backend, start frontend components |
-| Week 3 | Complete frontend, integrate with backend |
-| Week 4 | Testing, bug fixes, final touches |
+| Week 2 | Complete backend, start frontend components        |
+| Week 3 | Complete frontend, integrate with backend          |
+| Week 4 | Testing, bug fixes, final touches                  |
 
 ---
 

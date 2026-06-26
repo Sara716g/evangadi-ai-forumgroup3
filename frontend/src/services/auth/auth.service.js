@@ -55,7 +55,7 @@ function getStoredUser() {
 
   try {
     return JSON.parse(userJson);
-  } catch (error) {
+  } catch {
     // If JSON parsing fails, clear invalid data
     localStorage.removeItem('user');
     return null;
@@ -101,6 +101,32 @@ function handleAuthError(error) {
 }
 
 /**
+ * Sends a forgot-password request to generate a reset email.
+ * @param {string} email - The user's email address.
+ */
+async function forgotPassword(email) {
+  try {
+    await apiClient.post('/api/auth/forgot-password', { email });
+    return { success: true };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Resets a user's password using a valid reset token.
+ * @param {Object} data - { token, password }
+ */
+async function resetPassword({ token, password }) {
+  try {
+    await apiClient.post('/api/auth/reset-password', { token, password });
+    return { success: true };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
  * Service for handling auth-related requests.
  */
 export const authService = {
@@ -110,4 +136,6 @@ export const authService = {
   getStoredToken,
   getStoredUser,
   isAuthenticated,
+  forgotPassword,
+  resetPassword,
 };
