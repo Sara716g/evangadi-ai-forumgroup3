@@ -131,6 +131,8 @@ const rankDocumentChunks = async (documentId, query, k = DEFAULT_K) => {
     .slice(0, Number(k) || DEFAULT_K);
 };
 
+const EMBEDDING_BATCH_SIZE = 5;
+
 const processUploadedPdf = async (documentId, filePath) => {
   const pdfBuffer = await fs.readFile(filePath);
   const parser = new PDFParse({ data: pdfBuffer });
@@ -150,40 +152,44 @@ const processUploadedPdf = async (documentId, filePath) => {
 
   const chunks = chunkText(text);
 
-  try {
-    for (const [index, content] of chunks.entries()) {
-      const chunkResult = await safeExecute(
-        "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
-        [documentId, index, content],
-      );
-
-      const embedding = await generateDocumentEmbedding(content);
-
-      await safeExecute(
-        "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
-        [chunkResult.insertId, content, JSON.stringify(embedding)],
-      );
-    }
-
-    await safeExecute(
-      "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = ?",
-      [documentId],
+  const chunkIds = [];
+  for (const [index, content] of chunks.entries()) {
+    const chunkResult = await safeExecute(
+      "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
+      [documentId, index, content],
     );
-  } catch (error) {
-    console.error("Document processing error:", error);
-    await safeExecute(
-      "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = ?)",
-      [documentId],
-    );
-    await safeExecute(
-      "DELETE FROM document_chunks WHERE document_id = ?",
-      [documentId],
-    );
-    await safeExecute(
-      "UPDATE documents SET status = 'failed', error_message = ? WHERE document_id = ?",
-      [error.message || "Processing failed", documentId],
-    );
+    chunkIds.push({ id: chunkResult.insertId, content });
   }
+
+  for (let i = 0; i < chunkIds.length; i += EMBEDDING_BATCH_SIZE) {
+    const batch = chunkIds.slice(i, i + EMBEDDING_BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map((chunk) =>
+        generateDocumentEmbedding(chunk.content).then((embedding) => ({
+          chunkId: chunk.id,
+          content: chunk.content,
+          embedding,
+        })),
+      ),
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { chunkId, content: srcText, embedding } = result.value;
+        await safeExecute(
+          "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
+          [chunkId, srcText, JSON.stringify(embedding)],
+        );
+      } else {
+        console.error("Embedding batch item failed:", result.reason);
+      }
+    }
+  }
+
+  await safeExecute(
+    "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = ?",
+    [documentId],
+  );
 };
 
 const processPdfBackground = (documentId, filePath) => {

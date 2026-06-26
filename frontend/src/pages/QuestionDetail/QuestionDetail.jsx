@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
-import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service";
+import { postAnswer, assessAnswerFit } from "../../services/answer.service";
+import { useAuth } from "../../contexts/AuthContext";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,7 @@ const ghostBtn = {
 export default function QuestionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [question,   setQuestion]  = useState(null);
   const [answers,    setAnswers]   = useState([]);
@@ -285,8 +287,7 @@ export default function QuestionDetail() {
   }
 
   const authorName    = question.author?.username || question.author?.name || "New User";
-  // ⬇ swap `false` for a real auth check once you have a currentUser context
-  const isOwnQuestion = false;
+  const isOwnQuestion = user?.id === question.author?.id;
 
   return (
     <div style={{ display: "flex", gap: 28, maxWidth: 1160, margin: "0 auto", padding: "24px 20px", alignItems: "flex-start" }}>

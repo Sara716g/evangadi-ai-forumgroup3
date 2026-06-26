@@ -5,7 +5,7 @@ export async function postAnswer(questionId, content) {
     questionId,
     content,
   });
-  return res.data;
+  return res.data.data;
 }
 
 export async function assessAnswerFit(questionHash, answerText) {
@@ -15,7 +15,7 @@ export async function assessAnswerFit(questionHash, answerText) {
       answerText,
     },
   );
-  return res.data;
+  return res.data.data;
 }
 
 export default { postAnswer, assessAnswerFit };
