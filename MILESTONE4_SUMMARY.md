@@ -15,7 +15,7 @@ This document explains all Milestone 4 features, and where to add new code.
  T-28                 Voting & Comments
  T-29                 Notification
  T-30                 AI Assistant 
- T-31                 Duplicate Detection
+ T-31                 Forgot Password
  T-32                 Categories 
  T-33                 External Forum Search 
  T-34                 Bookmarks 
@@ -30,7 +30,7 @@ This document explains all Milestone 4 features, and where to add new code.
 
 
 backend/src/api/
-├── auth/              (Milestone 1 - done)
+├── auth/              (Milestone 1 - done, UPDATE for T-31 Forgot Password)
 ├── question/          (Milestone 2 - done)
 ├── answer/            (Milestone 2 - done)
 ├── rag/               (Milestone 3 - done)
@@ -40,7 +40,6 @@ backend/src/api/
 ├── comment/           (NEW - T-28) ← 
 ├── notification/      (NEW - T-29) ← 
 ├── ai-assistant/      (NEW - T-30) ← 
-├── duplicate/         (NEW - T-31) ← 
 ├── category/          (NEW - T-32) ← 
 ├── bookmark/          (NEW - T-34) ← 
 ├── profile/           (NEW - T-35) ←
@@ -60,14 +59,13 @@ frontend/src/
 │   ├── Voting/        (NEW - T-28) ← 
 │   ├── Comment/       (NEW - T-28) ← 
 │   ├── Notification/  (NEW - T-29) ←
-│   ├── Duplicate/     (NEW - T-31) ← 
 │   ├── Bookmark/      (NEW - T-34) ← 
 │   ├── Profile/       (NEW - T-35) ← 
 │   └── ThemeToggle/   (NEW - T-36) ← 
 │
 ├── pages/
 │   ├── Dashboard/     (done)
-│   ├── Auth/          (done)
+│   ├── Auth/          (done, UPDATE for T-31 Forgot Password)
 │   ├── Notifications/ (NEW - T-29) ← 
 │   ├── Bookmarks/     (NEW - T-34) ← 
 │   └── Profile/       (NEW - T-35) ← 
@@ -179,18 +177,20 @@ frontend/src/
 
 ---
 
-###  (T-31 + T-32)
+###  (T-31 Forgot Password + T-32 Categories)
 
 **Backend:**
-1. Create `backend/src/api/duplicate/` folder
+1. Update `backend/src/api/auth/` folder - add forgot-password and reset-password files
 2. Create `backend/src/api/category/` folder
 
 **Frontend:**
-1. Create `frontend/src/components/Duplicate/DuplicateWarning.jsx`
-2. Create `frontend/src/components/Categories/CategorySidebar.jsx`
+1. Create `frontend/src/pages/Auth/ForgotPassword.jsx`
+2. Create `frontend/src/pages/Auth/ResetPassword.jsx`
+3. Create `frontend/src/components/Categories/CategorySidebar.jsx`
 
 **API Endpoints:**
-- `POST /api/questions/check-duplicate` - detect duplicates
+- `POST /api/auth/forgot-password` - send reset email
+- `POST /api/auth/reset-password` - reset password with token
 - `GET /api/categories` - list categories
 - `GET /api/questions/category/:id` - filter by category
 
@@ -225,7 +225,7 @@ git checkout -b feature/T-27-melat-voice
 git checkout -b feature/T-28-melese-voting
 git checkout -b feature/T-29-you-notifications
 git checkout -b feature/T-30-beza-ai
-git checkout -b feature/T-31-abubaker-duplicate
+git checkout -b feature/T-31-abubaker-forgot-password
 git checkout -b feature/T-32-abubaker-categories
 git checkout -b feature/T-33-tsi-external
 git checkout -b feature/T-34-melese-bookmarks

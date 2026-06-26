@@ -186,9 +186,9 @@ _Improved community features including file uploads, voting, notifications, and 
   - **Description**: Implement AI-powered answer generation for questions.
   - **Reference**: `/ai-assistant/answer.md`
 
-- **Task Name**: Duplicate Detection (`T-31`)
-  - **Description**: Implement endpoint to detect similar existing questions using AI.
-  - **Reference**: `/duplicate/check-duplicate.md`
+- **Task Name**: Forgot Password (`T-31`)
+  - **Description**: Implement `POST /api/auth/forgot-password` to send password reset link via email, and `POST /api/auth/reset-password` to update password with token.
+  - **Reference**: `/auth/forgot-password.md`, `/auth/reset-password.md`
 
 - **Task Name**: Categories (`T-32`)
   - **Description**: Implement category listing and filter questions by category.
@@ -232,9 +232,9 @@ _Improved community features including file uploads, voting, notifications, and 
   - **Description**: Build notifications page and bell icon with unread count.
   - **Reference**: `/notifications/`
 
-- **Task Name**: Duplicate Warning (`T-31`)
-  - **Description**: Build duplicate question detection UI when posting new questions.
-  - **Reference**: `/duplicate/task-duplicate.md`
+- **Task Name**: Forgot Password Page (`T-31`)
+  - **Description**: Build the `/auth/forgot-password` and `/auth/reset-password` pages with email input and new password form.
+  - **Reference**: `/auth/task-forgot-password.md`, `/auth/task-reset-password.md`
 
 - **Task Name**: Category Sidebar (`T-32`)
   - **Description**: Build category filter sidebar for dashboard page.
