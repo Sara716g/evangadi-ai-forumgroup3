@@ -6,6 +6,7 @@ import ragRoutes from "./rag/routes/rag.routes.js";
 import adminRoutes from './admin/routes/admin.routes.js';
 import notificationRoutes from './notification/routes/notification.routes.js';
 import profileRoutes from './profile/routes/profile.routes.js';
+import voiceMessageRoutes from './voice-message/routes/voice-message.routes.js';
 
 const mainRouter = express.Router();
 
@@ -26,6 +27,9 @@ mainRouter.use('/notifications', notificationRoutes);
 
 // Profile routes
 mainRouter.use('/profile', profileRoutes);
+
+// Voice message routes
+mainRouter.use('/voice-messages', voiceMessageRoutes);
 
 // Admin routes
 mainRouter.use('/admin', adminRoutes);
