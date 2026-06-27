@@ -43,4 +43,3 @@ mainRouter.use('/admin', adminRoutes);
 mainRouter.use('/community', communityRoutes);
 
 export default mainRouter;
-export { mainRouter };
