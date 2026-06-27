@@ -7,6 +7,7 @@ import adminRoutes from './admin/routes/admin.routes.js';
 import notificationRoutes from './notification/routes/notification.routes.js';
 import profileRoutes from './profile/routes/profile.routes.js';
 import voiceMessageRoutes from './voice-message/routes/voice-message.routes.js';
+import communityRoutes from './community/routes/community.routes.js';
 
 const mainRouter = express.Router();
 
@@ -34,5 +35,9 @@ mainRouter.use('/voice-messages', voiceMessageRoutes);
 // Admin routes
 mainRouter.use('/admin', adminRoutes);
 
+// Community routes
+mainRouter.use('/community', communityRoutes);
+
 export default mainRouter;
 export { mainRouter };
+

@@ -22,6 +22,7 @@ import Profile from "./pages/Profile/Profile";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import ManageUsers from "./pages/Admin/ManageUsers";
 import ManageQuestions from "./pages/Admin/ManageQuestions";
+import ExternalSearch from "./pages/ExternalSearch/ExternalSearch";
 
 function App() {
   return (
@@ -116,6 +117,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ManageQuestions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community-search"
+              element={
+                <ProtectedRoute>
+                  <ExternalSearch />
                 </ProtectedRoute>
               }
             />
