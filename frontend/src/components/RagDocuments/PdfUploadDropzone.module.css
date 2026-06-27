@@ -1,0 +1,94 @@
+.dropzone {
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  padding: 16px;
+  background: #f9fafb;
+}
+.hint {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+.buttonRow {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.chooseFileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.chooseFileButton:hover {
+  border-color: #9ca3af;
+}
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ea580c;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.uploadButton:hover:not(:disabled) {
+  background: #c2410c;
+}
+.uploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.fileInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+}
+.fileName {
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 8px;
+}
+.fileSize {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.noFileText {
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  font-style: italic;
+  margin: 0;
+}
+.errorText {
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin: 8px 0 0 0;
+}

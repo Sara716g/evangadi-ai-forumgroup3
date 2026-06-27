@@ -1,0 +1,34 @@
+import express from 'express';
+import authRoutes from './auth/routes/auth.routes.js';
+import questionRoutes from './question/routes/question.routes.js';
+import answerRoutes from './answer/routes/answer.routes.js';
+import ragRoutes from "./rag/routes/rag.routes.js";
+import adminRoutes from './admin/routes/admin.routes.js';
+import notificationRoutes from './notification/routes/notification.routes.js';
+import profileRoutes from './profile/routes/profile.routes.js';
+
+const mainRouter = express.Router();
+
+// Authentication routes
+mainRouter.use('/auth', authRoutes);
+
+// RAG routes
+mainRouter.use('/rag', ragRoutes);
+
+// Question routes
+mainRouter.use('/questions', questionRoutes);
+
+// Answer routes
+mainRouter.use('/answers', answerRoutes);
+
+// Notification routes
+mainRouter.use('/notifications', notificationRoutes);
+
+// Profile routes
+mainRouter.use('/profile', profileRoutes);
+
+// Admin routes
+mainRouter.use('/admin', adminRoutes);
+
+export default mainRouter;
+export { mainRouter };
