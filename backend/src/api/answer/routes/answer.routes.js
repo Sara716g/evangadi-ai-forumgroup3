@@ -9,6 +9,7 @@ import {
   createAnswerController,
   deleteAnswerAttachmentController,
   getAnswerAttachmentFileController,
+  getAnswersController,
 } from '../controller/answer.controller.js';
 import {
   uploadAnswerAttachments,
@@ -18,6 +19,9 @@ import {
 const router = express.Router();
 
 router.use(authenticateUser);
+
+// List answers (optionally filtered by questionId or userId via query params).
+router.get('/', getAnswersController);
 
 // Create an answer, optionally with up to 5 image/PDF attachments ("files" field).
 router.post(

@@ -210,3 +210,77 @@ export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) =>
   await safeExecute('DELETE FROM answer_attachments WHERE attachment_id = ?', [attachmentId]);
   return { id: attachmentId };
 };
+
+export const getAnswersService = async (questionId) => {
+  let sql = `
+    SELECT
+      a.answer_id,
+      a.question_id,
+      a.content,
+      a.created_at,
+      a.updated_at,
+      u.user_id AS author_id,
+      u.first_name,
+      u.last_name,
+      q.question_hash
+    FROM answers a
+    JOIN users u ON a.user_id = u.user_id
+    LEFT JOIN questions q ON a.question_id = q.question_id
+  `;
+  const params = [];
+  if (questionId) {
+    sql += ' WHERE a.question_id = ?';
+    params.push(questionId);
+  }
+  sql += ' ORDER BY a.created_at DESC';
+  const rows = await safeExecute(sql, params);
+  return rows.map(row => ({
+    id: row.answer_id,
+    answerId: row.answer_id,
+    questionId: row.question_id,
+    questionHash: row.question_hash,
+    content: row.content,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    author: {
+      id: row.author_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+    },
+  }));
+};
+
+export const getUserAnswersService = async (userId) => {
+  const sql = `
+    SELECT
+      a.answer_id,
+      a.question_id,
+      a.content,
+      a.created_at,
+      a.updated_at,
+      u.user_id AS author_id,
+      u.first_name,
+      u.last_name,
+      q.question_hash
+    FROM answers a
+    JOIN users u ON a.user_id = u.user_id
+    LEFT JOIN questions q ON a.question_id = q.question_id
+    WHERE a.user_id = ?
+    ORDER BY a.created_at DESC
+  `;
+  const rows = await safeExecute(sql, [userId]);
+  return rows.map(row => ({
+    id: row.answer_id,
+    answerId: row.answer_id,
+    questionId: row.question_id,
+    questionHash: row.question_hash,
+    content: row.content,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    author: {
+      id: row.author_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+    },
+  }));
+};

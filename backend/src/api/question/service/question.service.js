@@ -1,350 +1,416 @@
-import { safeExecute } from "../../../../db/config.js";
-import { NotFoundError } from "../../../utils/errors/index.js";
-import {
-  parseEmbedding,
-  cosineSimilarity,
-  rankVectorsBySimilarity,
-} from "../../../utils/vector/vector.utils.js";
-import { getAttachmentsForAnswerIds } from "../../answer/service/answer.service.js";
+/**
+ * ============================================================================
+ * Domain: Core Forum (Blue Domain) + AI Search/Embeddings (Green Domain)
+ * ============================================================================
+ * Handles transactional operations for questions and semantic search vectors.
+ * Maintains clean separation between:
+ * - Core CRUD operations (Blue Domain): create, list, fetch questions
+ * - Vector embeddings (Green Domain): semantic search via question_vectors
+ *
+ * Status Tracking Pattern:
+ * - Vector status: 'ready' (complete), 'pending' (processing), 'failed' (error)
+ * - Enables async embedding generation without blocking question creation
+ * ============================================================================
+ */
 
-// =========================
-// CONFIG
-// =========================
-const DEFAULT_K = Number.parseInt(process.env.RECOMMEND_K, 10) || 5;
-const DEFAULT_THRESHOLD =
-  Number.parseFloat(process.env.RECOMMEND_THRESHOLD) || 0.75;
+import { safeExecute } from '../../../../db/config.js';
+import { NotFoundError, ServiceUnavailableError } from '../../../utils/errors/index.js';
+import { generateEmbedding, generateText } from '../../../utils/ai.js';
+import { embedSearchQuery } from '../../../utils/gemini/embedding.service.js';
+import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
+import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
+import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
+import { getAttachmentsForAnswerIds } from '../../answer/service/answer.service.js';
 
-// =========================
-// EMBEDDING GENERATION (GEMINI)
-// =========================
-const generateEmbedding = async (text) => {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent?key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "models/gemini-embedding-2",
-        content: { parts: [{ text }] },
-        taskType: "RETRIEVAL_DOCUMENT",
-      }),
-    },
-  );
+const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
+const DEFAULT_K = 5;
 
-  const data = await response.json();
-  return data.embedding.values;
+const mapQuestionRow = row => ({
+  id: row.question_id,
+  questionHash: row.question_hash,
+  title: row.title,
+  content: row.content,
+  answerCount: Number(row.answer_count ?? 0),
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  author: {
+    id: row.author_id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    username: row.username || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'anonymous',
+  },
+});
+
+const mapAnswerRow = row => ({
+  id: row.answer_id,
+  content: row.content,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  author: {
+    id: row.author_id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+  },
+});
+
+/**
+ * Generates embedding asynchronously without blocking question creation.
+ * Implements status tracking: pending → ready/failed
+ * Can be triggered by background worker for scalability.
+ */
+export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText }) => {
+  try {
+    if (!sourceText || typeof sourceText !== 'string' || sourceText.trim().length === 0) {
+      await safeExecute(
+        `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+        [questionId],
+      );
+      return { success: false, error: 'Source text is required' };
+    }
+
+    const vector = await generateEmbedding(sourceText);
+    if (Array.isArray(vector) && vector.length > 0) {
+      await safeExecute(
+        `UPDATE question_vectors SET embedding = ?, status = 'ready', updated_at = NOW() WHERE question_id = ?`,
+        [JSON.stringify(vector), questionId],
+      );
+      return { success: true, status: 'ready' };
+    }
+
+    console.error('[Embedding] Empty vector returned from Gemini');
+    await safeExecute(
+      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+      [questionId],
+    );
+    return { success: false, error: 'Embedding generation returned empty vector' };
+  } catch (error) {
+    console.error('[Embedding] Failed to generate embedding:', error);
+    await safeExecute(
+      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+      [questionId],
+    );
+    return { success: false, error: error.message };
+  }
 };
 
-// =========================
-// CREATE QUESTION + VECTOR
-// =========================
-const generateQuestionHash = () => {
-  const bytes = new Uint8Array(8);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-};
+export const createQuestionWithVectorService = async ({ userId, title, content }) => {
+  const questionHash = generateHexString(16);
 
-export const createQuestionWithVectorService = async ({
-  title,
-  content,
-  userId,
-}) => {
-  const questionHash = generateQuestionHash();
+  const insertSql = `INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)`;
+  const insertResult = await safeExecute(insertSql, [questionHash, userId, title, content]);
+  const questionId = insertResult.insertId;
 
-  // 1. Insert question
-  const insertSql = `
-    INSERT INTO questions (question_hash, user_id, title, content)
-    VALUES (?, ?, ?, ?)
-  `;
+  const sourceText = `${title}\n\n${content}`;
+  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
+  await safeExecute(vectorSql, [questionId, sourceText]);
 
-  const result = await safeExecute(insertSql, [
+  await generateQuestionEmbeddingAsync({ questionId, sourceText });
+
+  return {
+    id: questionId,
     questionHash,
-    userId,
     title,
     content,
-  ]);
+    userId,
+  };
+};
 
-  const questionId = result.insertId;
+export const getQuestionsService = async ({ userId, search, mine }) => {
+  const filters = [];
+  const params = [];
+  let whereClause = '';
 
-  // 2. Generate embedding
-  let embedding = null;
-  let vectorStatus = "failed";
-
-  try {
-    embedding = await generateEmbedding(title);
-    vectorStatus = "ready";
-  } catch (error) {
-    console.error(
-      `[T-11] Embedding failed for question ${questionId}:`,
-      error.message,
-    );
+  if (mine) {
+    filters.push('q.user_id = ?');
+    params.push(userId);
   }
 
-  // 3. Save vector
-  const vectorSql = `
-    INSERT INTO question_vectors (question_id, source_text, embedding, status)
-    VALUES (?, ?, ?, ?)
-  `;
+  if (search && String(search).trim().length > 0) {
+    filters.push('(q.title LIKE ? OR q.content LIKE ?)');
+    const likeValue = `%${String(search).trim()}%`;
+    params.push(likeValue, likeValue);
+  }
 
-  await safeExecute(vectorSql, [
-    questionId,
-    title,
-    JSON.stringify(embedding ?? []),
-    vectorStatus,
-  ]);
-
-  return { id: questionId, questionHash, title, content, userId };
-};
-
-// =========================
-// SIMILAR QUESTIONS (VECTOR SEARCH)
-// =========================
-const fetchAllReadyVectors = async (excludeQuestionId = null) => {
-  const sql =
-    excludeQuestionId === null
-      ? `SELECT question_id, embedding FROM question_vectors WHERE status = 'ready'`
-      : `SELECT question_id, embedding FROM question_vectors WHERE status = 'ready' AND question_id != ?`;
-
-  const params = excludeQuestionId === null ? [] : [excludeQuestionId];
-  return safeExecute(sql, params);
-};
-
-const hydrateQuestionsByIds = async (rankedMatches, scoreByQuestionId) => {
-  if (rankedMatches.length === 0) return [];
-
-  const questionIds = rankedMatches.map((m) => m.questionId);
-  const placeholders = questionIds.map(() => "?").join(",");
+  if (filters.length > 0) {
+    whereClause = `WHERE ${filters.join(' AND ')}`;
+  }
 
   const sql = `
     SELECT
-      q.question_id AS id,
-      q.question_hash AS questionHash,
+      q.question_id,
+      q.question_hash,
       q.title,
       q.content,
-      q.created_at AS createdAt,
-      q.updated_at AS updatedAt,
-      u.user_id AS authorId,
-      u.first_name AS authorFirstName,
-      u.last_name AS authorLastName,
-      COUNT(a.answer_id) AS answerCount
+      q.created_at,
+      q.updated_at,
+      u.user_id AS author_id,
+      u.first_name,
+      u.last_name,
+      COALESCE(ac.answer_count, 0) AS answer_count
     FROM questions q
-    INNER JOIN users u ON q.user_id = u.user_id
-    LEFT JOIN answers a ON q.question_id = a.question_id
-    WHERE q.question_id IN (${placeholders})
-    GROUP BY q.question_id, q.question_hash, q.title, q.content,
-             q.created_at, q.updated_at,
-             u.user_id, u.first_name, u.last_name
+    JOIN users u ON q.user_id = u.user_id
+    LEFT JOIN (
+      SELECT question_id, COUNT(*) AS answer_count
+      FROM answers
+      GROUP BY question_id
+    ) ac ON ac.question_id = q.question_id
+    ${whereClause}
+    ORDER BY q.created_at DESC
   `;
 
-  const rows = await safeExecute(sql, questionIds);
-  const rowById = new Map(rows.map((r) => [r.id, r]));
-
-  return rankedMatches
-    .map((match) => {
-      const row = rowById.get(match.questionId);
-      if (!row) return null;
-
-      return {
-        id: row.id,
-        questionHash: row.questionHash,
-        title: row.title,
-        content: row.content,
-        answerCount: Number(row.answerCount),
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-        author: {
-          id: row.authorId,
-          firstName: row.authorFirstName,
-          lastName: row.authorLastName,
-        },
-        score: scoreByQuestionId.get(match.questionId),
-      };
-    })
-    .filter(Boolean);
+  const rows = await safeExecute(sql, params);
+  return rows.map(mapQuestionRow);
 };
 
-export const getSimilarQuestionsService = async ({
-  questionHash,
-  k = DEFAULT_K,
-  threshold = DEFAULT_THRESHOLD,
-}) => {
-  const sourceSql = `
-    SELECT q.question_id, q.question_hash, qv.embedding
+export const getSingleQuestionService = async ({ questionHash }) => {
+  const sql = `
+    SELECT
+      q.question_id,
+      q.question_hash,
+      q.title,
+      q.content,
+      q.created_at,
+      q.updated_at,
+      u.user_id AS author_id,
+      u.first_name,
+      u.last_name
     FROM questions q
-    INNER JOIN question_vectors qv ON q.question_id = qv.question_id
-    WHERE q.question_hash = ? AND qv.status = 'ready'
+    JOIN users u ON q.user_id = u.user_id
+    WHERE q.question_hash = ?
+    LIMIT 1
+  `;
+
+  const rows = await safeExecute(sql, [questionHash]);
+  if (rows.length === 0) {
+    throw new NotFoundError('Question not found');
+  }
+
+  const question = rows[0];
+
+  const answersSql = `
+    SELECT
+      a.answer_id,
+      a.content,
+      a.created_at,
+      a.updated_at,
+      u.user_id AS author_id,
+      u.first_name,
+      u.last_name
+    FROM answers a
+    JOIN users u ON a.user_id = u.user_id
+    WHERE a.question_id = ?
+    ORDER BY a.created_at ASC
+  `;
+
+  const answerRows = await safeExecute(answersSql, [question.question_id]);
+
+  // Attach any images/PDFs uploaded with each answer.
+  const answerIds = answerRows.map(row => row.answer_id);
+  const attachmentsByAnswerId = await getAttachmentsForAnswerIds(answerIds);
+
+  const answers = answerRows.map(row => ({
+    ...mapAnswerRow(row),
+    attachments: attachmentsByAnswerId.get(row.answer_id) || [],
+  }));
+
+  return {
+    question: {
+      id: question.question_id,
+      questionHash: question.question_hash,
+      title: question.title,
+      content: question.content,
+      answerCount: answers.length,
+      createdAt: question.created_at,
+      updatedAt: question.updated_at,
+      author: {
+        id: question.author_id,
+        firstName: question.first_name,
+        lastName: question.last_name,
+      },
+    },
+    answers,
+    answersMeta: {
+      limit: 100,
+      total: answers.length,
+    },
+  };
+};
+
+const selectReadyQuestionVectorsSql = `
+  SELECT
+    q.question_id,
+    q.question_hash,
+    q.title,
+    q.content,
+    q.created_at,
+    q.updated_at,
+    u.user_id AS author_id,
+    u.first_name,
+    u.last_name,
+    COALESCE(ac.answer_count, 0) AS answer_count,
+    qv.embedding
+  FROM question_vectors qv
+  JOIN questions q ON qv.question_id = q.question_id
+  JOIN users u ON q.user_id = u.user_id
+  LEFT JOIN (
+    SELECT question_id, COUNT(*) AS answer_count
+    FROM answers
+    GROUP BY question_id
+  ) ac ON ac.question_id = q.question_id
+  WHERE qv.status = 'ready'
+`;
+
+export const searchQuestionsSemanticService = async ({ query, k, threshold }) => {
+  const limit = Number(k ?? DEFAULT_K);
+  const minSimilarity = Number(threshold ?? DEFAULT_RECOMMEND_THRESHOLD);
+
+  let queryVector;
+  try {
+    const vector = await embedSearchQuery(query);
+    queryVector = normalizeEmbedding(vector);
+  } catch (error) {
+    if (error.statusCode) throw error;
+    throw new ServiceUnavailableError(`Embedding generation failed: ${error.message}`);
+  }
+
+  if (!Array.isArray(queryVector) || queryVector.length === 0) {
+    throw new ServiceUnavailableError('Semantic search embedding failed');
+  }
+
+  const rows = await safeExecute(selectReadyQuestionVectorsSql, []);
+
+  const results = rows
+    .map(row => {
+      const embedding = normalizeEmbedding(parseEmbedding(row.embedding));
+      return {
+        ...mapQuestionRow(row),
+        score: cosineSimilarity(queryVector, embedding),
+      };
+    })
+    .filter(item => item.score >= minSimilarity)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return {
+    data: results,
+    meta: {
+      total: results.length,
+      k: limit,
+      threshold: minSimilarity,
+      query,
+      questionHash: null,
+    },
+  };
+};
+
+export const getSimilarQuestionsService = async ({ questionHash, k, threshold }) => {
+  const limit = Number(k ?? DEFAULT_K);
+  const minSimilarity = Number(threshold ?? DEFAULT_RECOMMEND_THRESHOLD);
+
+  const sourceSql = `
+    SELECT
+      q.question_id,
+      qv.embedding
+    FROM question_vectors qv
+    JOIN questions q ON qv.question_id = q.question_id
+    WHERE q.question_hash = ?
     LIMIT 1
   `;
 
   const sourceRows = await safeExecute(sourceSql, [questionHash]);
-
   if (sourceRows.length === 0) {
-    throw new NotFoundError("Question not found or vector not ready");
+    throw new NotFoundError('Question not found');
   }
 
-  const sourceQuestion = sourceRows[0];
-  const sourceVector = parseEmbedding(sourceQuestion.embedding);
+  const sourceEmbedding = normalizeEmbedding(parseEmbedding(sourceRows[0].embedding));
+  if (sourceEmbedding.length === 0) {
+    throw new ServiceUnavailableError('Source question embedding is unavailable');
+  }
 
-  const vectorRows = await fetchAllReadyVectors(sourceQuestion.question_id);
-
-  const scoredMatches = rankVectorsBySimilarity(sourceVector, vectorRows, {
-    k,
-    threshold,
-    excludeQuestionId: sourceQuestion.question_id,
-  });
-
-  const scoreByQuestionId = new Map(
-    scoredMatches.map((m) => [m.questionId, m.score]),
-  );
-
-  const data = await hydrateQuestionsByIds(scoredMatches, scoreByQuestionId);
+  const rows = await safeExecute(`${selectReadyQuestionVectorsSql} AND q.question_id != ?`, [sourceRows[0].question_id]);
+  const results = rows
+    .map(row => {
+        const embedding = normalizeEmbedding(parseEmbedding(row.embedding));
+      return {
+        ...mapQuestionRow(row),
+        score: cosineSimilarity(sourceEmbedding, embedding),
+      };
+    })
+    .filter(item => item.score >= minSimilarity)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 
   return {
-    data,
+    data: results,
     meta: {
-      total: data.length,
-      k,
-      threshold,
+      total: results.length,
+      k: limit,
+      threshold: minSimilarity,
       query: null,
       questionHash,
     },
   };
 };
 
-// =========================
-// SINGLE QUESTION + ANSWERS (with attachments)
-// =========================
-export const getSingleQuestionWithAnswersService = async ({ questionHash }) => {
-  const questionSql = `
+export const generateQuestionDraftCoachService = async ({ title, content }) => {
+  return await generateQuestionDraftCoachFromGemini({ title, content });
+};
+
+export const assessAnswerAgainstQuestionService = async ({ questionHash, answerText }) => {
+  const sql = `
     SELECT
-      q.question_id AS id,
-      q.question_hash AS questionHash,
+      q.question_id,
       q.title,
-      q.content,
-      q.created_at AS createdAt,
-      q.updated_at AS updatedAt,
-      u.user_id AS authorId,
-      u.first_name AS authorFirstName,
-      u.last_name AS authorLastName
+      q.content
     FROM questions q
-    INNER JOIN users u ON q.user_id = u.user_id
     WHERE q.question_hash = ?
     LIMIT 1
   `;
 
-  const questionRows = await safeExecute(questionSql, [questionHash]);
-  if (questionRows.length === 0) {
-    throw new NotFoundError("Question not found");
+  const rows = await safeExecute(sql, [questionHash]);
+  if (rows.length === 0) {
+    throw new NotFoundError('Question not found');
   }
 
-  const q = questionRows[0];
+  const question = rows[0];
+  const prompt = `You are a skilled forum moderator.
+Evaluate the answer below against the question content.
+Determine if the answer is "strong", "partial", or "weak":
+- "strong": answer directly addresses the question with clear, accurate information
+- "partial": answer is related but incomplete or misses key points
+- "weak": answer is off-topic, incorrect, or insufficient
 
-  const answersSql = `
-    SELECT
-      a.answer_id AS id,
-      a.content,
-      a.created_at AS createdAt,
-      a.updated_at AS updatedAt,
-      u.user_id AS authorId,
-      u.first_name AS authorFirstName,
-      u.last_name AS authorLastName
-    FROM answers a
-    INNER JOIN users u ON a.user_id = u.user_id
-    WHERE a.question_id = ?
-    ORDER BY a.created_at ASC
-  `;
+Respond with valid JSON only, no markdown. Use this exact structure:
+{
+  "level": "strong" or "partial" or "weak",
+  "note": "A brief 1-2 sentence explanation of your assessment"
+}
 
-  const answerRows = await safeExecute(answersSql, [q.id]);
-  const answerIds = answerRows.map((row) => row.id);
-  const attachmentsByAnswerId = await getAttachmentsForAnswerIds(answerIds);
+Question Title: ${question.title}
+Question Content: ${question.content}
+Answer: ${answerText}`;
 
-  const answers = answerRows.map((row) => ({
-    id: row.id,
-    content: row.content,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    author: {
-      id: row.authorId,
-      firstName: row.authorFirstName,
-      lastName: row.authorLastName,
-    },
-    attachments: attachmentsByAnswerId.get(row.id) || [],
-  }));
+  const raw = await generateText(prompt);
 
-  return {
-    id: q.id,
-    questionHash: q.questionHash,
-    title: q.title,
-    content: q.content,
-    createdAt: q.createdAt,
-    updatedAt: q.updatedAt,
-    author: {
-      id: q.authorId,
-      firstName: q.authorFirstName,
-      lastName: q.authorLastName,
-    },
-    answers,
-  };
-};
-// =========================
-// LIST / SEARCH QUESTIONS
-// =========================
-export const getAllQuestionsService = async ({ search = "", mine = false, userId = null }) => {
-  const conditions = [];
-  const params = [];
-
-  if (search && search.trim().length > 0) {
-    conditions.push("(q.title LIKE ? OR q.content LIKE ?)");
-    const likeTerm = `%${search.trim()}%`;
-    params.push(likeTerm, likeTerm);
+  // Strip markdown code fences if present
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
   }
 
-  if (mine && userId) {
-    conditions.push("q.user_id = ?");
-    params.push(userId);
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return {
+      level: ['strong', 'partial', 'weak'].includes(parsed.level) ? parsed.level : 'partial',
+      note: parsed.note || '',
+    };
+  } catch {
+    // Fallback: try to detect level from raw text
+    const lower = raw.toLowerCase();
+    let level = 'partial';
+    if (lower.includes('strong')) level = 'strong';
+    else if (lower.includes('weak')) level = 'weak';
+    return { level, note: raw };
   }
-
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-  const sql = `
-    SELECT
-      q.question_id AS id,
-      q.question_hash AS questionHash,
-      q.title,
-      q.content,
-      q.created_at AS createdAt,
-      q.updated_at AS updatedAt,
-      u.user_id AS authorId,
-      u.first_name AS authorFirstName,
-      u.last_name AS authorLastName,
-      COUNT(a.answer_id) AS answerCount
-    FROM questions q
-    INNER JOIN users u ON q.user_id = u.user_id
-    LEFT JOIN answers a ON q.question_id = a.question_id
-    ${whereClause}
-    GROUP BY q.question_id, q.question_hash, q.title, q.content,
-             q.created_at, q.updated_at,
-             u.user_id, u.first_name, u.last_name
-    ORDER BY q.created_at DESC
-    LIMIT 100
-  `;
-
-  const rows = await safeExecute(sql, params);
-
-  return rows.map((row) => ({
-    id: row.id,
-    questionHash: row.questionHash,
-    title: row.title,
-    content: row.content,
-    answerCount: Number(row.answerCount),
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    author: {
-      id: row.authorId,
-      firstName: row.authorFirstName,
-      lastName: row.authorLastName,
-    },
-  }));
 };

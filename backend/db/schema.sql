@@ -7,7 +7,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- 1. Users Table
 -- Stores user account information.
 -- -----------------------------------------------------------------------------
-SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
     `user_id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,7 +112,6 @@ CREATE TABLE `answer_attachments` (
     INDEX `idx_answer_attachments_answer_id` (`answer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- -----------------------------------------------------------------------------
 -- -----------------------------------------------------------------------------
 -- 5. RAG: user-owned PDF documents, text chunks, and chunk embeddings
 -- -----------------------------------------------------------------------------

@@ -119,7 +119,7 @@ function AttachmentChip({ attachment }) {
   }
 
   return (
-    <a
+    
       href={objectUrl}
       target="_blank"
       rel="noopener noreferrer"
@@ -144,6 +144,7 @@ function AttachmentChip({ attachment }) {
     </a>
   );
 }
+
 // ── answer card ──────────────────────────────────────────────────────────────
 
 function AnswerCard({ answer }) {
@@ -276,9 +277,9 @@ export default function QuestionDetail() {
       setLoadError(false);
       try {
         const res = await getSingleQuestion(id);
-        const questionData = res.data; // unwrap the {success, message, data} envelope
-        setQuestion(questionData);
-        setAnswers(questionData.answers ?? []);
+        // Backend shape: { success, message, question, answers, answersMeta }
+        setQuestion(res.question);
+        setAnswers(res.answers ?? []);
 
         // Fetch similar questions in the background (non-blocking)
         getSimilarQuestions(id)
