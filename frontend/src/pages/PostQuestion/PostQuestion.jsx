@@ -84,12 +84,16 @@ export default function PostQuestion() {
   const [createdQuestionHash, setCreatedQuestionHash] = useState(null);
   const [coachError, setCoachError]   = useState("");
 
+  // Custom tracking for incoming duplicate/similarity matches
+  const [duplicateMatch, setDuplicateMatch] = useState(null);
+
   const charCount = formData.content.length;
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     if (submitError) setSubmitError("");
+    if (duplicateMatch) setDuplicateMatch(null);
   };
 
   const appendVoiceText = (field) => (spokenText) => {
@@ -169,16 +173,42 @@ export default function PostQuestion() {
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); return; }
     setIsSubmitting(true);
     setSubmitError("");
-    try {
+        try {
       const result = await questionService.createQuestion(formData);
-      const data = result.data || result;
-      setCreatedQuestionHash(data.questionHash || data.id);
+      const data = result?.data ?? result;
+      setCreatedQuestionHash(data?.questionHash || data?.id || null);
       setSubmitSuccess(true);
     } catch (err) {
-      setSubmitError(err.message || "Failed to post question. Please try again.");
+      const status = err?.response?.status;
+      const responseData = err?.response?.data;
+
+      // Check backend duplicate status signal
+      if (status === 409 || responseData?.code === "DuplicateDetected") {
+        const questionData = responseData?.existingQuestion;
+        
+        // Prefer the shareable hash route identifier, but fall back to any available ID.
+        const targetRouteIdentifier = questionData?.questionHash || questionData?.hash || questionData?.id || questionData?.question_id;
+
+        setDuplicateMatch({
+          title: questionData?.title || "Similar Question Thread",
+          id: targetRouteIdentifier
+        });
+      } else {
+        setSubmitError(responseData?.msg || "Failed to publish your question. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
+    // try {
+    //   const result = await questionService.createQuestion(formData);
+    //   const data = result.data || result;
+    //   setCreatedQuestionHash(data.questionHash || data.id);
+    //   setSubmitSuccess(true);
+    // } catch (err) {
+    //   setSubmitError(err.message || "Failed to post question. Please try again.");
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   const handleReset = () => {
@@ -189,6 +219,7 @@ export default function PostQuestion() {
     setShowCoach(false);
     setSubmitError("");
     setCoachError("");
+    setDuplicateMatch(null);
   };
 
   return (
@@ -285,6 +316,46 @@ export default function PostQuestion() {
           font-size: 0.85rem;
           color: #dc2626;
           margin-bottom: 20px;
+        }
+        /* ── INLINE DUPLICATE NOTIFICATION ── */
+        .pq-dup-alert {
+          background: #fffdfa;
+          border: 1px solid #fed7aa;
+          border-radius: 8px;
+          padding: 16px;
+          margin: 24px 0 16px;
+          display: flex;
+          gap: 12px;
+        }
+        .pq-dup-icon {
+          color: #ea580c;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .pq-dup-body h4 {
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #c2410c;
+          margin-bottom: 4px;
+        }
+        .pq-dup-body p {
+          font-size: 0.83rem;
+          color: #7c2d12;
+          line-height: 1.45;
+          margin-bottom: 10px;
+          font-weight: 400;
+        }
+        .pq-dup-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #ea580c;
+          font-size: 0.85rem;
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .pq-dup-link:hover {
+          text-decoration: underline;
         }
 
         /* ── SUCCESS PANEL ── */
@@ -775,7 +846,27 @@ export default function PostQuestion() {
                   <span>{coachError}</span>
                 </div>
               )}
-
+              {/* Custom Vector Duplicate Alert Section */}
+              {duplicateMatch && (
+                <div className="pq-dup-alert">
+                  <div className="pq-dup-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div className="pq-dup-body">
+                    <h4>Failed to publish your question.</h4>
+                    <p>
+                      A highly similar problem thread already exists in the forum database. To keep active discussions grouped cleanly, please view or follow-up on the existing thread:
+                    </p>
+                    <a href={`/question/${duplicateMatch.id}`} className="pq-dup-link">
+                      {duplicateMatch.title} &rarr;
+                    </a>
+                  </div>
+                </div>
+              )}
               {/* Actions */}
               <div className="pq-actions">
                 <button className="pq-btn-cancel" onClick={handleReset}>Cancel</button>
