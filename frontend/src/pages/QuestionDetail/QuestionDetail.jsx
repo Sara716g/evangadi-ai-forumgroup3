@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
 import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service.js";
 import { useAuth } from "../../contexts/AuthContext";
+import { apiClient } from "../../services/core/api.client.js";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -80,6 +81,81 @@ function FitPanel({ level, note }) {
   );
 }
 
+function AttachmentChip({ attachment }) {
+  const [objectUrl, setObjectUrl] = useState(null);
+  const [error, setError] = useState(false);
+  const isImage = attachment.type === "image";
+
+  useEffect(() => {
+    let createdUrl = null;
+    let cancelled = false;
+
+    async function loadFile() {
+      try {
+        const res = await apiClient.get(attachment.url, { responseType: "blob" });
+        if (cancelled) return;
+        createdUrl = URL.createObjectURL(res.data);
+        setObjectUrl(createdUrl);
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+
+    loadFile();
+
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [attachment.url]);
+
+  if (error) {
+    return <span style={{ fontSize: 12, color: "#e74c3c" }}>Failed to load attachment</span>;
+  }
+
+  if (!objectUrl) {
+    return <span style={{ fontSize: 12, color: "#aaa" }}>Loading attachment…</span>;
+  }
+
+  if (isImage) {
+    return (
+      <a href={objectUrl} target="_blank" rel="noopener noreferrer">
+        <img
+          src={objectUrl}
+          alt={attachment.originalName}
+          style={{ maxWidth: 220, maxHeight: 220, borderRadius: 8, border: "1px solid #e8e8e8", display: "block" }}
+        />
+      </a>
+    );
+  }
+
+  return (
+    
+      href={objectUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={attachment.originalName}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        border: "1px solid #e8e8e8",
+        borderRadius: 6,
+        padding: "6px 10px",
+        fontSize: 12,
+        background: "#fafafa",
+        textDecoration: "none",
+        color: "#333",
+      }}
+    >
+      <span>📄</span>
+      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {attachment.originalName}
+      </span>
+    </a>
+  );
+}
+
 // ── answer card ──────────────────────────────────────────────────────────────
 
 function AnswerCard({ answer, isSpeaking, onToggleRead }) {
@@ -130,6 +206,14 @@ function AnswerCard({ answer, isSpeaking, onToggleRead }) {
       <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
         <ReactMarkdown>{answer.content}</ReactMarkdown>
       </div>
+
+      {answer.attachments?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {answer.attachments.map((att) => (
+            <AttachmentChip key={att.id} attachment={att} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -191,6 +275,12 @@ const ghostBtn = {
   gap: 5,
 };
 
+// ── attachment config ────────────────────────────────────────────────────────
+
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 // ── page ─────────────────────────────────────────────────────────────────────
 
 export default function QuestionDetail() {
@@ -215,15 +305,20 @@ export default function QuestionDetail() {
   const [speakingAnswerId, setSpeakingAnswerId] = useState(null);
   const [speechMessage, setSpeechMessage] = useState("");
 
+  // attachments for the answer being composed
+  const [answerFiles, setAnswerFiles] = useState([]);
+  const [attachmentError, setAttachmentError] = useState("");
+
   // fetch on mount
   useEffect(() => {
     async function load() {
       setIsLoading(true);
       setLoadError(false);
       try {
-        const data = await getSingleQuestion(id);
-        setQuestion(data.question ?? data);
-        setAnswers(data.answers ?? []);
+        const res = await getSingleQuestion(id);
+        // Backend shape: { success, message, question, answers, answersMeta }
+        setQuestion(res.question);
+        setAnswers(res.answers ?? []);
 
         // Fetch similar questions in the background (non-blocking)
         getSimilarQuestions(id)
@@ -249,6 +344,33 @@ export default function QuestionDetail() {
     setCharCount(e.target.value.length);
     setPostError("");
     setFitResult(null);
+  }
+
+  function handleFilesSelected(e) {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+
+    const accepted = [];
+    const rejected = [];
+
+    for (const file of picked) {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        rejected.push(`${file.name} (unsupported type)`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        rejected.push(`${file.name} (over 10MB)`);
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    setAnswerFiles((prev) => [...prev, ...accepted].slice(0, MAX_FILES));
+    setAttachmentError(rejected.length > 0 ? `Skipped: ${rejected.join(", ")}` : "");
+  }
+
+  function handleRemoveFile(index) {
+    setAnswerFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleInsert([before, after]) {
@@ -284,11 +406,13 @@ export default function QuestionDetail() {
     setIsPosting(true);
     setPostError("");
     try {
-      const newAnswer = await postAnswer(question.id, answerText);
+      const newAnswer = await postAnswer(question.id, answerText, answerFiles);
       setAnswers((prev) => [...prev, newAnswer]);
       setAnswerText("");
       setCharCount(0);
       setFitResult(null);
+      setAnswerFiles([]);
+      setAttachmentError("");
     } catch {
       setPostError("Failed to post answer. Please try again.");
     } finally {
@@ -539,6 +663,70 @@ export default function QuestionDetail() {
                 {charCount} characters
               </span>
             </div>
+          </div>
+
+          {/* attachment picker */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <label
+                htmlFor="answer-file-input"
+                style={{
+                  ...ghostBtn,
+                  cursor: answerFiles.length >= MAX_FILES ? "not-allowed" : "pointer",
+                  opacity: answerFiles.length >= MAX_FILES ? 0.5 : 1,
+                }}
+              >
+                📎 Attach image or PDF
+              </label>
+              <input
+                id="answer-file-input"
+                type="file"
+                multiple
+                accept={ACCEPTED_TYPES.join(",")}
+                onChange={handleFilesSelected}
+                disabled={answerFiles.length >= MAX_FILES}
+                style={{ display: "none" }}
+              />
+              <span style={{ fontSize: 12, color: "#aaa" }}>
+                Up to {MAX_FILES} files, 10MB each.
+              </span>
+            </div>
+
+            {attachmentError && (
+              <p style={{ color: "#e74c3c", fontSize: 13, marginTop: 6 }}>{attachmentError}</p>
+            )}
+
+            {answerFiles.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                {answerFiles.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "1px solid #e8e8e8",
+                      borderRadius: 6,
+                      padding: "6px 10px",
+                      fontSize: 12,
+                      background: "#fafafa",
+                    }}
+                  >
+                    <span>{file.type === "application/pdf" ? "📄" : "🖼️"}</span>
+                    <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      style={{ border: "none", background: "none", cursor: "pointer", color: "#e74c3c", fontWeight: 700 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {fitResult && <FitPanel level={fitResult.level} note={fitResult.note} />}

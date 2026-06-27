@@ -92,6 +92,27 @@ CREATE TABLE `answers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
+-- 4b. Answer Attachments Table
+-- Stores images and PDF files attached to an answer.
+-- An answer can have many attachments (1:N).
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `answer_attachments`;
+CREATE TABLE `answer_attachments` (
+    `attachment_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `answer_id` INT NOT NULL,
+    `file_type` ENUM('image', 'pdf') NOT NULL,
+    `original_name` VARCHAR(255) NOT NULL,
+    `mime_type` VARCHAR(128) NOT NULL,
+    `storage_path` VARCHAR(1024) NOT NULL,
+    `byte_size` BIGINT NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE CASCADE,
+
+    INDEX `idx_answer_attachments_answer_id` (`answer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
 -- 5. RAG: user-owned PDF documents, text chunks, and chunk embeddings
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `documents`;

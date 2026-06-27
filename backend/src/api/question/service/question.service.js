@@ -20,6 +20,7 @@ import { embedSearchQuery } from '../../../utils/gemini/embedding.service.js';
 import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
 import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
+import { getAttachmentsForAnswerIds } from '../../answer/service/answer.service.js';
 
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
 const DEFAULT_K = 5;
@@ -201,7 +202,16 @@ export const getSingleQuestionService = async ({ questionHash }) => {
     ORDER BY a.created_at ASC
   `;
 
-  const answers = await safeExecute(answersSql, [question.question_id]);
+  const answerRows = await safeExecute(answersSql, [question.question_id]);
+
+  // Attach any images/PDFs uploaded with each answer.
+  const answerIds = answerRows.map(row => row.answer_id);
+  const attachmentsByAnswerId = await getAttachmentsForAnswerIds(answerIds);
+
+  const answers = answerRows.map(row => ({
+    ...mapAnswerRow(row),
+    attachments: attachmentsByAnswerId.get(row.answer_id) || [],
+  }));
 
   return {
     question: {
@@ -218,7 +228,7 @@ export const getSingleQuestionService = async ({ questionHash }) => {
         lastName: question.last_name,
       },
     },
-    answers: answers.map(mapAnswerRow),
+    answers,
     answersMeta: {
       limit: 100,
       total: answers.length,
