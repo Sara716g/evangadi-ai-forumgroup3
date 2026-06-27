@@ -189,4 +189,60 @@ CREATE TABLE `user_credentials` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- 9. Notifications Table
+-- Stores user notifications (answers, mentions, etc.).
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `notifications`;
+CREATE TABLE `notifications` (
+    `notification_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `type` VARCHAR(50) NOT NULL,
+    `title` VARCHAR(255) NOT NULL,
+    `message` TEXT NOT NULL,
+    `link` VARCHAR(500) DEFAULT NULL,
+    `is_read` BOOLEAN DEFAULT FALSE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    INDEX `idx_notifications_user_id` (`user_id`),
+    INDEX `idx_notifications_is_read` (`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 10. Voice Messages Table
+-- Stores voice messages attached to questions or answers.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `voice_messages`;
+CREATE TABLE `voice_messages` (
+    `voice_message_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `file_name` VARCHAR(255) NOT NULL,
+    `file_type` VARCHAR(50) NOT NULL,
+    `file_size` INT NOT NULL,
+    `duration` FLOAT NOT NULL,
+    `file_path` VARCHAR(500) NOT NULL,
+    `question_id` INT DEFAULT NULL,
+    `answer_id` INT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`question_id`) REFERENCES `questions`(`question_id`) ON DELETE SET NULL,
+    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE SET NULL,
+    INDEX `idx_voice_messages_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 11. AI Assistant Logs Table
+-- Stores AI assistant interactions for debugging and analytics.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `ai_assistant_logs`;
+CREATE TABLE `ai_assistant_logs` (
+    `log_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `prompt` TEXT NOT NULL,
+    `response` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    INDEX `idx_ai_assistant_logs_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
