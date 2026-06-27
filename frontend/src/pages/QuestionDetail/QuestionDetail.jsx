@@ -130,7 +130,7 @@ function AttachmentChip({ attachment }) {
   }
 
   return (
-    
+    <a
       href={objectUrl}
       target="_blank"
       rel="noopener noreferrer"
