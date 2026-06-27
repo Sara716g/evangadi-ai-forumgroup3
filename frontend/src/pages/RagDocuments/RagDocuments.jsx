@@ -12,7 +12,7 @@ import {
   Redo2,
   Pencil,
   MoreVertical,
-  Square,
+  Square, 
 } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";

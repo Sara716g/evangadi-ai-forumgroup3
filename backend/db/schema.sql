@@ -86,7 +86,24 @@ CREATE TABLE `answers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
--- 5. RAG: user-owned PDF documents, text chunks, and chunk embeddings
+-- 5. Answer Votes Table
+-- Stores upvotes for answers (one vote per user per answer).
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `answer_votes`;
+CREATE TABLE `answer_votes` (
+    `vote_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `answer_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_answer_votes` (`answer_id`, `user_id`),
+    INDEX `idx_answer_votes_answer_id` (`answer_id`),
+    INDEX `idx_answer_votes_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 6. RAG: user-owned PDF documents, text chunks, and chunk embeddings
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS `documents`;
 CREATE TABLE `documents` (

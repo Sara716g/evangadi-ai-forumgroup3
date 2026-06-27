@@ -3,6 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
 import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service";
+import { toggleAnswerVote } from "../../services/answer/answerVote.service";
+import { getAnswerComments, postAnswerComment } from "../../services/answer/answerComment.service";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,30 +71,252 @@ function FitPanel({ level, note }) {
   );
 }
 
+// ── comment section ──────────────────────────────────────────────────────────
+
+function CommentSection({ answerId, isOpen, onCommentAdded }) {
+  const { user } = useAuth();
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPosting, setIsPosting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && comments.length === 0) {
+      setIsLoading(true);
+      getAnswerComments(answerId)
+        .then((res) => setComments(res.data ?? []))
+        .catch(() => {})
+        .finally(() => setIsLoading(false));
+    }
+  }, [isOpen]);
+
+  async function handlePostComment() {
+    if (!commentText.trim()) return;
+    setIsPosting(true);
+    try {
+      const res = await postAnswerComment(answerId, commentText.trim());
+      setComments((prev) => [...prev, res.data]);
+      setCommentText("");
+      if (onCommentAdded) onCommentAdded();
+    } catch {
+      // silently fail
+    } finally {
+      setIsPosting(false);
+    }
+  }
+
+  function formatTime(dateStr) {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h`;
+    const days = Math.floor(hrs / 24);
+    if (days < 30) return `${days}d`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo`;
+    return `${Math.floor(months / 12)}y`;
+  }
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{ padding: "0", background: "#fafafa" }}>
+      {isLoading ? (
+        <div style={{ fontSize: 13, color: "#aaa", padding: "12px 16px" }}>Loading comments...</div>
+      ) : (
+        <>
+          {/* header */}
+          <div style={{ padding: "12px 16px 8px" }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>Comments</span>
+          </div>
+
+          {/* comment input */}
+          {user && (
+            <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "4px 16px 12px" }}>
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handlePostComment(); }}
+                placeholder="Add a comment..."
+                style={{
+                  flex: 1,
+                  padding: "8px 12px",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: 20,
+                  fontSize: 13,
+                  outline: "none",
+                  background: "#fff",
+                }}
+              />
+              <button
+                onClick={handlePostComment}
+                disabled={isPosting || !commentText.trim()}
+                style={{
+                  background: commentText.trim() ? "#e67e22" : "#ccc",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 20,
+                  padding: "8px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: commentText.trim() ? "pointer" : "not-allowed",
+                  flexShrink: 0,
+                }}
+              >
+                {isPosting ? "..." : "Post"}
+              </button>
+            </div>
+          )}
+
+          {/* comments list */}
+          {comments.length > 0 && (
+            <div>
+              {comments.map((c) => {
+                const cName = c.author?.firstName
+                  ? `${c.author.firstName} ${c.author.lastName || ""}`.trim()
+                  : "User";
+                return (
+                  <div key={c.id} style={{ padding: "12px 16px", borderTop: "1px solid #f0f0f0" }}>
+                    <div style={{ fontSize: 14, color: "#282828", lineHeight: 1.5 }}>
+                      <span style={{ fontWeight: 700, color: "#1a1a1a" }}>{cName}</span>
+                      <span style={{ color: "#999", fontSize: 12 }}> · {formatTime(c.createdAt)}</span>
+                    </div>
+                    <div style={{ fontSize: 14, color: "#282828", lineHeight: 1.5, marginTop: 4 }}>
+                      {c.content}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div style={{ padding: "10px 16px", borderTop: "1px solid #f0f0f0", textAlign: "center" }}>
+                <button
+                  style={{
+                    background: "none",
+                    border: "1px solid #d9d9d9",
+                    borderRadius: 20,
+                    padding: "8px 20px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "#555",
+                    cursor: "pointer",
+                    width: "100%",
+                  }}
+                >
+                  View more comments ▾
+                </button>
+              </div>
+            </div>
+          )}
+
+          {comments.length === 0 && !isLoading && (
+            <div style={{ padding: "20px 16px", textAlign: "center", fontSize: 13, color: "#aaa" }}>
+              No comments yet. Be the first to comment!
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── answer card ──────────────────────────────────────────────────────────────
 
-function AnswerCard({ answer }) {
+function AnswerCard({ answer, onVote, isVoting }) {
   const name = answer.author?.username || answer.author?.name || "new user";
+  const voteCount = answer.voteCount ?? 0;
+  const userHasVoted = answer.userHasVoted ?? false;
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(answer.commentCount ?? 0);
+
   return (
     <div
       style={{
         background: "#fff",
         border: "1px solid #e8e8e8",
         borderRadius: 8,
-        padding: "16px 20px",
         marginBottom: 12,
+        overflow: "hidden",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <Avatar name={name} />
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
-          <div style={{ fontSize: 12, color: "#888" }}>{formatDate(answer.createdAt)}</div>
+      {/* ── answer content ── */}
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <Avatar name={name} />
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
+            <div style={{ fontSize: 12, color: "#888" }}>{formatDate(answer.createdAt)}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
+          <ReactMarkdown>{answer.content}</ReactMarkdown>
         </div>
       </div>
-      <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
-        <ReactMarkdown>{answer.content}</ReactMarkdown>
+
+      {/* ── vote + comment bar ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          padding: "8px 16px",
+          background: "#f8f8f8",
+          borderTop: "1px solid #f0f0f0",
+        }}
+      >
+        <button
+          onClick={() => onVote(answer.id, "up")}
+          disabled={isVoting}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: isVoting ? "not-allowed" : "pointer",
+            padding: "4px 6px",
+            borderRadius: 4,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            fontSize: 14,
+            color: userHasVoted ? "#e67e22" : "#888",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={(e) => { if (!isVoting) e.currentTarget.style.color = "#e67e22"; }}
+          onMouseLeave={(e) => { if (!userHasVoted) e.currentTarget.style.color = "#888"; }}
+          title={userHasVoted ? "Remove upvote" : "Upvote"}
+        >
+          <span style={{ fontSize: 16 }}>▲</span>
+          <span style={{ fontWeight: 600 }}>Upvote · {voteCount}</span>
+        </button>
+
+        <span style={{ color: "#ccc", fontSize: 10 }}>●</span>
+
+        <button
+          onClick={() => setShowComments((prev) => !prev)}
+          style={{
+            background: "none",
+            border: "none",
+            padding: "4px 6px",
+            fontSize: 14,
+            fontWeight: 600,
+            color: showComments ? "#e67e22" : "#888",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = "#e67e22"; }}
+          onMouseLeave={(e) => { if (!showComments) e.currentTarget.style.color = "#888"; }}
+        >
+          <span style={{ fontSize: 16 }}>💬</span>
+          {commentCount}
+        </button>
       </div>
+
+      {/* ── comments panel (below the bar) ── */}
+      <CommentSection answerId={answer.id} isOpen={showComments} onCommentAdded={() => setCommentCount((c) => c + 1)} />
     </div>
   );
 }
@@ -158,6 +383,7 @@ const ghostBtn = {
 export default function QuestionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [question,   setQuestion]  = useState(null);
   const [answers,    setAnswers]   = useState([]);
@@ -173,6 +399,8 @@ export default function QuestionDetail() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [fitResult,  setFitResult]  = useState(null); // { level, note }
+
+  const [votingAnswerId, setVotingAnswerId] = useState(null);
 
   // fetch on mount
   useEffect(() => {
@@ -246,6 +474,29 @@ export default function QuestionDetail() {
       setPostError("Failed to post answer. Please try again.");
     } finally {
       setIsPosting(false);
+    }
+  }
+
+  async function handleVote(answerId, direction) {
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setVotingAnswerId(answerId);
+    try {
+      const result = await toggleAnswerVote(answerId);
+      setAnswers((prev) =>
+        prev.map((a) =>
+          a.id === answerId
+            ? { ...a, voteCount: result.data.voteCount, userHasVoted: result.data.voted }
+            : a
+        )
+      );
+    } catch {
+      // Silently fail - vote will revert on next page load
+    } finally {
+      setVotingAnswerId(null);
     }
   }
 
@@ -376,7 +627,12 @@ export default function QuestionDetail() {
       ) : (
         <div style={{ marginBottom: 28 }}>
           {answers.map((a) => (
-            <AnswerCard key={a.id} answer={a} />
+            <AnswerCard
+              key={a.id}
+              answer={a}
+              onVote={handleVote}
+              isVoting={votingAnswerId === a.id}
+            />
           ))}
         </div>
       )}

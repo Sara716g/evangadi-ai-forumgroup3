@@ -3,7 +3,7 @@ import { apiClient } from "../core/api.client.js";
 export const ragService = {
   listDocuments() {
     return apiClient.get("/api/rag/documents").then((r) => r.data);
-  },
+  }, 
 
   getDocument(documentId) {
     return apiClient.get(`/api/rag/documents/${documentId}`).then((r) => r.data);
