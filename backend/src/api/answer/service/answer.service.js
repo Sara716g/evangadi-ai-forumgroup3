@@ -10,18 +10,27 @@
  * - An answer may have zero or more attachments (images and/or PDFs).
  * - Files live on disk under uploads/answers/<userId>/<filename>.
  * - Metadata (path, mime type, type, size) lives in `answer_attachments`.
+ *
+ * Notifications:
+ * - When an answer is created, the question's asker is notified ('new_answer').
+ * - When the asker views an answer, the answer's author is notified
+ *   ('answer_seen'), via markAnswerSeenService.
  * ============================================================================
  */
 
-import path from 'path';
-import fs from 'fs/promises';
-import { safeExecute } from '../../../../db/config.js';
-import { BadRequestError, NotFoundError } from '../../../utils/errors/index.js';
-import { classifyAttachmentType } from '../answer.upload.config.js';
+import path from "path";
+import fs from "fs/promises";
+import { safeExecute } from "../../../../db/config.js";
+import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
+import { classifyAttachmentType } from "../answer.upload.config.js";
+import {
+  createNotification,
+  groupNewAnswerNotification,
+  notifyAnswerSeen,
+} from "../../notification/service/notification.service.js";
+const UPLOAD_BASE_DIR = path.resolve(process.cwd(), "uploads", "answers");
 
-const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'answers');
-
-const mapAttachmentRow = row => ({
+const mapAttachmentRow = (row) => ({
   id: row.attachment_id,
   answerId: row.answer_id,
   type: row.file_type, // 'image' | 'pdf'
@@ -37,7 +46,7 @@ const insertAttachmentsForAnswer = async ({ answerId, userId, files }) => {
     return [];
   }
 
-  const insertSql = `
+  const insertSl = `
     INSERT INTO answer_attachments
       (answer_id, file_type, original_name, mime_type, storage_path, byte_size)
     VALUES (?, ?, ?, ?, ?, ?)
@@ -72,12 +81,12 @@ const insertAttachmentsForAnswer = async ({ answerId, userId, files }) => {
   return inserted;
 };
 
-export const getAttachmentsForAnswerIds = async answerIds => {
+export const getAttachmentsForAnswerIds = async (answerIds) => {
   if (!answerIds || answerIds.length === 0) {
     return new Map();
   }
 
-  const placeholders = answerIds.map(() => '?').join(',');
+  const placeholders = answerIds.map(() => "?").join(",");
   const sql = `
     SELECT
       attachment_id, answer_id, file_type, original_name,
@@ -101,24 +110,53 @@ export const getAttachmentsForAnswerIds = async answerIds => {
   return byAnswerId;
 };
 
-export const createAnswerService = async ({ userId, questionId, content, files = [] }) => {
-  const questionSql = 'SELECT question_id, user_id FROM questions WHERE question_id = ? LIMIT 1';
+export const createAnswerService = async ({
+  userId,
+  questionId,
+  content,
+  files = [],
+}) => {
+  const questionSql =
+    "SELECT question_id, user_id, question_hash FROM questions WHERE question_id = ? LIMIT 1";
   const questionRows = await safeExecute(questionSql, [questionId]);
 
   if (questionRows.length === 0) {
-    throw new NotFoundError('Question not found');
+    throw new NotFoundError("Question not found");
   }
-
   const question = questionRows[0];
   if (question.user_id === userId) {
-    throw new BadRequestError('You cannot answer your own question.');
+    throw new BadRequestError("You cannot answer your own question.");
   }
 
-  const insertSql = 'INSERT INTO answers (question_id, user_id, content) VALUES (?, ?, ?)';
-  const insertResult = await safeExecute(insertSql, [questionId, userId, content]);
+  const insertSql =
+    "INSERT INTO answers (question_id, user_id, content) VALUES (?, ?, ?)";
+  const insertResult = await safeExecute(insertSql, [
+    questionId,
+    userId,
+    content,
+  ]);
   const answerId = insertResult.insertId;
 
-  const attachmentRows = await insertAttachmentsForAnswer({ answerId, userId, files });
+  // Notify the asker that their question received a new answer.
+  // Groups multiple answers into one notification if the asker hasn't
+  // read the previous "new_answer" notification for this question yet.
+  // Wrapped so that a notification failure never blocks the answer itself
+  // from being created successfully.
+  try {
+    await groupNewAnswerNotification({
+      userId: question.user_id,
+      questionId,
+      questionHash: question.question_hash,
+      answerId,
+    });
+  } catch (notifyError) {
+    console.error("Failed to create new_answer notification:", notifyError);
+  }
+  const attachmentRows = await insertAttachmentsForAnswer({
+    answerId,
+    userId,
+    files,
+  });
 
   const fetchSql = `
     SELECT
@@ -138,7 +176,7 @@ export const createAnswerService = async ({ userId, questionId, content, files =
 
   const rows = await safeExecute(fetchSql, [answerId]);
   if (rows.length === 0) {
-    throw new Error('Failed to retrieve the created answer.');
+    throw new Error("Failed to retrieve the created answer.");
   }
 
   const row = rows[0];
@@ -167,7 +205,7 @@ export const getAnswerAttachmentFileService = async ({ attachmentId }) => {
 
   const rows = await safeExecute(sql, [attachmentId]);
   if (rows.length === 0) {
-    throw new NotFoundError('Attachment not found');
+    throw new NotFoundError("Attachment not found");
   }
 
   const row = rows[0];
@@ -180,7 +218,10 @@ export const getAnswerAttachmentFileService = async ({ attachmentId }) => {
   };
 };
 
-export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) => {
+export const deleteAnswerAttachmentService = async ({
+  attachmentId,
+  userId,
+}) => {
   const sql = `
     SELECT aa.attachment_id, aa.storage_path, a.user_id AS answer_owner_id
     FROM answer_attachments aa
@@ -191,12 +232,14 @@ export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) =>
 
   const rows = await safeExecute(sql, [attachmentId]);
   if (rows.length === 0) {
-    throw new NotFoundError('Attachment not found');
+    throw new NotFoundError("Attachment not found");
   }
 
   const row = rows[0];
   if (row.answer_owner_id !== userId) {
-    throw new BadRequestError('You can only remove attachments from your own answer.');
+    throw new BadRequestError(
+      "You can only remove attachments from your own answer.",
+    );
   }
 
   const absolutePath = path.join(UPLOAD_BASE_DIR, row.storage_path);
@@ -207,7 +250,9 @@ export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) =>
     // File may already be missing on disk; proceed with removing the DB record.
   }
 
-  await safeExecute('DELETE FROM answer_attachments WHERE attachment_id = ?', [attachmentId]);
+  await safeExecute("DELETE FROM answer_attachments WHERE attachment_id = ?", [
+    attachmentId,
+  ]);
   return { id: attachmentId };
 };
 
@@ -229,12 +274,12 @@ export const getAnswersService = async (questionId) => {
   `;
   const params = [];
   if (questionId) {
-    sql += ' WHERE a.question_id = ?';
+    sql += " WHERE a.question_id = ?";
     params.push(questionId);
   }
-  sql += ' ORDER BY a.created_at DESC';
+  sql += " ORDER BY a.created_at DESC";
   const rows = await safeExecute(sql, params);
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.answer_id,
     answerId: row.answer_id,
     questionId: row.question_id,
@@ -269,7 +314,7 @@ export const getUserAnswersService = async (userId) => {
     ORDER BY a.created_at DESC
   `;
   const rows = await safeExecute(sql, [userId]);
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.answer_id,
     answerId: row.answer_id,
     questionId: row.question_id,
@@ -283,4 +328,41 @@ export const getUserAnswersService = async (userId) => {
       lastName: row.last_name,
     },
   }));
+};
+
+// Called when the asker views an answer on their question. Notifies the
+// answer's author that their answer was seen. Looks up the answer's author
+// and the viewer's display name, then delegates the actual notify-and-dedupe
+// logic to notifyAnswerSeen in the notification service.
+export const markAnswerSeenService = async ({ answerId, viewerId }) => {
+  const answerSql = `
+    SELECT a.answer_id, a.question_id, a.user_id AS author_id, q.question_hash
+    FROM answers a
+    JOIN questions q ON q.question_id = a.question_id
+    WHERE a.answer_id = ?
+    LIMIT 1
+  `;
+  const answerRows = await safeExecute(answerSql, [answerId]);
+  if (answerRows.length === 0) {
+    throw new NotFoundError("Answer not found");
+  }
+  const answer = answerRows[0];
+
+  const viewerSql =
+    "SELECT first_name, last_name FROM users WHERE user_id = ? LIMIT 1";
+  const viewerRows = await safeExecute(viewerSql, [viewerId]);
+  const viewerName =
+    viewerRows.length > 0
+      ? `${viewerRows[0].first_name} ${viewerRows[0].last_name}`.trim()
+      : "Someone";
+
+  await notifyAnswerSeen({
+    answerId: answer.answer_id,
+    answererId: answer.author_id,
+    viewerId,
+    viewerName,
+    questionHash: answer.question_hash,
+  });
+
+  return { answerId: answer.answer_id, seen: true };
 };

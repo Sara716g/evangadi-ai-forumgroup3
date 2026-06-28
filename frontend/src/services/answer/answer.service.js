@@ -23,11 +23,18 @@ export async function postAnswer(questionId, content, files = []) {
 export async function assessAnswerFit(questionHash, answerText) {
   const res = await apiClient.post(
     `/api/questions/${questionHash}/answer-fit`,
-    {
-      answerText,
-    },
+    { answerText },
   );
   return res.data.data;
 }
 
-export default { postAnswer, assessAnswerFit };
+// NEW — fetches all answers for a given question id
+export async function getAnswers(questionId) {
+  const res = await apiClient.get("/api/answers", {
+    params: { questionId },
+  });
+  return res.data.data;
+}
+
+
+export default { postAnswer, assessAnswerFit, getAnswers };

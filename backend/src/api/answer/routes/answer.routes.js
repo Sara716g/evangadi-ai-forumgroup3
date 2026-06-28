@@ -1,32 +1,33 @@
-import express from 'express';
-import { authenticateUser } from '../../../middleware/authentication.js';
-import { validationErrorHandler } from '../../../middleware/validation-handler.js';
+import express from "express";
+import { authenticateUser } from "../../../middleware/authentication.js";
+import { validationErrorHandler } from "../../../middleware/validation-handler.js";
 import {
   attachmentIdParamValidation,
   createAnswerValidation,
-} from '../validations/answer.validation.js';
+} from "../validations/answer.validation.js";
 import {
   createAnswerController,
   deleteAnswerAttachmentController,
   getAnswerAttachmentFileController,
   getAnswersController,
-} from '../controller/answer.controller.js';
+  markAnswerSeenController,
+} from "../controller/answer.controller.js";
 import {
   uploadAnswerAttachments,
   createAnswerAttachmentMulterErrorHandler,
-} from '../answer.upload.config.js';
+} from "../answer.upload.config.js";
 
 const router = express.Router();
 
 router.use(authenticateUser);
 
 // List answers (optionally filtered by questionId or userId via query params).
-router.get('/', getAnswersController);
+router.get("/", getAnswersController);
 
 // Create an answer, optionally with up to 5 image/PDF attachments ("files" field).
 router.post(
-  '/',
-  uploadAnswerAttachments.array('files', 5),
+  "/",
+  uploadAnswerAttachments.array("files", 5),
   createAnswerAttachmentMulterErrorHandler,
   createAnswerValidation,
   validationErrorHandler,
@@ -35,7 +36,7 @@ router.post(
 
 // Stream a single attachment (image displayed inline, PDF opened inline/downloaded).
 router.get(
-  '/attachments/:attachmentId',
+  "/attachments/:attachmentId",
   attachmentIdParamValidation,
   validationErrorHandler,
   getAnswerAttachmentFileController,
@@ -43,10 +44,14 @@ router.get(
 
 // Remove an attachment (only the answer's author can do this).
 router.delete(
-  '/attachments/:attachmentId',
+  "/attachments/:attachmentId",
   attachmentIdParamValidation,
   validationErrorHandler,
   deleteAnswerAttachmentController,
 );
+
+// Mark an answer as seen by the current user (the question's asker).
+// Notifies the answer's author that their answer was viewed.
+router.post("/:answerId/seen", markAnswerSeenController);
 
 export default router;
