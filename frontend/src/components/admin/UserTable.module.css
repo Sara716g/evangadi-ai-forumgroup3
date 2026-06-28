@@ -154,6 +154,11 @@
   transition: all var(--transition-fast);
 }
 
+.actionGroup {
+  display: flex;
+  gap: 0.25rem;
+}
+
 .banBtn {
   color: var(--error);
 }
@@ -170,6 +175,24 @@
 .unbanBtn:hover {
   background-color: var(--success-light);
   border-color: var(--success);
+}
+
+.promoteBtn {
+  color: #8b5cf6;
+}
+
+.promoteBtn:hover {
+  background-color: #ede9fe;
+  border-color: #8b5cf6;
+}
+
+.demoteBtn {
+  color: #6b7280;
+}
+
+.demoteBtn:hover {
+  background-color: #f3f4f6;
+  border-color: #6b7280;
 }
 
 .pagination {

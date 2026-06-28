@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Ban, CheckCircle } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Ban, CheckCircle, Shield, ShieldOff } from 'lucide-react';
 import styles from './UserTable.module.css';
 
-export default function UserTable({ users, pagination, onPageChange, onSearch, onStatusChange }) {
+export default function UserTable({ users, pagination, onPageChange, onSearch, onStatusChange, onRoleChange }) {
   const [searchInput, setSearchInput] = useState('');
 
   function handleSearch(e) {
@@ -64,14 +64,24 @@ export default function UserTable({ users, pagination, onPageChange, onSearch, o
                   <td className={styles.numCell}>{user.questionCount}</td>
                   <td className={styles.numCell}>{user.answerCount}</td>
                   <td>
-                    <button
-                      type="button"
-                      className={`${styles.actionBtn} ${user.status === 'banned' ? styles.unbanBtn : styles.banBtn}`}
-                      onClick={() => onStatusChange(user.id, user.status === 'banned' ? 'active' : 'banned')}
-                      title={user.status === 'banned' ? 'Unban user' : 'Ban user'}
-                    >
-                      {user.status === 'banned' ? <CheckCircle size={14} /> : <Ban size={14} />}
-                    </button>
+                    <div className={styles.actionGroup}>
+                      <button
+                        type="button"
+                        className={`${styles.actionBtn} ${user.status === 'banned' ? styles.unbanBtn : styles.banBtn}`}
+                        onClick={() => onStatusChange(user.id, user.status === 'banned' ? 'active' : 'banned')}
+                        title={user.status === 'banned' ? 'Unban user' : 'Ban user'}
+                      >
+                        {user.status === 'banned' ? <CheckCircle size={14} /> : <Ban size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.actionBtn} ${user.role === 'admin' ? styles.demoteBtn : styles.promoteBtn}`}
+                        onClick={() => onRoleChange(user.id)}
+                        title={user.role === 'admin' ? 'Demote to user' : 'Promote to admin'}
+                      >
+                        {user.role === 'admin' ? <ShieldOff size={14} /> : <Shield size={14} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

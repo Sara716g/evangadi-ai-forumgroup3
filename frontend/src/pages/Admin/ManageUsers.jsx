@@ -57,6 +57,23 @@ export default function ManageUsers() {
     }
   }
 
+  async function handleRoleChange(userId) {
+    const targetUser = users.find((u) => u.id === userId);
+    const action = targetUser?.role === 'admin' ? 'demote to regular user' : 'promote to admin';
+    if (!window.confirm(`Are you sure you want to ${action}?`)) return;
+
+    try {
+      const result = await adminService.toggleUserRole(userId);
+      const newRole = result.data?.role || result.role;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
+      );
+    } catch (err) {
+      console.error('Failed to update user role:', err);
+      alert('Failed to update user role.');
+    }
+  }
+
   if (user?.role !== 'admin') {
     return (
       <div className={styles.accessDenied}>
@@ -82,6 +99,7 @@ export default function ManageUsers() {
         onPageChange={handlePageChange}
         onSearch={handleSearch}
         onStatusChange={handleStatusChange}
+        onRoleChange={handleRoleChange}
       />
     </div>
   );

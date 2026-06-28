@@ -46,6 +46,37 @@ export const updateUserStatusController = async (req, res, next) => {
   }
 };
 
+export const toggleUserRoleController = async (req, res, next) => {
+  try {
+    const adminId = req.user.id;
+    const userId = Number(req.params.userId);
+
+    const result = await adminService.toggleUserRoleService(userId, adminId);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'User role updated.',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getQuestionsController = async (req, res, next) => {
+  try {
+    const { page, limit, search } = req.query;
+    const result = await adminService.getAllQuestionsService({ page, limit, search });
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteQuestionController = async (req, res, next) => {
   try {
     const { questionHash } = req.params;

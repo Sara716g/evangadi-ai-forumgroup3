@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Trash2, ExternalLink, Shield } from 'lucide-react';
+import { Search, Trash2, ExternalLink, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminService } from '../../services/admin.service.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './ManageQuestions.module.css';
@@ -11,14 +11,16 @@ export default function ManageQuestions() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
   async function fetchQuestions() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await adminService.getUsers({ page: 1, limit: 1000 });
+      const data = await adminService.getQuestions({ page: pagination.page, limit: pagination.limit, search: searchTerm });
       const payload = data.data || data;
       setQuestions(payload.questions || []);
+      setPagination((prev) => ({ ...prev, ...payload.pagination }));
     } catch (err) {
       console.error('Failed to fetch questions:', err);
       setError('Could not load questions.');
@@ -29,14 +31,14 @@ export default function ManageQuestions() {
 
   useEffect(() => {
     fetchQuestions();
-  }, []);
+  }, [pagination.page]);
 
   async function handleDelete(hash) {
     if (!window.confirm('Are you sure you want to delete this question? This cannot be undone.')) return;
 
     try {
       await adminService.deleteQuestion(hash);
-      setQuestions((prev) => prev.filter((q) => q.question_hash !== hash));
+      setQuestions((prev) => prev.filter((q) => q.questionHash !== hash));
     } catch (err) {
       console.error('Failed to delete question:', err);
       alert('Failed to delete question.');
@@ -46,6 +48,16 @@ export default function ManageQuestions() {
   const filtered = questions.filter((q) =>
     q.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  function handleSearchChange(e) {
+    setSearchTerm(e.target.value);
+  }
+
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    fetchQuestions();
+  }
 
   if (user?.role !== 'admin') {
     return (
@@ -73,13 +85,15 @@ export default function ManageQuestions() {
           className={styles.searchInput}
           placeholder="Search by title..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
         />
+        <button type="button" className={styles.searchBtn} onClick={handleSearchSubmit}>Search</button>
       </div>
 
       {isLoading ? (
         <div className={styles.loadingState}><p>Loading questions...</p></div>
       ) : (
+        <>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -97,16 +111,16 @@ export default function ManageQuestions() {
                 </tr>
               ) : (
                 filtered.map((q) => (
-                  <tr key={q.question_id || q.question_hash}>
+                  <tr key={q.id || q.questionHash}>
                     <td className={styles.titleCell}>{q.title}</td>
-                    <td className={styles.authorCell}>{q.author?.firstName} {q.author?.lastName}</td>
+                    <td className={styles.authorCell}>{q.author}</td>
                     <td className={styles.dateCell}>
-                      {q.created_at ? new Date(q.created_at).toLocaleDateString() : '—'}
+                      {q.createdAt ? new Date(q.createdAt).toLocaleDateString() : '—'}
                     </td>
                     <td>
                       <div className={styles.actions}>
                         <Link
-                          to={`/question/${q.question_hash}`}
+                          to={`/question/${q.questionHash}`}
                           className={styles.viewBtn}
                           title="View question"
                         >
@@ -115,7 +129,7 @@ export default function ManageQuestions() {
                         <button
                           type="button"
                           className={styles.deleteBtn}
-                          onClick={() => handleDelete(q.question_hash)}
+                          onClick={() => handleDelete(q.questionHash)}
                           title="Delete question"
                         >
                           <Trash2 size={14} />
@@ -128,6 +142,30 @@ export default function ManageQuestions() {
             </tbody>
           </table>
         </div>
+        {pagination.totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              type="button"
+              className={styles.pageBtn}
+              disabled={pagination.page <= 1}
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className={styles.pageInfo}>
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <button
+              type="button"
+              className={styles.pageBtn}
+              disabled={pagination.page >= pagination.totalPages}
+              onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        )}
+        </>
       )}
     </div>
   );

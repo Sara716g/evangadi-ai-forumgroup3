@@ -11,7 +11,9 @@ import {
 import {
   getStatsController,
   getUsersController,
+  getQuestionsController,
   updateUserStatusController,
+  toggleUserRoleController,
   deleteQuestionController,
   deleteAnswerController,
 } from '../controller/admin.controller.js';
@@ -33,12 +35,19 @@ router.use(requireAdmin);
 
 router.get('/stats', getStatsController);
 router.get('/users', paginationValidation, validationErrorHandler, getUsersController);
+router.get('/questions', paginationValidation, validationErrorHandler, getQuestionsController);
 router.put(
   '/users/:userId/status',
   userIdParamValidation,
   updateStatusValidation,
   validationErrorHandler,
   updateUserStatusController
+);
+router.put(
+  '/users/:userId/role',
+  userIdParamValidation,
+  validationErrorHandler,
+  toggleUserRoleController
 );
 router.delete(
   '/questions/:questionHash',

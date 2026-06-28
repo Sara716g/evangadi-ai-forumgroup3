@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogOut, MessageSquare, FileText, Search } from 'lucide-react';
+import { LayoutDashboard, LogOut, MessageSquare, FileText, Search, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
@@ -73,6 +73,38 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {user?.role === 'admin' && (
+        <nav className={styles.sidebar__nav} aria-label='Admin navigation'>
+          <p className={styles.sidebar__navLabel}>Admin</p>
+          <div className={styles['sidebar__nav-item-wrapper']}>
+            <NavLink
+              to='/admin'
+              className={({ isActive }) =>
+                `${styles.sidebar__link} ${
+                  isActive
+                    ? styles['sidebar__link--active']
+                    : styles['sidebar__link--inactive']
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Shield
+                    size={18}
+                    className={`${styles.sidebar__icon} ${
+                      isActive
+                        ? styles['sidebar__icon--active']
+                        : styles['sidebar__icon--inactive']
+                    }`}
+                  />
+                  <span>Admin Dashboard</span>
+                </>
+              )}
+            </NavLink>
+          </div>
+        </nav>
+      )}
 
       <div className={styles.sidebar__footer}>
         <button

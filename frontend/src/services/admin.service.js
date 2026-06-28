@@ -11,9 +11,21 @@ export const adminService = {
       .then((r) => r.data);
   },
 
+  getQuestions({ page = 1, limit = 20, search = '' } = {}) {
+    return apiClient
+      .get('/api/admin/questions', { params: { page, limit, search } })
+      .then((r) => r.data);
+  },
+
   updateUserStatus(userId, status) {
     return apiClient
       .put(`/api/admin/users/${userId}/status`, { status })
+      .then((r) => r.data);
+  },
+
+  toggleUserRole(userId) {
+    return apiClient
+      .put(`/api/admin/users/${userId}/role`)
       .then((r) => r.data);
   },
 
