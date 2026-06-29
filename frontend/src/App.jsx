@@ -13,6 +13,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout/Layout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Auth from "./pages/Auth/Auth";
@@ -99,124 +100,126 @@ const AiCascadeLayout = () => {
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/contact" element={<Contact />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/contact" element={<Contact />} />
 
-          {/* Protected routes wrapped in our new AiCascadeLayout */}
-          <Route element={<AiCascadeLayout />}>
-            <Route element={<Layout />}>
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/questions/ask"
-                element={
-                  <ProtectedRoute>
-                    <PostQuestion />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-questions"
-                element={
-                  <ProtectedRoute>
-                    <MyQuestions />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/question/:id"
-                element={
-                  <ProtectedRoute>
-                    <QuestionDetail />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rag-documents"
-                element={
-                  <ProtectedRoute>
-                    <RagDocuments />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/users"
-                element={
-                  <ProtectedRoute>
-                    <ManageUsers />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/questions"
-                element={
-                  <ProtectedRoute>
-                    <ManageQuestions />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/community-search"
-                element={
-                  <ProtectedRoute>
-                    <ExternalSearch />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/ai-assistant"
-                element={
-                  <ProtectedRoute>
-                    <AIAssistant />
-                  </ProtectedRoute>
-                }
-              />
+            {/* Protected routes wrapped in our new AiCascadeLayout */}
+            <Route element={<AiCascadeLayout />}>
+              <Route element={<Layout />}>
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/questions/ask"
+                  element={
+                    <ProtectedRoute>
+                      <PostQuestion />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/my-questions"
+                  element={
+                    <ProtectedRoute>
+                      <MyQuestions />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/question/:id"
+                  element={
+                    <ProtectedRoute>
+                      <QuestionDetail />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/rag-documents"
+                  element={
+                    <ProtectedRoute>
+                      <RagDocuments />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/notifications"
+                  element={
+                    <ProtectedRoute>
+                      <Notifications />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <ProtectedRoute>
+                      <ManageUsers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/questions"
+                  element={
+                    <ProtectedRoute>
+                      <ManageQuestions />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/community-search"
+                  element={
+                    <ProtectedRoute>
+                      <ExternalSearch />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ai-assistant"
+                  element={
+                    <ProtectedRoute>
+                      <AIAssistant />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
             </Route>
-          </Route>
 
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

@@ -177,10 +177,10 @@
   right: 0;
   margin-top: 0.5rem;
   width: 240px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-lg);
   z-index: 50;
   overflow: hidden;
 }
@@ -194,7 +194,7 @@
 }
 
 .navbar__dropdownHeader:hover {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 .navbar__dropdownAvatar {
@@ -219,17 +219,17 @@
 .navbar__dropdownName {
   font-weight: 600;
   font-size: 0.9375rem;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 .navbar__dropdownArrow {
-  color: #94a3b8;
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .navbar__dropdownDivider {
   height: 1px;
-  background: #e5e7eb;
+  background: var(--border);
 }
 
 .navbar__dropdownItem {
@@ -239,7 +239,7 @@
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--text-secondary);
   background: none;
   border: none;
   cursor: pointer;
@@ -247,15 +247,15 @@
 }
 
 .navbar__dropdownItem:hover {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 .navbar__dropdownItemLogout {
-  color: #dc2626;
+  color: var(--error);
 }
 
 .navbar__dropdownItemLogout:hover {
-  background: #fef2f2;
+  background: var(--error-light);
 }
 
 .navbar__user-name {
