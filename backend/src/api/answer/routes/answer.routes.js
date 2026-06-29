@@ -15,6 +15,8 @@ import {
   uploadAnswerAttachments,
   createAnswerAttachmentMulterErrorHandler,
 } from '../answer.upload.config.js';
+import { toggleAnswerVoteController } from '../controller/answerVote.controller.js';
+import { getAnswerCommentsController, createAnswerCommentController } from '../controller/answerComment.controller.js';
 
 const router = express.Router();
 
@@ -32,6 +34,13 @@ router.post(
   validationErrorHandler,
   createAnswerController,
 );
+
+// Vote on an answer
+router.post('/:answerId/vote', toggleAnswerVoteController);
+
+// Comments
+router.get('/:answerId/comments', getAnswerCommentsController);
+router.post('/:answerId/comments', createAnswerCommentController);
 
 // Stream a single attachment (image displayed inline, PDF opened inline/downloaded).
 router.get(

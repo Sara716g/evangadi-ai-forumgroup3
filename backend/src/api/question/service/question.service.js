@@ -82,6 +82,9 @@ const mapAnswerRow = row => ({
   content: row.content,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
+  voteCount: Number(row.vote_count ?? 0),
+  commentCount: Number(row.comment_count ?? 0),
+  userHasVoted: row.user_has_voted === 1,
   author: {
     id: row.author_id,
     firstName: row.first_name,
@@ -279,7 +282,7 @@ export const getQuestionsService = async ({ userId, search, mine }) => {
   return rows.map(mapQuestionRow);
 };
 
-export const getSingleQuestionService = async ({ questionHash }) => {
+export const getSingleQuestionService = async ({ questionHash, userId }) => {
   const sql = `
     SELECT
       q.question_id,
@@ -312,14 +315,28 @@ export const getSingleQuestionService = async ({ questionHash }) => {
       a.updated_at,
       u.user_id AS author_id,
       u.first_name,
-      u.last_name
+      u.last_name,
+      COALESCE(v.vote_count, 0) AS vote_count,
+      COALESCE(c.comment_count, 0) AS comment_count,
+      CASE WHEN uv.vote_id IS NOT NULL THEN 1 ELSE 0 END AS user_has_voted
     FROM answers a
     JOIN users u ON a.user_id = u.user_id
+    LEFT JOIN (
+      SELECT answer_id, COUNT(*) AS vote_count
+      FROM answer_votes
+      GROUP BY answer_id
+    ) v ON v.answer_id = a.answer_id
+    LEFT JOIN (
+      SELECT answer_id, COUNT(*) AS comment_count
+      FROM answer_comments
+      GROUP BY answer_id
+    ) c ON c.answer_id = a.answer_id
+    LEFT JOIN answer_votes uv ON uv.answer_id = a.answer_id AND uv.user_id = ?
     WHERE a.question_id = ?
     ORDER BY a.created_at ASC
   `;
 
-  const answerRows = await safeExecute(answersSql, [question.question_id]);
+  const answerRows = await safeExecute(answersSql, [userId || null, question.question_id]);
 
   // Attach any images/PDFs uploaded with each answer.
   const answerIds = answerRows.map(row => row.answer_id);

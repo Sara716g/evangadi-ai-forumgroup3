@@ -5,6 +5,7 @@ import {
   Loader2,
   AlertCircle,
   RotateCcw,
+  RotateCw,
   Download,
   Menu,
   Printer,
@@ -132,6 +133,16 @@ function ReaderPanel({ activeDocument }) {
   function onDocumentLoadSuccess({ numPages: total }) {
     setNumPages(total);
     setCurrentPage(1);
+  }
+
+function goToPrevPage() {
+    pushToUndo();
+    setCurrentPage((p) => Math.max(p - 1, 1));
+  }
+
+  function goToNextPage() {
+    pushToUndo();
+    setCurrentPage((p) => Math.min(p + 1, numPages || 1));
   }
 
   function zoomIn() {

@@ -96,9 +96,11 @@ export const getQuestionsController = async (req, res, next) => {
 export const getSingleQuestionController = async (req, res, next) => {
   try {
     const { questionHash } = req.params;
+    const userId = req.user.id;
 
     const result = await getSingleQuestionService({
       questionHash,
+      userId,
     });
 
     res.status(StatusCodes.OK).json({
