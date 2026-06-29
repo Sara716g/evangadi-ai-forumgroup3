@@ -16,9 +16,8 @@ This document explains all Milestone 4 features, and where to add new code.
 | T-29 | Notification |
 | T-30 | AI Assistant |
 | T-31 | Forgot Password |
-| T-32 | Categories |
+| T-32 | Duplicate Detection |
 | T-33 | External Forum Search |
-| T-34 | Bookmarks |
 | T-35 | User Profiles |
 | T-36 | Dark Mode |
 
@@ -38,8 +37,6 @@ backend/src/api/
 ├── comment/           (NEW - T-28) ← 
 ├── notification/      (NEW - T-29) ← 
 ├── ai-assistant/      (NEW - T-30) ← 
-├── category/          (NEW - T-32) ← 
-├── bookmark/          (NEW - T-34) ← 
 ├── profile/           (NEW - T-35) ←
 ├── admin/             (NEW - T-37) ←
 └── routes.js          (UPDATE - add new routes)
@@ -52,14 +49,13 @@ frontend/src/
 ├── components/
 │   ├── Layout/        (done)
 │   ├── Navbar/        (UPDATE - add notification bell)
-│   ├── Sidebar/       (UPDATE - add categories)
+│   ├── Sidebar/       (done)
 │   ├── Attachment/    (NEW - T-26) ← 
 │   ├── VoiceRecorder/ (NEW - T-27) ← 
 │   ├── Voting/        (NEW - T-28) ← 
 │   ├── Comment/       (NEW - T-28) ← 
 │   ├── Notification/  (NEW - T-29) ←
 │   ├── admin/         (NEW - T-37) ←
-│   ├── Bookmark/      (NEW - T-34) ← 
 │   ├── Profile/       (NEW - T-35) ← 
 │   └── ThemeToggle/   (NEW - T-36) ← 
 │
@@ -68,7 +64,6 @@ frontend/src/
 │   ├── Auth/          (done, UPDATE for T-31 Forgot Password)
 │   ├── Admin/         (NEW - T-37) ←
 │   ├── Notifications/ (NEW - T-29) ← 
-│   ├── Bookmarks/     (NEW - T-34) ← 
 │   └── Profile/       (NEW - T-35) ← 
 │
 ├── services/ (UPDATE - add API calls)
@@ -77,7 +72,6 @@ frontend/src/
 │   ├── vote.service.js (NEW)
 │   ├── comment.service.js (NEW)
 │   ├── notification.service.js (NEW)
-│   ├── bookmark.service.js (NEW)
 │   ├── profile.service.js (NEW)
 │   └── admin.service.js (NEW)
 │
@@ -122,26 +116,20 @@ frontend/src/
 
 ---
 
-### (T-28 + T-34)
+### (T-28)
 
 **Backend:**
 1. Create `backend/src/api/vote/` folder
 2. Create `backend/src/api/comment/` folder
-3. Create `backend/src/api/bookmark/` folder
 
 **Frontend:**
 1. Create `frontend/src/components/Voting/VoteButtons.jsx`
 2. Create `frontend/src/components/Comment/CommentSection.jsx`
-3. Create `frontend/src/components/Bookmark/BookmarkButton.jsx`
-4. Create `frontend/src/pages/Bookmarks/Bookmarks.jsx`
 
 **API Endpoints:**
 - `POST /api/answers/:id/vote` - upvote/downvote
 - `POST /api/answers/:id/comments` - add comment
 - `GET /api/answers/:id/comments` - list comments
-- `POST /api/bookmarks` - save question
-- `DELETE /api/bookmarks/:hash` - remove save
-- `GET /api/bookmarks` - list saved questions
 
 ---
 
@@ -179,22 +167,31 @@ frontend/src/
 
 ---
 
-### (T-31 Forgot Password + T-32 Categories)
+### (T-31 Forgot Password)
 
 **Backend:**
 1. Update `backend/src/api/auth/` folder - add forgot-password and reset-password files
-2. Create `backend/src/api/category/` folder
 
 **Frontend:**
 1. Create `frontend/src/pages/Auth/ForgotPassword.jsx`
 2. Create `frontend/src/pages/Auth/ResetPassword.jsx`
-3. Create `frontend/src/components/Categories/CategorySidebar.jsx`
 
 **API Endpoints:**
 - `POST /api/auth/forgot-password` - send reset email
 - `POST /api/auth/reset-password` - reset password with token
-- `GET /api/categories` - list categories
-- `GET /api/questions/category/:id` - filter by category
+
+---
+
+### (T-32 Duplicate Detection)
+
+**Backend:**
+1. Update `backend/src/api/question/` - enhance duplicate detection with AI vector cosine similarity
+
+**Frontend:**
+1. Update `frontend/src/pages/PostQuestion/PostQuestion.jsx` - show duplicate warnings during question creation
+
+**API Endpoints:**
+- `POST /api/questions` - returns duplicate warnings when similar question detected (cosine similarity > 90%)
 
 ---
 
@@ -228,9 +225,8 @@ git checkout -b feature/T-28-melese-voting
 git checkout -b feature/T-29-you-notifications
 git checkout -b feature/T-30-beza-ai
 git checkout -b feature/T-31-gebre-forgot-password
-git checkout -b feature/T-32-abubaker-categories
+git checkout -b feature/T-32-duplicate-detection
 git checkout -b feature/T-33-tsi-external
-git checkout -b feature/T-34-melese-bookmarks
 git checkout -b feature/T-35-you-profiles
 git checkout -b feature/T-36-bini-darkmode
 ```

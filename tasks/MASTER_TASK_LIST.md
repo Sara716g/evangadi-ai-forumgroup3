@@ -169,17 +169,13 @@ _Improved community features including file uploads, voting, notifications, and 
   - **Description**: Implement the Forgot Password functionality, including the "Forgot Password" request endpoint, email verification with a secure reset token, and the "Reset Password" endpoint to allow users to set a new password after successful token validation.
   - **Reference**: `/auth/forgot-password.md`, `/auth/reset-password.md`
 
-- **Task Name**: Categories (`T-32`)
-  - **Description**: Implement category listing and filter questions by category.
-  - **Reference**: `/category/`
+- **Task Name**: Duplicate Detection (`T-32`)
+  - **Description**: Enhance question creation to detect and warn about duplicate questions using AI vector cosine similarity (>90% threshold).
+  - **Reference**: `/question/duplicate-detection.md`
 
 - **Task Name**: External Forum Search (`T-33`)
   - **Description**: Implement endpoint to search questions from external forums (StackOverflow, Dev.to).
   - **Reference**: `/community/external-forums.md`
-
-- **Task Name**: Bookmarks (`T-34`)
-  - **Description**: Implement save/unsave questions and list user bookmarks.
-  - **Reference**: `/bookmark/`
 
 - **Task Name**: User Profiles (`T-35`)
   - **Description**: Implement get/update profile, upload avatar, and profile stats.
@@ -215,13 +211,9 @@ _Improved community features including file uploads, voting, notifications, and 
   - **Description**: Build the `/auth/forgot-password` and `/auth/reset-password` pages with email input and new password form.
   - **Reference**: `/auth/task-forgot-password.md`, `/auth/task-reset-password.md`
 
-- **Task Name**: Category Sidebar (`T-32`)
-  - **Description**: Build category filter sidebar for dashboard page.
-  - **Reference**: `/categories/task-categories.md`
-
-- **Task Name**: Bookmarks Page (`T-34`)
-  - **Description**: Build bookmarks page and bookmark button component.
-  - **Reference**: `/bookmark/`
+- **Task Name**: Duplicate Detection UI (`T-32`)
+  - **Description**: Show duplicate question warnings during question creation when similar questions are detected.
+  - **Reference**: `/question/duplicate-detection.md`
 
 - **Task Name**: User Profile (`T-35`)
   - **Description**: Build profile page with edit form and avatar upload.

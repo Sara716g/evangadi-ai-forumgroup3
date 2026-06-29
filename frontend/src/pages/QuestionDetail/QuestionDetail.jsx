@@ -344,9 +344,8 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
             <div style={{ fontSize: 12, color: "#888" }}>{formatDate(answer.createdAt)}</div>
           </div>
         </div>
-        <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
+        <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222", flex: 1 }}>
           <ReactMarkdown>{answer.content}</ReactMarkdown>
-        </div>
         </div>
         <button
           type="button"

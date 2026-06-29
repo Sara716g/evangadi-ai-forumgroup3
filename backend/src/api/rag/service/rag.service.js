@@ -53,7 +53,17 @@ const assertOwnedDocument = async (
   return document;
 };
 
-const generateDocumentEmbedding = async (text) => {
+const EMBEDDING_MAX_RETRIES = 5;
+const EMBEDDING_BASE_DELAY_MS = 2000;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isQuotaError = (error) => {
+  const status = error?.status || error?.response?.status || error?.cause?.status;
+  return status === 429;
+};
+
+const generateDocumentEmbedding = async (text, attempt = 1) => {
   try {
     const model = genAI.getGenerativeModel({ model: resolveEmbeddingModel() });
     const result = await model.embedContent({
@@ -67,12 +77,20 @@ const generateDocumentEmbedding = async (text) => {
 
     throw new Error("Unexpected embedding response format");
   } catch (error) {
+    if (isQuotaError(error) && attempt < EMBEDDING_MAX_RETRIES) {
+      const delay = EMBEDDING_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      console.warn(
+        `[RAG] Embedding quota hit (attempt ${attempt}/${EMBEDDING_MAX_RETRIES}). Retrying in ${delay}ms...`,
+      );
+      await sleep(delay);
+      return generateDocumentEmbedding(text, attempt + 1);
+    }
     console.error("Embedding generation failed:", error);
     throw new Error(`Embedding failed: ${error.message}`);
   }
 };
 
-const generateQueryEmbedding = async (text) => {
+const generateQueryEmbedding = async (text, attempt = 1) => {
   try {
     const model = genAI.getGenerativeModel({ model: resolveEmbeddingModel() });
     const result = await model.embedContent({
@@ -86,6 +104,14 @@ const generateQueryEmbedding = async (text) => {
 
     throw new Error("Unexpected embedding response format");
   } catch (error) {
+    if (isQuotaError(error) && attempt < EMBEDDING_MAX_RETRIES) {
+      const delay = EMBEDDING_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+      console.warn(
+        `[RAG] Query embedding quota hit (attempt ${attempt}/${EMBEDDING_MAX_RETRIES}). Retrying in ${delay}ms...`,
+      );
+      await sleep(delay);
+      return generateQueryEmbedding(text, attempt + 1);
+    }
     console.error("Query embedding generation failed:", error);
     throw new ServiceUnavailableError(
       `Failed to generate query embedding: ${error.message}`,
@@ -183,6 +209,10 @@ const processUploadedPdf = async (documentId, filePath) => {
       } else {
         console.error("Embedding batch item failed:", result.reason);
       }
+    }
+
+    if (i + EMBEDDING_BATCH_SIZE < chunkIds.length) {
+      await sleep(1500);
     }
   }
 
