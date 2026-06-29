@@ -6,7 +6,7 @@ import { apiClient } from '../../services/core/api.client.js';
 import { Pencil, MapPin, Briefcase, GraduationCap, Calendar, X, Camera } from 'lucide-react';
 import styles from './Profile.module.css';
 
-const TABS = ['Profile', 'Answers', 'Questions'];
+const TABS = ['Questions', 'Answers'];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -15,7 +15,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('Profile');
+  const [activeTab, setActiveTab] = useState('Questions');
   const [searchContent, setSearchContent] = useState('');
   const [userQuestions, setUserQuestions] = useState([]);
   const [userAnswers, setUserAnswers] = useState([]);
@@ -78,13 +78,10 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
+    loadUserQuestions();
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'Profile') {
-      loadUserQuestions();
-      loadUserAnswers();
-    }
     if (activeTab === 'Questions') loadUserQuestions();
     if (activeTab === 'Answers') loadUserAnswers();
   }, [activeTab]);
@@ -331,41 +328,6 @@ export default function Profile() {
 
             {loadingContent ? (
               <p className={styles.loadingContent}>Loading...</p>
-            ) : activeTab === 'Profile' ? (
-              <div className={styles.contentList}>
-                {userQuestions.length === 0 && userAnswers.length === 0 ? (
-                  <div className={styles.emptyContent}>
-                    <p>No content yet.</p>
-                  </div>
-                ) : (
-                  <>
-                    {filterContent(userQuestions, 'title').map(q => (
-                      <div
-                        key={q.questionHash || q.id}
-                        className={styles.contentItem}
-                        onClick={() => navigate(`/question/${q.questionHash || q.id}`)}
-                      >
-                        <h4 className={styles.contentItemTitle}>{q.title}</h4>
-                        <p className={styles.contentItemMeta}>
-                          {q.answerCount || 0} answers · {new Date(q.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                    {filterContent(userAnswers, 'content').map(a => (
-                      <div
-                        key={a.id || a.answerId}
-                        className={styles.contentItem}
-                        onClick={() => navigate(`/question/${a.questionHash}`)}
-                      >
-                        <p className={styles.contentItemText}>{a.content?.substring(0, 150)}...</p>
-                        <p className={styles.contentItemMeta}>
-                          {new Date(a.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
             ) : activeTab === 'Questions' ? (
               <div className={styles.contentList}>
                 {filterContent(userQuestions, 'title').length === 0 ? (

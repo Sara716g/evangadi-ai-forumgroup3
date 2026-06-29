@@ -530,6 +530,7 @@ export default function QuestionDetail() {
   const [attachmentError, setAttachmentError] = useState("");
 
   const [votingAnswerId, setVotingAnswerId] = useState(null);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // fetch on mount
   useEffect(() => {
@@ -560,6 +561,29 @@ export default function QuestionDetail() {
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // Fallback: select text
+      const input = document.createElement('input');
+      input.value = window.location.href;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
+
+  const scrollToAnswers = () => {
+    const el = document.getElementById('community-answers');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   function handleTextChange(e) {
     setAnswerText(e.target.value);
@@ -793,22 +817,21 @@ export default function QuestionDetail() {
         <hr style={{ border: "none", borderTop: "1px solid #f0f0f0", margin: "18px 0" }} />
 
         <div style={{ display: "flex", gap: 12 }}>
-          <button
-            onClick={() => navigator.clipboard?.writeText(window.location.href)}
-            style={ghostBtn}
-          >
-            ↗ Share
+          <button onClick={handleShare} style={ghostBtn}>
+            {shareCopied ? "✓ Copied!" : "↗ Share"}
           </button>
-          <button style={{ ...ghostBtn, cursor: "default" }}>
+          <button onClick={scrollToAnswers} style={ghostBtn}>
             💬 {answers.length} {answers.length === 1 ? "Answer" : "Answers"}
           </button>
         </div>
       </div>
 
       {/* ── community answers ── */}
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
-        Community Answers ({answers.length})
-      </h2>
+      <div id="community-answers">
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
+          Community Answers ({answers.length})
+        </h2>
+      </div>
       {speechMessage && (
         <p style={{ color: "#cf1322", fontSize: 13, margin: "-6px 0 14px" }}>
           {speechMessage}
