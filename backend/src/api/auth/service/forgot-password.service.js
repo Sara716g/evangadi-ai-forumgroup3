@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { safeExecute } from '../../../../db/config.js';
 import { sendEmail } from '../../../utils/email.js';
+import { passwordResetEmailTemplate } from '../../../utils/email-templates.js';
 import { BadRequestError, NotFoundError } from '../../../utils/errors/index.js';
 
 const normalizeEmail = email => email.trim().toLowerCase();
@@ -59,36 +60,52 @@ export const forgotPasswordService = async email => {
   console.log(`║  Code:  ${code}`);
   console.log('╚══════════════════════════════════════════╝\n');
 
-  // Build the email with the verification code.
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-      <h2 style="color: #1a1a1a; margin-bottom: 16px;">Reset Your Password</h2>
-      <p style="color: #4a4a4a; line-height: 1.6;">
-        Hi ${user.first_name},
-      </p>
-      <p style="color: #4a4a4a; line-height: 1.6;">
-        We received a request to reset your password. Please use the following verification code:
-      </p>
-      <div style="text-align: center; margin: 24px 0;">
-        <span style="display: inline-block; font-size: 32px; font-weight: bold;
-                     color: #f97316; letter-spacing: 8px; padding: 16px 32px;
-                     background-color: #fff7ed; border-radius: 8px;">
-          ${code}
-        </span>
-      </div>
-      <p style="color: #4a4a4a; line-height: 1.6; font-size: 14px;">
-        This code expires in <strong>15 minutes</strong>.
-      </p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-      <p style="color: #999; font-size: 12px;">
-        If you didn't request a password reset, you can safely ignore this email.
-      </p>
-    </div>
-  `;
+  // Build the email with the verification code using template.
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: 'Evangadi Forum – Password Reset Code',
+      html: passwordResetEmailTemplate(user.first_name, code),
+    });
+  } catch (err) {
+    console.error('Failed to send password reset email:', err);
+  }
+};
 
-  await sendEmail({
-    to: user.email,
-    subject: 'Evangadi Forum – Password Reset Code',
-    html,
-  });
+/**
+ * Verifies a password reset code is valid and not expired.
+ * Returns the user_id if valid, throws otherwise.
+ *
+ * @param {string} email - The user's email address.
+ * @param {string} code  - The 6-digit verification code.
+ * @returns {Promise<void>}
+ * @throws {BadRequestError} If code is invalid or expired.
+ */
+export const verifyResetCodeService = async ({ email, code }) => {
+  const normalizedEmail = normalizeEmail(email);
+
+  const tokenSql = `
+    SELECT prt.token_id, prt.user_id, prt.expires_at, prt.used
+    FROM password_reset_tokens prt
+    INNER JOIN users u ON u.user_id = prt.user_id
+    WHERE prt.token = ? AND u.email = ? AND prt.used = 0
+    LIMIT 1
+  `;
+  const rows = await safeExecute(tokenSql, [code, normalizedEmail]);
+
+  if (rows.length === 0) {
+    throw new BadRequestError('Invalid verification code.');
+  }
+
+  const resetToken = rows[0];
+
+  // Check expiry
+  const now = new Date();
+  const expiresAt = new Date(resetToken.expires_at);
+  if (now > expiresAt) {
+    throw new BadRequestError('Verification code has expired. Please request a new one.');
+  }
+
+  // Code is valid — return success
+  return { success: true, message: 'Verification code is valid.' };
 };

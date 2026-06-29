@@ -16,6 +16,9 @@ CREATE TABLE `users` (
     `password_hash` VARCHAR(255) NOT NULL,
     `role` ENUM('user', 'admin') DEFAULT 'user',
     `status` ENUM('active', 'banned', 'suspended') DEFAULT 'active',
+    `is_verified` BOOLEAN NOT NULL DEFAULT FALSE,
+    `verification_code` VARCHAR(64) DEFAULT NULL,
+    `verification_code_expires_at` DATETIME DEFAULT NULL,
     `bio` TEXT DEFAULT NULL,
     `avatar_url` VARCHAR(500) DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,7 +27,8 @@ CREATE TABLE `users` (
     
     INDEX `idx_users_email` (`email`),
     INDEX `idx_users_role` (`role`),
-    INDEX `idx_users_status` (`status`)
+    INDEX `idx_users_status` (`status`),
+    INDEX `idx_users_verification_code` (`verification_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------

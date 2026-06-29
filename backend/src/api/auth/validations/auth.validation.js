@@ -43,6 +43,35 @@ export const loginValidation = [
   validationErrorHandler,
 ];
 
+export const verifyEmailValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email address is required')
+    .normalizeEmail(),
+  body('code')
+    .notEmpty()
+    .withMessage('Verification code is required')
+    .isString()
+    .withMessage('Verification code must be a string')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 digits'),
+
+  validationErrorHandler,
+];
+
+export const resendVerificationValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email address is required')
+    .normalizeEmail(),
+
+  validationErrorHandler,
+];
+
 export const forgotPasswordValidation = [
   body('email')
     .notEmpty()
@@ -50,6 +79,24 @@ export const forgotPasswordValidation = [
     .isEmail()
     .withMessage('A valid email address is required')
     .normalizeEmail(),
+
+  validationErrorHandler,
+];
+
+export const verifyResetCodeValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email address is required')
+    .normalizeEmail(),
+  body('code')
+    .notEmpty()
+    .withMessage('Verification code is required')
+    .isString()
+    .withMessage('Verification code must be a string')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 digits'),
 
   validationErrorHandler,
 ];

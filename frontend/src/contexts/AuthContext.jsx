@@ -33,15 +33,32 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Registers a new user — creates account and updates session state.
+   * Registers a new user — creates account as unverified.
+   * Returns user info but does NOT set authenticated state yet.
    * @param {Object} userData - { firstName, lastName, email, password }
    */
   const register = async userData => {
     setLoading(true);
     try {
       const { user } = await authService.register(userData);
-      setUser(user);
+      // Store user temporarily but don't set as fully authenticated yet
+      // (email must be verified first)
       return { success: true, user };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Completes email verification — sets authenticated state with full user info and token.
+   * @param {Object} data - { email, code }
+   */
+  const verifyEmail = async ({ email, code }) => {
+    setLoading(true);
+    try {
+      const { user, token } = await authService.verifyEmail({ email, code });
+      setUser(user);
+      return { success: true, user, token };
     } finally {
       setLoading(false);
     }
@@ -76,6 +93,7 @@ export function AuthProvider({ children }) {
     user,
     loading,
     register,
+    verifyEmail,
     login,
     logout,
     isAuthenticated: !!user,

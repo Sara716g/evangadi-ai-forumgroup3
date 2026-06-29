@@ -1,5 +1,5 @@
 /**
- * ForgotPassword: Email input → verification code → set new password.
+ * ForgotPassword: Email input → verify code → set new password.
  */
 import { useState } from 'react';
 import { motion as Motion } from 'framer-motion';
@@ -19,12 +19,12 @@ import styles from './Auth.module.css';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('email'); // 'email' | 'code' | 'password' | 'success'
+  const [step, setStep] = useState('email'); // 'email' | 'verify' | 'password' | 'success'
 
   // Email step
   const [email, setEmail] = useState('');
 
-  // Code step
+  // Verify code step
   const [code, setCode] = useState('');
 
   // Password step
@@ -37,6 +37,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Step 1: Send reset code
   const handleEmailSubmit = async e => {
     e.preventDefault();
     setError(null);
@@ -58,7 +59,7 @@ export default function ForgotPassword() {
 
     try {
       await authService.forgotPassword(normalizedEmail);
-      setStep('code');
+      setStep('verify');
     } catch (err) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
@@ -66,6 +67,29 @@ export default function ForgotPassword() {
     }
   };
 
+  // Step 2: Verify code
+  const handleCodeSubmit = async e => {
+    e.preventDefault();
+    setError(null);
+
+    if (!code || code.length !== 6) {
+      setError('Please enter a valid 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await authService.verifyResetCode({ email: email.trim().toLowerCase(), code });
+      setStep('password');
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 3: Reset password
   const handlePasswordSubmit = async e => {
     e.preventDefault();
     setError(null);
@@ -128,8 +152,8 @@ export default function ForgotPassword() {
     );
   }
 
-  // Code verification step
-  if (step === 'code') {
+  // Password step
+  if (step === 'password') {
     return (
       <div className={styles.forgotPassword}>
         <Motion.div
@@ -138,40 +162,20 @@ export default function ForgotPassword() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Logo */}
           <div className={styles.forgotPassword__logo}>
             <div className={styles.forgotPassword__logoIcon}>
               <MessageSquare size={24} />
             </div>
           </div>
 
-          {/* Header */}
           <div className={styles.forgotPassword__header}>
-            <h1 className={styles.forgotPassword__title}>Enter verification code</h1>
+            <h1 className={styles.forgotPassword__title}>Set new password</h1>
             <p className={styles.forgotPassword__subtitle}>
-              We've sent a 6-digit code to <strong>{email}</strong>. Enter it
-              below to continue.
+              Your code has been verified. Enter your new password below.
             </p>
           </div>
 
-          {/* Code + Password Form */}
           <form className={styles.forgotPassword__form} onSubmit={handlePasswordSubmit}>
-            <div className={styles.forgotPassword__inputGroup}>
-              <label htmlFor='code' className={styles.forgotPassword__label}>
-                Verification Code
-              </label>
-              <input
-                id='code'
-                type='text'
-                placeholder='Enter 6-digit code'
-                className={styles.forgotPassword__input}
-                value={code}
-                onChange={e => setCode(e.target.value)}
-                maxLength={6}
-                autoFocus
-              />
-            </div>
-
             <div className={styles.forgotPassword__inputGroup}>
               <label htmlFor='password' className={styles.forgotPassword__label}>
                 New Password
@@ -232,15 +236,82 @@ export default function ForgotPassword() {
             </button>
           </form>
 
-          {/* Footer */}
           <div className={styles.forgotPassword__footer}>
             <button
               type='button'
-              onClick={() => { setStep('email'); setError(null); }}
+              onClick={() => { setStep('verify'); setError(null); }}
               className={styles.forgotPassword__backLink}
             >
               <ArrowLeft size={16} />
-              ← Back to email
+              Back to code verification
+            </button>
+          </div>
+        </Motion.div>
+      </div>
+    );
+  }
+
+  // Verify code step
+  if (step === 'verify') {
+    return (
+      <div className={styles.forgotPassword}>
+        <Motion.div
+          className={styles.forgotPassword__card}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className={styles.forgotPassword__logo}>
+            <div className={styles.forgotPassword__logoIcon}>
+              <MessageSquare size={24} />
+            </div>
+          </div>
+
+          <div className={styles.forgotPassword__header}>
+            <h1 className={styles.forgotPassword__title}>Enter verification code</h1>
+            <p className={styles.forgotPassword__subtitle}>
+              We've sent a 6-digit code to <strong>{email}</strong>. Enter it
+              below to continue.
+            </p>
+          </div>
+
+          <form className={styles.forgotPassword__form} onSubmit={handleCodeSubmit}>
+            <div className={styles.forgotPassword__inputGroup}>
+              <label htmlFor='code' className={styles.forgotPassword__label}>
+                Verification Code
+              </label>
+              <input
+                id='code'
+                type='text'
+                placeholder='Enter 6-digit code'
+                className={styles.forgotPassword__input}
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+
+            {error && <div className={styles.forgotPassword__error}>{error}</div>}
+
+            <button
+              type='submit'
+              className={styles.forgotPassword__button}
+              disabled={loading}
+            >
+              {loading ? 'Verifying...' : 'Verify Code'}
+              {!loading && <ArrowRight size={16} />}
+            </button>
+          </form>
+
+          <div className={styles.forgotPassword__footer}>
+            <button
+              type='button'
+              onClick={() => { setStep('email'); setError(null); setCode(''); }}
+              className={styles.forgotPassword__backLink}
+            >
+              <ArrowLeft size={16} />
+              Back to email
             </button>
           </div>
         </Motion.div>
@@ -257,14 +328,12 @@ export default function ForgotPassword() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Logo */}
         <div className={styles.forgotPassword__logo}>
           <div className={styles.forgotPassword__logoIcon}>
             <MessageSquare size={24} />
           </div>
         </div>
 
-        {/* Header */}
         <div className={styles.forgotPassword__header}>
           <h1 className={styles.forgotPassword__title}>Reset your password</h1>
           <p className={styles.forgotPassword__subtitle}>
@@ -273,7 +342,6 @@ export default function ForgotPassword() {
           </p>
         </div>
 
-        {/* Form */}
         <form className={styles.forgotPassword__form} onSubmit={handleEmailSubmit}>
           <div className={styles.forgotPassword__inputGroup}>
             <label htmlFor='email' className={styles.forgotPassword__label}>
@@ -301,7 +369,6 @@ export default function ForgotPassword() {
           </button>
         </form>
 
-        {/* Footer */}
         <div className={styles.forgotPassword__footer}>
           <Link to='/auth' className={styles.forgotPassword__backLink}>
             <ArrowLeft size={16} />

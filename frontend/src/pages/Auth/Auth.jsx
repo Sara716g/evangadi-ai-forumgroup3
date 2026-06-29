@@ -1,5 +1,6 @@
 /**
- * Auth: combined login + register form; switches mode without changing routes.
+ * Auth: combined login + register form with email verification flow.
+ * Steps: login/register → verify-email → dashboard
  */
 import { useState } from 'react';
 
@@ -12,15 +13,20 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
+  Mail,
+  CheckCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { authService } from '../../services/auth/auth.service';
 import styles from './Auth.module.css';
 
 export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { register, login } = useAuth();
+  const { register, login, verifyEmail } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [step, setStep] = useState('form'); // 'form' | 'verify'
 
   // Form state
   const [firstName, setFirstName] = useState('');
@@ -28,6 +34,10 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Verification state
+  const [verificationCode, setVerificationCode] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Error and loading state
   const [error, setError] = useState(null);
@@ -40,7 +50,6 @@ export default function Auth() {
     setError(null);
     setSuccessMessage(null);
     const normalizedEmail = email.trim().toLowerCase();
-    // regex for email validation
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!normalizedEmail) {
@@ -88,32 +97,28 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        // Login flow
         await login({ email: normalizedEmail, password });
         setSuccessMessage('Sign-in successful. Redirecting...');
-        // Clear form fields
         setEmail('');
         setPassword('');
         setShowPassword(false);
-        // Delay redirect to show successful message
         await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Check location state for original URL after login
-        // Redirect to original URL if present, otherwise dashboard
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {
-        // Registration flow — create account directly
-        await register({
+        // Registration flow — create account (unverified)
+        const result = await register({
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
           email: normalizedEmail,
           password,
         });
-        setSuccessMessage('Account created! Redirecting...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const from = location.state?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
+
+        // Store the email for verification and switch to verify step
+        setRegisteredEmail(normalizedEmail);
+        setStep('verify');
+        setSuccessMessage('Account created! Check your email for a verification code.');
+        setVerificationCode('');
       }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred.');
@@ -122,6 +127,180 @@ export default function Auth() {
     }
   };
 
+  // Handle email verification
+  const handleVerifyEmail = async e => {
+    e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
+    if (!verificationCode || verificationCode.length !== 6) {
+      setError('Please enter a valid 6-digit verification code.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await verifyEmail({
+        email: registeredEmail,
+        code: verificationCode,
+      });
+      setSuccessMessage('Email verified successfully! Redirecting...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const from = location.state?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle resend verification
+  const handleResendVerification = async () => {
+    setError(null);
+    setSuccessMessage(null);
+    setLoading(true);
+
+    try {
+      await authService.resendVerification(registeredEmail);
+      setSuccessMessage('New verification code sent! Check your email.');
+    } catch (err) {
+      setError(err.message || 'Failed to resend code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Verification step
+  if (step === 'verify') {
+    return (
+      <div className={styles.auth}>
+        <section className={styles.auth__info}>
+          <div className={styles.auth__infoContent}>
+            <header className={styles.auth__infoHeader}>
+              <div
+                className={styles.auth__infoBranding}
+                onClick={() => navigate('/')}
+                title='Go to Home'
+                role='button'
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate('/');
+                  }
+                }}
+              >
+                <div className={styles.auth__infoLogo} aria-hidden>
+                  <MessageSquare
+                    className={styles.auth__infoLogoIcon}
+                    size={22}
+                  />
+                </div>
+                <div className={styles.auth__infoBrandCopy}>
+                  <p className={styles.auth__infoTitle}>Evangadi Forum</p>
+                  <p className={styles.auth__infoTagline}>
+                    Learn together. Ask with context.
+                  </p>
+                </div>
+              </div>
+              <p className={styles.auth__infoDescription}>
+                We've sent a verification code to your email address. Enter the
+                6-digit code below to verify your account and start using
+                Evangadi Forum.
+              </p>
+            </header>
+          </div>
+        </section>
+
+        <section className={styles.auth__formSection}>
+          <div className={styles.auth__formContainer}>
+            <Motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div className={styles.auth__formHeader}>
+                <h2 className={styles.auth__formTitle}>
+                  Verify your email
+                </h2>
+                <p className={styles.auth__formSubtitle}>
+                  Enter the 6-digit code sent to <strong>{registeredEmail}</strong>
+                </p>
+              </div>
+
+              <form className={styles.auth__form} onSubmit={handleVerifyEmail}>
+                <div className={styles.auth__inputGroup}>
+                  <label htmlFor='verificationCode' className={styles.auth__label}>
+                    Verification Code
+                  </label>
+                  <input
+                    id='verificationCode'
+                    type='text'
+                    placeholder='Enter 6-digit code'
+                    className={styles.auth__input}
+                    value={verificationCode}
+                    onChange={e => setVerificationCode(e.target.value)}
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+
+                {successMessage && (
+                  <div className={styles.auth__success}>{successMessage}</div>
+                )}
+
+                {error && <div className={styles.auth__error}>{error}</div>}
+
+                <div className={styles.auth__buttonContainer}>
+                  <button
+                    type='submit'
+                    className={`${styles.auth__button} ${styles['auth__button--primary']}`}
+                    disabled={loading}
+                  >
+                    {loading ? 'Verifying...' : 'Verify Email'}
+                    {!loading && (
+                      <CheckCircle size={16} className={styles.auth__buttonIcon} />
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              <footer className={styles.auth__formFooter}>
+                <p className={styles.auth__formFooterText}>
+                  Didn't receive a code?
+                  <button
+                    onClick={handleResendVerification}
+                    className={styles.auth__formFooterLink}
+                    disabled={loading}
+                  >
+                    <RefreshCw size={14} style={{ marginRight: '4px' }} />
+                    Resend Code
+                  </button>
+                </p>
+                <p className={styles.auth__formFooterText}>
+                  <button
+                    onClick={() => {
+                      setStep('form');
+                      setError(null);
+                      setSuccessMessage(null);
+                      setVerificationCode('');
+                    }}
+                    className={styles.auth__formFooterLink}
+                  >
+                    Back to sign in
+                  </button>
+                </p>
+              </footer>
+            </Motion.div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Form step (login/register)
   return (
     <div className={styles.auth}>
       {/* Left: Info Section */}

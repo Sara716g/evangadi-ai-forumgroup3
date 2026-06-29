@@ -1,18 +1,51 @@
 import { apiClient } from '../core/api.client.js';
 
 /**
- * Registers a new user — creates account and returns token.
+ * Registers a new user — creates account (unverified) and sends verification code.
  * @param {Object} userData - User details for registration.
  */
 async function register(userData) {
   try {
     const response = await apiClient.post('/api/auth/register', userData);
+    const { user } = response.data;
+
+    // Store user info locally but do NOT store token yet
+    // (user must verify email first)
+    localStorage.setItem('user', JSON.stringify(user));
+
+    return { user };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Verifies email using 6-digit OTP code.
+ * @param {Object} data - { email, code }
+ */
+async function verifyEmail({ email, code }) {
+  try {
+    const response = await apiClient.post('/api/auth/verify-email', { email, code });
     const { user, token } = response.data;
 
+    // Store token and user after successful verification
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
 
     return { user, token };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Resends email verification code.
+ * @param {string} email
+ */
+async function resendVerification(email) {
+  try {
+    await apiClient.post('/api/auth/resend-verification', { email });
+    return { success: true };
   } catch (error) {
     throw handleAuthError(error);
   }
@@ -61,7 +94,6 @@ function getStoredUser() {
   try {
     return JSON.parse(userJson);
   } catch {
-    // If JSON parsing fails, clear invalid data
     localStorage.removeItem('user');
     return null;
   }
@@ -96,6 +128,10 @@ function handleAuthError(error) {
       return new Error(backendMessage || 'Invalid input data.');
     case 401:
       return new Error(backendMessage || 'Invalid email or password.');
+    case 429:
+      return new Error(
+        backendMessage || 'Too many requests. Please try again later.',
+      );
     case 500:
       return new Error(
         'Something went wrong on our end. Please try again later.',
@@ -112,6 +148,19 @@ function handleAuthError(error) {
 async function forgotPassword(email) {
   try {
     await apiClient.post('/api/auth/forgot-password', { email });
+    return { success: true };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Verifies a password reset code.
+ * @param {Object} data - { email, code }
+ */
+async function verifyResetCode({ email, code }) {
+  try {
+    await apiClient.post('/api/auth/verify-reset-code', { email, code });
     return { success: true };
   } catch (error) {
     throw handleAuthError(error);
@@ -136,11 +185,14 @@ async function resetPassword({ code, password }) {
  */
 export const authService = {
   register,
+  verifyEmail,
+  resendVerification,
   login,
   logout,
   getStoredToken,
   getStoredUser,
   isAuthenticated,
   forgotPassword,
+  verifyResetCode,
   resetPassword,
 };
