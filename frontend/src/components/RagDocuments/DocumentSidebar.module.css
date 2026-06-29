@@ -1,7 +1,7 @@
 .sidebar {
   width: 100%;
   box-sizing: border-box;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 12px;
   padding: 1.25rem;
 }
@@ -9,22 +9,22 @@
   margin: 0 0 4px 0;
   font-size: 1.25rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 .subheading {
-  color: #64748b;
+  color: var(--text-tertiary);
   margin: 0 0 16px 0;
   font-size: 0.8125rem;
 }
 .statusMessage {
-  color: #64748b;
+  color: var(--text-tertiary);
   margin-top: 16px;
   font-size: 0.875rem;
   line-height: 1.5;
 }
 .errorMessage {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--error);
+  background: var(--error-light);
   padding: 12px 16px;
   border-radius: 8px;
   margin-top: 16px;
@@ -45,16 +45,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-left: 3px solid #ea580c;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
   border-radius: 10px;
   padding: 10px 12px;
   text-align: left;
 }
 .docCardSelected {
-  border-color: #e5e7eb;
-  border-left-color: #ea580c;
+  border-color: var(--border);
+  border-left-color: var(--primary);
 }
 .docCardBody {
   display: flex;
@@ -64,7 +64,7 @@
   min-width: 0;
 }
 .docName {
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,16 +83,16 @@
   line-height: 1.4;
 }
 .badge--ready {
-  color: #16a34a;
-  background: #dcfce7;
+  color: var(--success);
+  background: var(--success-light);
 }
 .badge--processing {
-  color: #d97706;
-  background: #fef3c7;
+  color: var(--warning);
+  background: var(--warning-light);
 }
 .badge--failed {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--error);
+  background: var(--error-light);
 }
 .deleteBtn {
   display: flex;
@@ -101,9 +101,9 @@
   width: 28px;
   height: 28px;
   background: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 50%;
   cursor: pointer;
-  color: #dc2626;
+  color: var(--error);
   flex-shrink: 0;
 }

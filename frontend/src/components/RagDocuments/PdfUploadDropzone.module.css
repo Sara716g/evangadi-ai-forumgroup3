@@ -1,11 +1,11 @@
 .dropzone {
-  border: 1px dashed #d1d5db;
+  border: 1px dashed var(--border-hover);
   border-radius: 10px;
   padding: 16px;
-  background: #f9fafb;
+  background: var(--surface-container-low);
 }
 .hint {
-  color: #6b7280;
+  color: var(--text-tertiary);
   font-size: 0.8125rem;
   margin: 0 0 12px 0;
   line-height: 1.4;
@@ -19,17 +19,17 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 14px;
   font-size: 0.8125rem;
-  color: #374151;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
 .chooseFileButton:hover {
-  border-color: #9ca3af;
+  border-color: var(--text-tertiary);
 }
 .hiddenInput {
   position: absolute;
@@ -42,8 +42,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #ea580c;
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--text-inverse);
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
@@ -53,7 +53,7 @@
   transition: background-color 0.15s ease;
 }
 .uploadButton:hover:not(:disabled) {
-  background: #c2410c;
+  background: var(--primary-hover);
 }
 .uploadButton:disabled {
   opacity: 0.5;
@@ -63,14 +63,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 0.8125rem;
 }
 .fileName {
-  color: #0f172a;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -78,17 +78,17 @@
   margin-right: 8px;
 }
 .fileSize {
-  color: #94a3b8;
+  color: var(--text-placeholder);
   flex-shrink: 0;
 }
 .noFileText {
-  color: #94a3b8;
+  color: var(--text-placeholder);
   font-size: 0.8125rem;
   font-style: italic;
   margin: 0;
 }
 .errorText {
-  color: #dc2626;
+  color: var(--error);
   font-size: 0.8125rem;
   margin: 8px 0 0 0;
 }
