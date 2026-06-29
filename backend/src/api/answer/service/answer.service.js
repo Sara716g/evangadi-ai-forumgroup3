@@ -18,7 +18,7 @@ import fs from 'fs/promises';
 import { safeExecute } from '../../../../db/config.js';
 import { BadRequestError, NotFoundError } from '../../../utils/errors/index.js';
 import { classifyAttachmentType } from '../answer.upload.config.js';
-import { createNotification } from '../../notification/service/notification.service.js';
+import { createNotification, groupNewAnswerNotification } from '../../notification/service/notification.service.js';
 
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'answers');
 
@@ -121,30 +121,14 @@ export const createAnswerService = async ({ userId, questionId, content, files =
 
   const attachmentRows = await insertAttachmentsForAnswer({ answerId, userId, files });
 
-  // Notify question owner
+  // Notify question owner (grouped: "N people answered your question")
   try {
     if (question.user_id !== userId) {
-      const answererRows = await safeExecute(
-        'SELECT first_name, last_name FROM users WHERE user_id = ?',
-        [userId]
-      );
-      const answererName = answererRows.length > 0
-        ? `${answererRows[0].first_name} ${answererRows[0].last_name}`
-        : 'Someone';
-
-      const questionRows2 = await safeExecute(
-        'SELECT title, question_hash FROM questions WHERE question_id = ?',
-        [questionId]
-      );
-      const questionTitle = questionRows2.length > 0 ? questionRows2[0].title : 'your question';
-      const questionHash = questionRows2.length > 0 ? questionRows2[0].question_hash : questionId;
-
-      await createNotification({
+      await groupNewAnswerNotification({
         userId: question.user_id,
-        type: 'answer',
-        title: 'New Answer',
-        message: `${answererName} answered your question "${questionTitle}"`,
-        link: `/question/${questionHash}`,
+        questionId,
+        questionHash: question.question_hash,
+        answerId,
       });
     }
   } catch (err) {
