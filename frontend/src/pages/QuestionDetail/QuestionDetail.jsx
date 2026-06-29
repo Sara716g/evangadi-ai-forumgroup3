@@ -135,9 +135,9 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
   if (!isOpen) return null;
 
   return (
-    <div style={{ padding: "0", background: "var(--bg-secondary, #fafafa)" }}>
+    <div style={{ padding: "0", background: "var(--background-secondary, #fafafa)" }}>
       {isLoading ? (
-        <div style={{ fontSize: 13, color: "var(--text-muted, #aaa)", padding: "12px 16px" }}>Loading comments...</div>
+        <div style={{ fontSize: 13, color: "var(--text-tertiary, #aaa)", padding: "12px 16px" }}>Loading comments...</div>
       ) : (
         <>
           {/* header */}
@@ -157,11 +157,11 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
                 style={{
                   flex: 1,
                   padding: "8px 12px",
-                  border: "1px solid var(--border-color, #d9d9d9)",
+                  border: "1px solid var(--border, #d9d9d9)",
                   borderRadius: 20,
                   fontSize: 13,
                   outline: "none",
-                  background: "var(--bg-primary, #fff)",
+                  background: "var(--surface, #fff)",
                   color: "var(--text-primary, #222)",
                 }}
               />
@@ -193,10 +193,10 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
                   ? `${c.author.firstName} ${c.author.lastName || ""}`.trim()
                   : "User";
                 return (
-                  <div key={c.id} style={{ padding: "12px 16px", borderTop: "1px solid var(--border-color, #f0f0f0)" }}>
+                  <div key={c.id} style={{ padding: "12px 16px", borderTop: "1px solid var(--border, #f0f0f0)" }}>
                     <div style={{ fontSize: 14, color: "var(--text-primary, #282828)", lineHeight: 1.5 }}>
                       <span style={{ fontWeight: 700, color: "var(--text-primary, #1a1a1a)" }}>{cName}</span>
-                      <span style={{ color: "var(--text-muted, #999)", fontSize: 12 }}> · {formatTime(c.createdAt)}</span>
+                      <span style={{ color: "var(--text-tertiary, #999)", fontSize: 12 }}> · {formatTime(c.createdAt)}</span>
                     </div>
                     <div style={{ fontSize: 14, color: "var(--text-primary, #282828)", lineHeight: 1.5, marginTop: 4 }}>
                       {c.content}
@@ -205,11 +205,11 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
                 );
               })}
 
-              <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border-color, #f0f0f0)", textAlign: "center" }}>
+              <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border, #f0f0f0)", textAlign: "center" }}>
                 <button
                   style={{
                     background: "none",
-                    border: "1px solid var(--border-color, #d9d9d9)",
+                    border: "1px solid var(--border, #d9d9d9)",
                     borderRadius: 20,
                     padding: "8px 20px",
                     fontSize: 13,
@@ -226,7 +226,7 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
           )}
 
           {comments.length === 0 && !isLoading && (
-            <div style={{ padding: "20px 16px", textAlign: "center", fontSize: 13, color: "var(--text-muted, #aaa)" }}>
+            <div style={{ padding: "20px 16px", textAlign: "center", fontSize: 13, color: "var(--text-tertiary, #aaa)" }}>
               No comments yet. Be the first to comment!
             </div>
           )}
@@ -269,7 +269,7 @@ function AttachmentChip({ attachment }) {
   }
 
   if (!objectUrl) {
-    return <span style={{ fontSize: 12, color: "var(--text-muted, #aaa)" }}>Loading attachment…</span>;
+    return <span style={{ fontSize: 12, color: "var(--text-tertiary, #aaa)" }}>Loading attachment…</span>;
   }
 
   if (isImage) {
@@ -298,7 +298,7 @@ function AttachmentChip({ attachment }) {
         borderRadius: 6,
         padding: "6px 10px",
         fontSize: 12,
-        background: "var(--bg-secondary, #fafafa)",
+        background: "var(--background-secondary, #fafafa)",
         textDecoration: "none",
         color: "var(--text-primary, #333)",
       }}
@@ -322,8 +322,8 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
   return (
     <div
       style={{
-        background: "var(--bg-primary, #fff)",
-        border: "1px solid var(--border-color, #e8e8e8)",
+        background: "var(--surface, #fff)",
+        border: "1px solid var(--border, #e8e8e8)",
         borderRadius: 8,
         marginBottom: 12,
         overflow: "hidden",
@@ -342,7 +342,7 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
           <Avatar name={name} />
           <div>
             <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary, #1a1a1a)" }}>{name}</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>{formatDate(answer.createdAt)}</div>
+            <div style={{ fontSize: 12, color: "var(--text-tertiary, #888)" }}>{formatDate(answer.createdAt)}</div>
           </div>
         </div>
         <div style={{ fontSize: 15, lineHeight: 1.7, color: "var(--text-primary, #222)", flex: 1 }}>
@@ -358,7 +358,7 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
             flexShrink: 0,
             padding: "6px 10px",
             color: isSpeaking ? "#e67e22" : "var(--text-secondary, #555)",
-            borderColor: isSpeaking ? "#e67e22" : "var(--border-color, #d9d9d9)",
+            borderColor: isSpeaking ? "#e67e22" : "var(--border, #d9d9d9)",
           }}
         >
           {isSpeaking ? <Square size={14} /> : <Volume2 size={15} />}
@@ -373,8 +373,8 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
           alignItems: "center",
           gap: 16,
           padding: "8px 16px",
-          background: "var(--bg-secondary, #f8f8f8)",
-          borderTop: "1px solid var(--border-color, #f0f0f0)",
+          background: "var(--background-secondary, #f8f8f8)",
+          borderTop: "1px solid var(--border, #f0f0f0)",
         }}
       >
         <button
@@ -390,18 +390,18 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
             alignItems: "center",
             gap: 4,
             fontSize: 14,
-            color: userHasVoted ? "#e67e22" : "var(--text-muted, #888)",
+            color: userHasVoted ? "#e67e22" : "var(--text-tertiary, #888)",
             transition: "color 0.15s",
           }}
           onMouseEnter={(e) => { if (!isVoting) e.currentTarget.style.color = "#e67e22"; }}
-          onMouseLeave={(e) => { if (!userHasVoted) e.currentTarget.style.color = "var(--text-muted, #888)"; }}
+          onMouseLeave={(e) => { if (!userHasVoted) e.currentTarget.style.color = "var(--text-tertiary, #888)"; }}
           title={userHasVoted ? "Remove upvote" : "Upvote"}
         >
           <span style={{ fontSize: 16 }}>▲</span>
           <span style={{ fontWeight: 600 }}>Upvote · {voteCount}</span>
         </button>
 
-        <span style={{ color: "var(--text-muted, #ccc)", fontSize: 10 }}>●</span>
+        <span style={{ color: "var(--text-tertiary, #ccc)", fontSize: 10 }}>●</span>
 
         <button
           onClick={() => setShowComments((prev) => !prev)}
@@ -411,14 +411,14 @@ function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
             padding: "4px 6px",
             fontSize: 14,
             fontWeight: 600,
-            color: showComments ? "#e67e22" : "var(--text-muted, #888)",
+            color: showComments ? "#e67e22" : "var(--text-tertiary, #888)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: 4,
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "#e67e22"; }}
-          onMouseLeave={(e) => { if (!showComments) e.currentTarget.style.color = "var(--text-muted, #888)"; }}
+          onMouseLeave={(e) => { if (!showComments) e.currentTarget.style.color = "var(--text-tertiary, #888)"; }}
         >
           <span style={{ fontSize: 16 }}>💬</span>
           {commentCount}
@@ -454,8 +454,8 @@ function MarkdownToolbar({ onInsert }) {
         display: "flex",
         gap: 4,
         padding: "6px 10px",
-        borderBottom: "1px solid var(--border-color, #e8e8e8)",
-        background: "var(--bg-secondary, #fafafa)",
+        borderBottom: "1px solid var(--border, #e8e8e8)",
+        background: "var(--background-secondary, #fafafa)",
         borderRadius: "8px 8px 0 0",
       }}
     >
@@ -466,7 +466,7 @@ function MarkdownToolbar({ onInsert }) {
           onClick={() => onInsert(a.wrap)}
           style={{
             background: "none",
-            border: "1px solid var(--border-color, #d9d9d9)",
+            border: "1px solid var(--border, #d9d9d9)",
             borderRadius: 4,
             padding: "2px 8px",
             cursor: "pointer",
@@ -484,8 +484,8 @@ function MarkdownToolbar({ onInsert }) {
 // ── shared ghost button style ────────────────────────────────────────────────
 
 const ghostBtn = {
-  background: "var(--bg-primary, #fff)",
-  border: "1px solid var(--border-color, #d9d9d9)",
+  background: "var(--surface, #fff)",
+  border: "1px solid var(--border, #d9d9d9)",
   borderRadius: 6,
   padding: "7px 14px",
   fontSize: 13,
@@ -792,8 +792,8 @@ export default function QuestionDetail() {
       {/* ── question card ── */}
       <div
         style={{
-          background: "var(--bg-primary, #fff)",
-          border: "1px solid var(--border-color, #e8e8e8)",
+          background: "var(--surface, #fff)",
+          border: "1px solid var(--border, #e8e8e8)",
           borderRadius: 10,
           padding: "24px 28px",
           marginBottom: 28,
@@ -803,7 +803,7 @@ export default function QuestionDetail() {
           <Avatar name={authorName} size={42} />
           <div>
             <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text-primary, #1a1a1a)" }}>{authorName}</div>
-            <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>Posted {formatDate(question.createdAt)}</div>
+            <div style={{ fontSize: 12, color: "var(--text-tertiary, #888)" }}>Posted {formatDate(question.createdAt)}</div>
           </div>
         </div>
 
@@ -815,7 +815,7 @@ export default function QuestionDetail() {
           <ReactMarkdown>{question.content || question.body || ""}</ReactMarkdown>
         </div>
 
-        <hr style={{ border: "none", borderTop: "1px solid var(--border-color, #f0f0f0)", margin: "18px 0" }} />
+        <hr style={{ border: "none", borderTop: "1px solid var(--border, #f0f0f0)", margin: "18px 0" }} />
 
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={handleShare} style={ghostBtn}>
@@ -834,7 +834,7 @@ export default function QuestionDetail() {
         </h2>
       </div>
       {speechMessage && (
-        <p style={{ color: "var(--color-error, #cf1322)", fontSize: 13, margin: "-6px 0 14px" }}>
+        <p style={{ color: "var(--error, #cf1322)", fontSize: 13, margin: "-6px 0 14px" }}>
           {speechMessage}
         </p>
       )}
@@ -842,17 +842,17 @@ export default function QuestionDetail() {
       {answers.length === 0 ? (
         <div
           style={{
-            background: "var(--bg-secondary, #f9f9f9)",
-            border: "1px solid var(--border-color, #e8e8e8)",
+            background: "var(--background-secondary, #f9f9f9)",
+            border: "1px solid var(--border, #e8e8e8)",
             borderRadius: 10,
             padding: "48px 20px",
             textAlign: "center",
             marginBottom: 28,
           }}
         >
-          <div style={{ fontSize: 32, marginBottom: 10, color: "var(--text-muted, #ccc)" }}>💬</div>
+          <div style={{ fontSize: 32, marginBottom: 10, color: "var(--text-tertiary, #ccc)" }}>💬</div>
           <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 6, color: "var(--text-primary, #1a1a1a)" }}>Be the first to help!</div>
-          <div style={{ color: "var(--text-muted, #888)", fontSize: 14 }}>
+          <div style={{ color: "var(--text-tertiary, #888)", fontSize: 14 }}>
             This question is waiting for an expert like you. Share your knowledge and earn reputation points.
           </div>
         </div>
@@ -873,14 +873,14 @@ export default function QuestionDetail() {
 
       {/* ── contribute form ── */}
       {isOwnQuestion ? (
-        <div style={{ color: "var(--text-muted, #888)", fontSize: 14, padding: "16px 0" }}>
+        <div style={{ color: "var(--text-tertiary, #888)", fontSize: 14, padding: "16px 0" }}>
           You cannot answer your own question.
         </div>
       ) : (
         <div
           style={{
-            background: "var(--bg-primary, #fff)",
-            border: "1px solid var(--border-color, #e8e8e8)",
+            background: "var(--surface, #fff)",
+            border: "1px solid var(--border, #e8e8e8)",
             borderRadius: 10,
             padding: "24px 28px",
           }}
@@ -888,13 +888,13 @@ export default function QuestionDetail() {
           <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 14, color: "var(--text-primary, #1a1a1a)" }}>Contribute an answer</h3>
 
           {postError && (
-            <p style={{ color: "var(--color-error, #e74c3c)", fontSize: 14, marginBottom: 10 }}>{postError}</p>
+            <p style={{ color: "var(--error, #e74c3c)", fontSize: 14, marginBottom: 10 }}>{postError}</p>
           )}
 
           {/* toolbar + textarea */}
           <div
             style={{
-              border: "1px solid var(--border-color, #e8e8e8)",
+              border: "1px solid var(--border, #e8e8e8)",
               borderRadius: 8,
               overflow: "hidden",
               marginBottom: 14,
@@ -917,7 +917,7 @@ export default function QuestionDetail() {
                   fontSize: 14,
                   fontFamily: "inherit",
                   lineHeight: 1.7,
-                  background: "var(--bg-primary, #fff)",
+                  background: "var(--surface, #fff)",
                   color: "var(--text-primary, #222)",
                   boxSizing: "border-box",
                 }}
@@ -928,7 +928,7 @@ export default function QuestionDetail() {
                   top: 8,
                   right: 12,
                   fontSize: 12,
-                  color: "var(--text-muted, #aaa)",
+                  color: "var(--text-tertiary, #aaa)",
                   pointerEvents: "none",
                 }}
               >
@@ -959,7 +959,7 @@ export default function QuestionDetail() {
                 disabled={answerFiles.length >= MAX_FILES}
                 style={{ display: "none" }}
               />
-              <span style={{ fontSize: 12, color: "var(--text-muted, #aaa)" }}>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary, #aaa)" }}>
                 Up to {MAX_FILES} files, 10MB each.
               </span>
             </div>
@@ -977,11 +977,11 @@ export default function QuestionDetail() {
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      border: "1px solid var(--border-color, #e8e8e8)",
+                      border: "1px solid var(--border, #e8e8e8)",
                       borderRadius: 6,
                       padding: "6px 10px",
                       fontSize: 12,
-                      background: "var(--bg-secondary, #fafafa)",
+                      background: "var(--background-secondary, #fafafa)",
                     }}
                   >
                     <span>{file.type === "application/pdf" ? "📄" : "🖼️"}</span>
@@ -1026,7 +1026,7 @@ export default function QuestionDetail() {
               >
                 {isChecking ? "Checking..." : "✦ Check draft fit"}
               </button>
-              <span style={{ fontSize: 12, color: "var(--text-muted, #aaa)" }}>
+              <span style={{ fontSize: 12, color: "var(--text-tertiary, #aaa)" }}>
                 Relevance only. Not grading correctness. You need at least 20 characters.
               </span>
             </div>
@@ -1066,8 +1066,8 @@ export default function QuestionDetail() {
       >
         <div
           style={{
-            background: "var(--bg-primary, #fff)",
-            border: "1px solid var(--border-color, #e8e8e8)",
+            background: "var(--surface, #fff)",
+            border: "1px solid var(--border, #e8e8e8)",
             borderRadius: 10,
             padding: "18px 16px",
           }}
@@ -1077,7 +1077,7 @@ export default function QuestionDetail() {
           </h3>
 
           {similarQuestions.length === 0 ? (
-            <p style={{ color: "var(--text-muted, #999)", fontSize: 13 }}>
+            <p style={{ color: "var(--text-tertiary, #999)", fontSize: 13 }}>
               No related questions found.
             </p>
           ) : (
@@ -1089,14 +1089,14 @@ export default function QuestionDetail() {
                   style={{
                     display: "block",
                     padding: "10px 12px",
-                    background: "var(--bg-secondary, #fafafa)",
-                    border: "1px solid var(--border-color, #f0f0f0)",
+                    background: "var(--background-secondary, #fafafa)",
+                    border: "1px solid var(--border, #f0f0f0)",
                     borderRadius: 8,
                     textDecoration: "none",
                     transition: "border-color 0.15s",
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#e67e22")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-color, #f0f0f0)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border, #f0f0f0)")}
                 >
                   <div
                     style={{
@@ -1109,7 +1109,7 @@ export default function QuestionDetail() {
                   >
                     {sq.title}
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted, #888)" }}>
+                  <div style={{ fontSize: 12, color: "var(--text-tertiary, #888)" }}>
                     {sq.author?.firstName || ""} {sq.author?.lastName || ""}{" "}
                     <span style={{ float: "right" }}>
                       {sq.createdAt ? formatDate(sq.createdAt) : ""}
