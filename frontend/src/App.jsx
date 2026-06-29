@@ -31,6 +31,10 @@ import ManageUsers from "./pages/Admin/ManageUsers";
 import ManageQuestions from "./pages/Admin/ManageQuestions";
 import ExternalSearch from "./pages/ExternalSearch/ExternalSearch";
 import AIAssistant from "./pages/AI-Assistant/AI-Assistant";
+import About from "./pages/StaticPages/About";
+import Privacy from "./pages/StaticPages/Privacy";
+import Terms from "./pages/StaticPages/Terms";
+import Contact from "./pages/StaticPages/Contact";
 import "prismjs/themes/prism-tomorrow.css";
 
 import styles from "./AiCascade.module.css";
@@ -102,6 +106,10 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Protected routes wrapped in our new AiCascadeLayout */}
           <Route element={<AiCascadeLayout />}>

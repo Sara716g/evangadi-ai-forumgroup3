@@ -57,7 +57,10 @@ export const sendEmail = async ({ to, subject, html }) => {
 
   // In development without SMTP config, log the generated email payload.
   if (!SMTP_USER || !SMTP_PASS) {
-    console.log('[Email Service] Development mode – email not sent:');
-    console.log(JSON.parse(info.message));
+    console.log('\n========================================');
+    console.log('[Email Service] Development mode — email NOT sent');
+    console.log('To:', to);
+    console.log('Subject:', subject);
+    console.log('========================================\n');
   }
 };

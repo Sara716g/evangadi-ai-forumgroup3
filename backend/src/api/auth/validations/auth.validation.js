@@ -55,13 +55,13 @@ export const forgotPasswordValidation = [
 ];
 
 export const resetPasswordValidation = [
-  body('token')
+  body('code')
     .notEmpty()
-    .withMessage('Reset token is required')
+    .withMessage('Verification code is required')
     .isString()
-    .withMessage('Reset token must be a string')
-    .isLength({ min: 64, max: 64 })
-    .withMessage('Invalid reset token format'),
+    .withMessage('Verification code must be a string')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 digits'),
   body('password')
     .notEmpty()
     .withMessage('Password is required')

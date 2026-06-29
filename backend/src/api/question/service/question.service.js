@@ -21,6 +21,7 @@ import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemi
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
 import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
 import { getAttachmentsForAnswerIds } from '../../answer/service/answer.service.js';
+import { createNotification } from '../../notification/service/notification.service.js';
 
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
 const DEFAULT_K = 5;
@@ -194,7 +195,33 @@ export const createQuestionWithVectorService = async ({ userId, title, content }
   const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, ?, 'ready')`;
   await safeExecute(vectorSql, [questionId, sourceText, JSON.stringify(incomingVector)]);
 
-  // await generateQuestionEmbeddingAsync({ questionId, sourceText });
+  // Notify all other users about the new question
+  try {
+    const [askerRows] = await safeExecute(
+      'SELECT first_name, last_name FROM users WHERE user_id = ?',
+      [userId]
+    );
+    const askerName = askerRows.length > 0
+      ? `${askerRows[0].first_name} ${askerRows[0].last_name}`
+      : 'Someone';
+
+    const allUsers = await safeExecute(
+      'SELECT user_id FROM users WHERE user_id != ?',
+      [userId]
+    );
+
+    for (const u of allUsers) {
+      await createNotification({
+        userId: u.user_id,
+        type: 'question',
+        title: 'New Question',
+        message: `${askerName} asked a new question "${title}"`,
+        link: `/question/${questionHash}`,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to create question notifications:', err);
+  }
 
   return {
     id: questionId,

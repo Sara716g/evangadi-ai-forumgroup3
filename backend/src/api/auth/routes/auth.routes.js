@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @route POST /api/auth/register
- * @desc Register a new user
+ * @desc Create a new user account (validates email via MX record)
  * @access Public
  */
 router.post('/register', registerValidation, registerController);

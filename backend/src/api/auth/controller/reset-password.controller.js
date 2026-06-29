@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes';
 import { resetPasswordService } from '../service/reset-password.service.js';
 
 /**
- * Handles the password reset request after the user clicks the email link.
+ * Handles the password reset request using a verification code.
  *
  * @param {import('express').Request} req
  * @param {import('express').Response} res
@@ -11,9 +11,9 @@ import { resetPasswordService } from '../service/reset-password.service.js';
  */
 export const resetPasswordController = async (req, res, next) => {
   try {
-    const { token, password } = req.body;
+    const { code, password } = req.body;
 
-    await resetPasswordService({ token, password });
+    await resetPasswordService({ code, password });
 
     res.status(StatusCodes.OK).json({
       success: true,

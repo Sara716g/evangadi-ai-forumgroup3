@@ -159,7 +159,7 @@ function AttachmentChip({ attachment }) {
 // ── answer card ──────────────────────────────────────────────────────────────
 
 function AnswerCard({ answer, isSpeaking, onToggleRead }) {
-  const name = answer.author?.username || answer.author?.name || "new user";
+  const name = `${answer.author?.firstName || ''} ${answer.author?.lastName || ''}`.trim() || answer.author?.username || answer.author?.name || "New User";
   return (
     <div
       style={{
@@ -494,7 +494,7 @@ export default function QuestionDetail() {
     );
   }
 
-  const authorName    = question.author?.username || question.author?.name || "New User";
+  const authorName = `${question.author?.firstName || ''} ${question.author?.lastName || ''}`.trim() || question.author?.username || question.author?.name || "New User";
   const isOwnQuestion = user?.id === question.author?.id;
 
   return (

@@ -1,13 +1,18 @@
 import { apiClient } from '../core/api.client.js';
 
 /**
- * Registers a new user.
+ * Registers a new user — creates account and returns token.
  * @param {Object} userData - User details for registration.
  */
 async function register(userData) {
   try {
     const response = await apiClient.post('/api/auth/register', userData);
-    return { user: response.data.user };
+    const { user, token } = response.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    return { user, token };
   } catch (error) {
     throw handleAuthError(error);
   }
@@ -114,12 +119,12 @@ async function forgotPassword(email) {
 }
 
 /**
- * Resets a user's password using a valid reset token.
- * @param {Object} data - { token, password }
+ * Resets a user's password using a valid reset code.
+ * @param {Object} data - { code, password }
  */
-async function resetPassword({ token, password }) {
+async function resetPassword({ code, password }) {
   try {
-    await apiClient.post('/api/auth/reset-password', { token, password });
+    await apiClient.post('/api/auth/reset-password', { code, password });
     return { success: true };
   } catch (error) {
     throw handleAuthError(error);

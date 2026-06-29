@@ -67,7 +67,115 @@ async function migrate() {
     console.error('✗ user_credentials error:', e.message);
   }
 
-  // 6. Install nodemailer
+  // 6. Create notifications table
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        notification_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT,
+        link VARCHAR(500),
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        INDEX idx_notifications_user_id (user_id),
+        INDEX idx_notifications_is_read (is_read)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Created notifications table');
+  } catch (e) {
+    console.error('✗ notifications error:', e.message);
+  }
+
+  // 7. Create voice_messages table
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS voice_messages (
+        voice_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        question_id INT,
+        answer_id INT,
+        audio_url VARCHAR(500) NOT NULL,
+        duration_seconds FLOAT,
+        transcript TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE SET NULL,
+        FOREIGN KEY (answer_id) REFERENCES answers(answer_id) ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Created voice_messages table');
+  } catch (e) {
+    console.error('✗ voice_messages error:', e.message);
+  }
+
+  // 8. Create ai_assistant_logs table
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS ai_assistant_logs (
+        log_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        session_id VARCHAR(100),
+        query_text TEXT NOT NULL,
+        response_text TEXT,
+        source VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        INDEX idx_ai_logs_user_id (user_id),
+        INDEX idx_ai_logs_session_id (session_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Created ai_assistant_logs table');
+  } catch (e) {
+    console.error('✗ ai_assistant_logs error:', e.message);
+  }
+
+  // 9. Create answer_attachments table
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS answer_attachments (
+        attachment_id INT AUTO_INCREMENT PRIMARY KEY,
+        answer_id INT NOT NULL,
+        file_type ENUM('image','pdf') NOT NULL,
+        original_name VARCHAR(255) NOT NULL,
+        mime_type VARCHAR(100) NOT NULL,
+        storage_path VARCHAR(500) NOT NULL,
+        byte_size INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (answer_id) REFERENCES answers(answer_id) ON DELETE CASCADE,
+        INDEX idx_answer_attachments_answer_id (answer_id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Created answer_attachments table');
+  } catch (e) {
+    console.error('✗ answer_attachments error:', e.message);
+  }
+
+  // 10. Create email_verifications table
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS email_verifications (
+        verification_id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        code VARCHAR(6) NOT NULL,
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        expires_at DATETIME NOT NULL,
+        verified TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE INDEX idx_email_verifications_email (email),
+        INDEX idx_email_verifications_code (code)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ Created email_verifications table');
+  } catch (e) {
+    console.error('✗ email_verifications error:', e.message);
+  }
+
+  // Install nodemailer
   console.log('\nIf nodemailer is missing, run: npm install nodemailer');
 
   // Summary

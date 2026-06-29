@@ -1,6 +1,6 @@
 /**
- * ResetPassword: Form to set a new password after clicking the email reset link.
- * Reads the `token` query parameter from the URL.
+ * ResetPassword: Form to set a new password using a verification code.
+ * Reads the `code` query parameter from the URL (or can be used standalone).
  */
 import { useState } from 'react';
 import { motion as Motion } from 'framer-motion';
@@ -19,17 +19,14 @@ import styles from './Auth.module.css';
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const codeFromUrl = searchParams.get('code');
 
+  const [code, setCode] = useState(codeFromUrl || '');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState(
-    !token
-      ? 'No reset token found. Please request a new password reset link.'
-      : null,
-  );
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -37,8 +34,8 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
 
-    if (!token) {
-      setError('No reset token found. Please request a new password reset link.');
+    if (!code || code.length !== 6) {
+      setError('Please enter a valid 6-digit verification code.');
       return;
     }
 
@@ -60,7 +57,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      await authService.resetPassword({ token, password });
+      await authService.resetPassword({ code, password });
       setSuccess(true);
     } catch (err) {
       setError(err.message || 'An unexpected error occurred.');
@@ -176,8 +173,8 @@ export default function ResetPassword() {
               </div>
             </div>
             <p className={styles.auth__infoDescription}>
-              Create a new strong password for your account. Make sure it's
-              at least 6 characters long and something you'll remember.
+              Enter the 6-digit verification code sent to your email, then
+              create a new strong password for your account.
             </p>
           </header>
         </div>
@@ -196,12 +193,26 @@ export default function ResetPassword() {
                 Set new password
               </h2>
               <p className={styles.auth__formSubtitle}>
-                Enter your new password below. Make sure it's at least 6
-                characters long.
+                Enter your verification code and new password below.
               </p>
             </div>
 
             <form className={styles.auth__form} onSubmit={handleSubmit}>
+              <div className={styles.auth__inputGroup}>
+                <label htmlFor='code' className={styles.auth__label}>
+                  Verification Code
+                </label>
+                <input
+                  id='code'
+                  type='text'
+                  placeholder='Enter 6-digit code'
+                  className={styles.auth__input}
+                  value={code}
+                  onChange={e => setCode(e.target.value)}
+                  maxLength={6}
+                />
+              </div>
+
               <div className={styles.auth__inputGroup}>
                 <label htmlFor='password' className={styles.auth__label}>
                   New Password
@@ -272,7 +283,7 @@ export default function ResetPassword() {
                 <button
                   type='submit'
                   className={`${styles.auth__button} ${styles['auth__button--primary']}`}
-                  disabled={loading || !token}
+                  disabled={loading}
                 >
                   {loading ? 'Resetting...' : 'Reset Password'}
                   {!loading && (

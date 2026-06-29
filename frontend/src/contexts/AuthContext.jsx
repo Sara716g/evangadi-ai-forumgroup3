@@ -33,13 +33,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Registers a new user. Does not automatically log them in.
+   * Registers a new user — creates account and updates session state.
    * @param {Object} userData - { firstName, lastName, email, password }
    */
   const register = async userData => {
     setLoading(true);
     try {
       const { user } = await authService.register(userData);
+      setUser(user);
       return { success: true, user };
     } finally {
       setLoading(false);
