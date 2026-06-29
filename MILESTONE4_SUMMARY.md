@@ -2,27 +2,25 @@
 
 ## Overview
 
-This document explains all Milestone 4 features, who does what, and where to add new code.
+This document explains all Milestone 4 features, and where to add new code.
 
 ---
 
 ## Feature List
 
-| Task | Feature | Owner | Time Est. |
-|------|---------|-------|-----------|
-| T-26 | File Attachments | Bini | 2-3 days |
-| T-27 | Voice Messages | Melat | 2-3 days |
-| T-28 | Voting & Comments | Melese | 3-4 days |
-| T-29 | Notifications | You | 3-4 days |
-| T-30 | AI Assistant | Beza | 2-3 days |
-| T-31 | Duplicate Detection | Abubaker | 2 days |
-| T-32 | Categories | Abubaker | 2 days |
-| T-33 | External Forum Search | Tsi | 2 days |
-| T-34 | Bookmarks | Melese | 1-2 days |
-| T-35 | User Profiles | You | 2-3 days |
-| T-36 | Dark Mode | Bini | 1 day |
-
----
+| Task | Feature |
+|------|---------|
+| T-26 | File Attachments |
+| T-27 | Voice Messages |
+| T-28 | Voting & Comments |
+| T-29 | Notification |
+| T-30 | AI Assistant |
+| T-31 | Forgot Password |
+| T-32 | Categories |
+| T-33 | External Forum Search |
+| T-34 | Bookmarks |
+| T-35 | User Profiles |
+| T-36 | Dark Mode |
 
 ## Folder Structure
 
@@ -30,20 +28,20 @@ This document explains all Milestone 4 features, who does what, and where to add
 
 ```
 backend/src/api/
-├── auth/              (Milestone 1 - done)
+├── auth/              (Milestone 1 - done, UPDATE for T-31 Forgot Password)
 ├── question/          (Milestone 2 - done)
 ├── answer/            (Milestone 2 - done)
 ├── rag/               (Milestone 3 - done)
-├── attachment/        (NEW - T-26) ← Bini creates
-├── voice-message/     (NEW - T-27) ← Melat creates
-├── vote/              (NEW - T-28) ← Melese creates
-├── comment/           (NEW - T-28) ← Melese creates
-├── notification/      (NEW - T-29) ← You creates
-├── ai-assistant/      (NEW - T-30) ← Beza creates
-├── duplicate/         (NEW - T-31) ← Abubaker creates
-├── category/          (NEW - T-32) ← Abubaker creates
-├── bookmark/          (NEW - T-34) ← Melese creates
-├── profile/           (NEW - T-35) ← You creates
+├── attachment/        (NEW - T-26) ← 
+├── voice-message/     (NEW - T-27) ← 
+├── vote/              (NEW - T-28) ← 
+├── comment/           (NEW - T-28) ← 
+├── notification/      (NEW - T-29) ← 
+├── ai-assistant/      (NEW - T-30) ← 
+├── category/          (NEW - T-32) ← 
+├── bookmark/          (NEW - T-34) ← 
+├── profile/           (NEW - T-35) ←
+├── admin/             (NEW - T-37) ←
 └── routes.js          (UPDATE - add new routes)
 ```
 
@@ -55,41 +53,43 @@ frontend/src/
 │   ├── Layout/        (done)
 │   ├── Navbar/        (UPDATE - add notification bell)
 │   ├── Sidebar/       (UPDATE - add categories)
-│   ├── Attachment/    (NEW - T-26) ← Bini creates
-│   ├── VoiceRecorder/ (NEW - T-27) ← Melat creates
-│   ├── Voting/        (NEW - T-28) ← Melese creates
-│   ├── Comment/       (NEW - T-28) ← Melese creates
-│   ├── Notification/  (NEW - T-29) ← You creates
-│   ├── Duplicate/     (NEW - T-31) ← Abubaker creates
-│   ├── Bookmark/      (NEW - T-34) ← Melese creates
-│   ├── Profile/       (NEW - T-35) ← You creates
-│   └── ThemeToggle/   (NEW - T-36) ← Bini creates
+│   ├── Attachment/    (NEW - T-26) ← 
+│   ├── VoiceRecorder/ (NEW - T-27) ← 
+│   ├── Voting/        (NEW - T-28) ← 
+│   ├── Comment/       (NEW - T-28) ← 
+│   ├── Notification/  (NEW - T-29) ←
+│   ├── admin/         (NEW - T-37) ←
+│   ├── Bookmark/      (NEW - T-34) ← 
+│   ├── Profile/       (NEW - T-35) ← 
+│   └── ThemeToggle/   (NEW - T-36) ← 
 │
 ├── pages/
 │   ├── Dashboard/     (done)
-│   ├── Auth/          (done)
-│   ├── Notifications/ (NEW - T-29) ← You creates
-│   ├── Bookmarks/     (NEW - T-34) ← Melese creates
-│   └── Profile/       (NEW - T-35) ← You creates
+│   ├── Auth/          (done, UPDATE for T-31 Forgot Password)
+│   ├── Admin/         (NEW - T-37) ←
+│   ├── Notifications/ (NEW - T-29) ← 
+│   ├── Bookmarks/     (NEW - T-34) ← 
+│   └── Profile/       (NEW - T-35) ← 
 │
-├── services/          (UPDATE - add API calls)
-│   ├── attachment.service.js    (NEW)
-│   ├── voice.service.js         (NEW)
-│   ├── vote.service.js          (NEW)
-│   ├── comment.service.js       (NEW)
-│   ├── notification.service.js  (NEW)
-│   ├── bookmark.service.js      (NEW)
-│   └── profile.service.js       (NEW)
+├── services/ (UPDATE - add API calls)
+│   ├── attachment.service.js (NEW)
+│   ├── voice.service.js (NEW)
+│   ├── vote.service.js (NEW)
+│   ├── comment.service.js (NEW)
+│   ├── notification.service.js (NEW)
+│   ├── bookmark.service.js (NEW)
+│   ├── profile.service.js (NEW)
+│   └── admin.service.js (NEW)
 │
 └── contexts/
-    └── ThemeContext.jsx  (NEW - T-36) ← Bini creates
+    └── ThemeContext.jsx (NEW - T-36) ← Bini creates
 ```
 
 ---
 
 ## What Each Person Needs to Do
 
-### Bini (T-26 + T-36)
+### (T-26 + T-36)
 
 **Backend:**
 1. Create `backend/src/api/attachment/` folder
@@ -107,7 +107,7 @@ frontend/src/
 
 ---
 
-### Melat (T-27)
+### (T-27)
 
 **Backend:**
 1. Create `backend/src/api/voice-message/` folder
@@ -122,7 +122,7 @@ frontend/src/
 
 ---
 
-### Melese (T-28 + T-34)
+### (T-28 + T-34)
 
 **Backend:**
 1. Create `backend/src/api/vote/` folder
@@ -145,7 +145,7 @@ frontend/src/
 
 ---
 
-### You (T-29 + T-35)
+### (T-29 + T-35)
 
 **Backend:**
 1. Create `backend/src/api/notification/` folder
@@ -168,7 +168,7 @@ frontend/src/
 
 ---
 
-### Beza (T-30)
+### (T-30)
 
 **Backend:**
 1. Create `backend/src/api/ai-assistant/` folder
@@ -179,24 +179,26 @@ frontend/src/
 
 ---
 
-### Abubaker (T-31 + T-32)
+### (T-31 Forgot Password + T-32 Categories)
 
 **Backend:**
-1. Create `backend/src/api/duplicate/` folder
+1. Update `backend/src/api/auth/` folder - add forgot-password and reset-password files
 2. Create `backend/src/api/category/` folder
 
 **Frontend:**
-1. Create `frontend/src/components/Duplicate/DuplicateWarning.jsx`
-2. Create `frontend/src/components/Categories/CategorySidebar.jsx`
+1. Create `frontend/src/pages/Auth/ForgotPassword.jsx`
+2. Create `frontend/src/pages/Auth/ResetPassword.jsx`
+3. Create `frontend/src/components/Categories/CategorySidebar.jsx`
 
 **API Endpoints:**
-- `POST /api/questions/check-duplicate` - detect duplicates
+- `POST /api/auth/forgot-password` - send reset email
+- `POST /api/auth/reset-password` - reset password with token
 - `GET /api/categories` - list categories
 - `GET /api/questions/category/:id` - filter by category
 
 ---
 
-### Tsi (T-33)
+### (T-33)
 
 **Backend:**
 1. Create `backend/src/api/community/` folder
@@ -225,7 +227,7 @@ git checkout -b feature/T-27-melat-voice
 git checkout -b feature/T-28-melese-voting
 git checkout -b feature/T-29-you-notifications
 git checkout -b feature/T-30-beza-ai
-git checkout -b feature/T-31-abubaker-duplicate
+git checkout -b feature/T-31-gebre-forgot-password
 git checkout -b feature/T-32-abubaker-categories
 git checkout -b feature/T-33-tsi-external
 git checkout -b feature/T-34-melese-bookmarks
@@ -240,6 +242,7 @@ git checkout -b feature/T-36-bini-darkmode
 All task details are in: `tasks/MASTER_TASK_LIST.md`
 
 Each task has detailed docs in:
+
 - `tasks/backend/[feature-name]/`
 - `tasks/frontend/[feature-name]/`
 
@@ -247,12 +250,12 @@ Each task has detailed docs in:
 
 ## Timeline
 
-| Week | Focus |
-|------|-------|
+| Week   | Focus                                              |
+| ------ | -------------------------------------------------- |
 | Week 1 | Setup branches, create folders, start backend APIs |
-| Week 2 | Complete backend, start frontend components |
-| Week 3 | Complete frontend, integrate with backend |
-| Week 4 | Testing, bug fixes, final touches |
+| Week 2 | Complete backend, start frontend components        |
+| Week 3 | Complete frontend, integrate with backend          |
+| Week 4 | Testing, bug fixes, final touches                  |
 
 ---
 

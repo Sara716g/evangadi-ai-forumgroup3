@@ -5,6 +5,7 @@ import {
   Loader2,
   AlertCircle,
   RotateCcw,
+  RotateCw,
   Download,
   Menu,
   Printer,
@@ -12,7 +13,7 @@ import {
   Redo2,
   Pencil,
   MoreVertical,
-  Square, 
+  Square,
 } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -134,7 +135,7 @@ function ReaderPanel({ activeDocument }) {
     setCurrentPage(1);
   }
 
-  function goToPrevPage() {
+function goToPrevPage() {
     pushToUndo();
     setCurrentPage((p) => Math.max(p - 1, 1));
   }
@@ -553,6 +554,27 @@ export default function RagDocuments() {
   const [loadError, setLoadError] = useState(null);
   const [activeDocument, setActiveDocument] = useState(null);
 
+  async function loadDocuments() {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const data = await ragService.listDocuments();
+      const docs = (data.data || data || []).map((doc) => ({
+        id: doc.document_id || doc.id,
+        name: doc.title || doc.name,
+        title: doc.title || doc.name,
+        status: doc.status,
+        errorMessage: doc.error_message || null,
+      }));
+      setDocuments(docs);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+      setLoadError("Could not load documents.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     loadDocuments();
   }, []);
@@ -587,27 +609,6 @@ export default function RagDocuments() {
 
     return () => clearInterval(pollInterval);
   }, [activeDocument?.id, activeDocument?.status]);
-
-  async function loadDocuments() {
-    try {
-      setIsLoading(true);
-      setLoadError(null);
-      const data = await ragService.listDocuments();
-      const docs = (data.data || data || []).map((doc) => ({
-        id: doc.document_id || doc.id,
-        name: doc.title || doc.name,
-        title: doc.title || doc.name,
-        status: doc.status,
-        errorMessage: doc.error_message || null,
-      }));
-      setDocuments(docs);
-    } catch (err) {
-      console.error("Failed to load documents:", err);
-      setLoadError("Could not load documents.");
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   function handleSelectDocument(doc) {
     setActiveDocument(doc);

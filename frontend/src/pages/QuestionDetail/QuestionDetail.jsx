@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { Square, Volume2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { getSingleQuestion, getSimilarQuestions } from "../../services/";
-import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service";
-import { toggleAnswerVote } from "../../services/answer/answerVote.service";
-import { getAnswerComments, postAnswerComment } from "../../services/answer/answerComment.service";
+import { postAnswer, assessAnswerFit } from "../../services/answer/answer.service.js";
+import { toggleAnswerVote } from "../../services/answer/answerVote.service.js";
+import { getAnswerComments, postAnswerComment } from "../../services/answer/answerComment.service.js";
 import { useAuth } from "../../contexts/AuthContext.jsx";
+import { apiClient } from "../../services/core/api.client.js";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -41,6 +43,16 @@ function Avatar({ name = "", size = 36 }) {
       {initials || "?"}
     </div>
   );
+}
+
+function getReadableAnswerText(content = "") {
+  return content
+    .replace(/```[\s\S]*?```/g, " code block. ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[#>*_~]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // ── AI fit panel ─────────────────────────────────────────────────────────────
@@ -223,15 +235,89 @@ function CommentSection({ answerId, isOpen, onCommentAdded }) {
   );
 }
 
+function AttachmentChip({ attachment }) {
+  const [objectUrl, setObjectUrl] = useState(null);
+  const [error, setError] = useState(false);
+  const isImage = attachment.type === "image";
+
+  useEffect(() => {
+    let createdUrl = null;
+    let cancelled = false;
+
+    async function loadFile() {
+      try {
+        const res = await apiClient.get(attachment.url, { responseType: "blob" });
+        if (cancelled) return;
+        createdUrl = URL.createObjectURL(res.data);
+        setObjectUrl(createdUrl);
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    }
+
+    loadFile();
+
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [attachment.url]);
+
+  if (error) {
+    return <span style={{ fontSize: 12, color: "#e74c3c" }}>Failed to load attachment</span>;
+  }
+
+  if (!objectUrl) {
+    return <span style={{ fontSize: 12, color: "#aaa" }}>Loading attachment…</span>;
+  }
+
+  if (isImage) {
+    return (
+      <a href={objectUrl} target="_blank" rel="noopener noreferrer">
+        <img
+          src={objectUrl}
+          alt={attachment.originalName}
+          style={{ maxWidth: 220, maxHeight: 220, borderRadius: 8, border: "1px solid #e8e8e8", display: "block" }}
+        />
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={objectUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      download={attachment.originalName}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        border: "1px solid #e8e8e8",
+        borderRadius: 6,
+        padding: "6px 10px",
+        fontSize: 12,
+        background: "#fafafa",
+        textDecoration: "none",
+        color: "#333",
+      }}
+    >
+      <span>📄</span>
+      <span style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {attachment.originalName}
+      </span>
+    </a>
+  );
+}
+
 // ── answer card ──────────────────────────────────────────────────────────────
 
-function AnswerCard({ answer, onVote, isVoting }) {
-  const name = answer.author?.username || answer.author?.name || "new user";
+function AnswerCard({ answer, onVote, isVoting, isSpeaking, onToggleRead }) {
+  const name = `${answer.author?.firstName || ''} ${answer.author?.lastName || ''}`.trim() || answer.author?.username || answer.author?.name || "New User";
   const voteCount = answer.voteCount ?? 0;
   const userHasVoted = answer.userHasVoted ?? false;
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(answer.commentCount ?? 0);
-
   return (
     <div
       style={{
@@ -242,9 +328,16 @@ function AnswerCard({ answer, onVote, isVoting }) {
         overflow: "hidden",
       }}
     >
-      {/* ── answer content ── */}
-      <div style={{ padding: "16px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <Avatar name={name} />
           <div>
             <div style={{ fontWeight: 600, fontSize: 14 }}>{name}</div>
@@ -254,6 +347,23 @@ function AnswerCard({ answer, onVote, isVoting }) {
         <div style={{ fontSize: 15, lineHeight: 1.7, color: "#222" }}>
           <ReactMarkdown>{answer.content}</ReactMarkdown>
         </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onToggleRead(answer)}
+          aria-pressed={isSpeaking}
+          title={isSpeaking ? "Stop reading answer" : "Read answer aloud"}
+          style={{
+            ...ghostBtn,
+            flexShrink: 0,
+            padding: "6px 10px",
+            color: isSpeaking ? "#e67e22" : "#555",
+            borderColor: isSpeaking ? "#e67e22" : "#d9d9d9",
+          }}
+        >
+          {isSpeaking ? <Square size={14} /> : <Volume2 size={15} />}
+          {isSpeaking ? "Stop" : "Read aloud"}
+        </button>
       </div>
 
       {/* ── vote + comment bar ── */}
@@ -317,6 +427,14 @@ function AnswerCard({ answer, onVote, isVoting }) {
 
       {/* ── comments panel (below the bar) ── */}
       <CommentSection answerId={answer.id} isOpen={showComments} onCommentAdded={() => setCommentCount((c) => c + 1)} />
+
+      {answer.attachments?.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+          {answer.attachments.map((att) => (
+            <AttachmentChip key={att.id} attachment={att} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -378,6 +496,12 @@ const ghostBtn = {
   gap: 5,
 };
 
+// ── attachment config ────────────────────────────────────────────────────────
+
+const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"];
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 // ── page ─────────────────────────────────────────────────────────────────────
 
 export default function QuestionDetail() {
@@ -399,6 +523,12 @@ export default function QuestionDetail() {
 
   const [isChecking, setIsChecking] = useState(false);
   const [fitResult,  setFitResult]  = useState(null); // { level, note }
+  const [speakingAnswerId, setSpeakingAnswerId] = useState(null);
+  const [speechMessage, setSpeechMessage] = useState("");
+
+  // attachments for the answer being composed
+  const [answerFiles, setAnswerFiles] = useState([]);
+  const [attachmentError, setAttachmentError] = useState("");
 
   const [votingAnswerId, setVotingAnswerId] = useState(null);
 
@@ -408,9 +538,10 @@ export default function QuestionDetail() {
       setIsLoading(true);
       setLoadError(false);
       try {
-        const data = await getSingleQuestion(id);
-        setQuestion(data.question ?? data);
-        setAnswers(data.answers ?? []);
+        const res = await getSingleQuestion(id);
+        // Backend shape: { success, message, question, answers, answersMeta }
+        setQuestion(res.question);
+        setAnswers(res.answers ?? []);
 
         // Fetch similar questions in the background (non-blocking)
         getSimilarQuestions(id)
@@ -425,11 +556,44 @@ export default function QuestionDetail() {
     load();
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis?.cancel();
+    };
+  }, []);
+
   function handleTextChange(e) {
     setAnswerText(e.target.value);
     setCharCount(e.target.value.length);
     setPostError("");
     setFitResult(null);
+  }
+
+  function handleFilesSelected(e) {
+    const picked = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting the same file later
+
+    const accepted = [];
+    const rejected = [];
+
+    for (const file of picked) {
+      if (!ACCEPTED_TYPES.includes(file.type)) {
+        rejected.push(`${file.name} (unsupported type)`);
+        continue;
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        rejected.push(`${file.name} (over 10MB)`);
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    setAnswerFiles((prev) => [...prev, ...accepted].slice(0, MAX_FILES));
+    setAttachmentError(rejected.length > 0 ? `Skipped: ${rejected.join(", ")}` : "");
+  }
+
+  function handleRemoveFile(index) {
+    setAnswerFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   function handleInsert([before, after]) {
@@ -465,11 +629,13 @@ export default function QuestionDetail() {
     setIsPosting(true);
     setPostError("");
     try {
-      const newAnswer = await postAnswer(question.id, answerText);
+      const newAnswer = await postAnswer(question.id, answerText, answerFiles);
       setAnswers((prev) => [...prev, newAnswer]);
       setAnswerText("");
       setCharCount(0);
       setFitResult(null);
+      setAnswerFiles([]);
+      setAttachmentError("");
     } catch {
       setPostError("Failed to post answer. Please try again.");
     } finally {
@@ -498,6 +664,45 @@ export default function QuestionDetail() {
     } finally {
       setVotingAnswerId(null);
     }
+  }
+
+  function handleToggleReadAnswer(answer) {
+    if (!("speechSynthesis" in window)) {
+      setSpeechMessage("Read aloud is not supported in this browser.");
+      return;
+    }
+
+    if (speakingAnswerId === answer.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingAnswerId(null);
+      setSpeechMessage("");
+      return;
+    }
+
+    const text = getReadableAnswerText(answer.content);
+    if (!text) {
+      setSpeechMessage("This answer has no readable text.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.onend = () => {
+      setSpeakingAnswerId((currentId) =>
+        currentId === answer.id ? null : currentId,
+      );
+    };
+    utterance.onerror = () => {
+      setSpeakingAnswerId(null);
+      setSpeechMessage("Could not read this answer aloud.");
+    };
+
+    setSpeechMessage("");
+    setSpeakingAnswerId(answer.id);
+    window.speechSynthesis.speak(utterance);
   }
 
   // ── loading ───────────────────────────────────────────────────────────────
@@ -535,9 +740,8 @@ export default function QuestionDetail() {
     );
   }
 
-  const authorName    = question.author?.username || question.author?.name || "New User";
-  // ⬇ swap `false` for a real auth check once you have a currentUser context
-  const isOwnQuestion = false;
+  const authorName = `${question.author?.firstName || ''} ${question.author?.lastName || ''}`.trim() || question.author?.username || question.author?.name || "New User";
+  const isOwnQuestion = user?.id === question.author?.id;
 
   return (
     <div style={{ display: "flex", gap: 28, maxWidth: 1160, margin: "0 auto", padding: "24px 20px", alignItems: "flex-start" }}>
@@ -606,6 +810,11 @@ export default function QuestionDetail() {
       <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
         Community Answers ({answers.length})
       </h2>
+      {speechMessage && (
+        <p style={{ color: "#cf1322", fontSize: 13, margin: "-6px 0 14px" }}>
+          {speechMessage}
+        </p>
+      )}
 
       {answers.length === 0 ? (
         <div
@@ -632,6 +841,8 @@ export default function QuestionDetail() {
               answer={a}
               onVote={handleVote}
               isVoting={votingAnswerId === a.id}
+              isSpeaking={speakingAnswerId === a.id}
+              onToggleRead={handleToggleReadAnswer}
             />
           ))}
         </div>
@@ -700,6 +911,70 @@ export default function QuestionDetail() {
                 {charCount} characters
               </span>
             </div>
+          </div>
+
+          {/* attachment picker */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <label
+                htmlFor="answer-file-input"
+                style={{
+                  ...ghostBtn,
+                  cursor: answerFiles.length >= MAX_FILES ? "not-allowed" : "pointer",
+                  opacity: answerFiles.length >= MAX_FILES ? 0.5 : 1,
+                }}
+              >
+                📎 Attach image or PDF
+              </label>
+              <input
+                id="answer-file-input"
+                type="file"
+                multiple
+                accept={ACCEPTED_TYPES.join(",")}
+                onChange={handleFilesSelected}
+                disabled={answerFiles.length >= MAX_FILES}
+                style={{ display: "none" }}
+              />
+              <span style={{ fontSize: 12, color: "#aaa" }}>
+                Up to {MAX_FILES} files, 10MB each.
+              </span>
+            </div>
+
+            {attachmentError && (
+              <p style={{ color: "#e74c3c", fontSize: 13, marginTop: 6 }}>{attachmentError}</p>
+            )}
+
+            {answerFiles.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                {answerFiles.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      border: "1px solid #e8e8e8",
+                      borderRadius: 6,
+                      padding: "6px 10px",
+                      fontSize: 12,
+                      background: "#fafafa",
+                    }}
+                  >
+                    <span>{file.type === "application/pdf" ? "📄" : "🖼️"}</span>
+                    <span style={{ maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {file.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      style={{ border: "none", background: "none", cursor: "pointer", color: "#e74c3c", fontWeight: 700 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {fitResult && <FitPanel level={fitResult.level} note={fitResult.note} />}

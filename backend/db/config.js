@@ -17,6 +17,7 @@ export const db = mysql.createPool({
   password: dbPassword,
   database: dbName,
   port: dbPort,
+  timezone: '+00:00',
 });
 
 const ensureParams = (params) => {

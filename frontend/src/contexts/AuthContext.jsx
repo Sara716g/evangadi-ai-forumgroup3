@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth/auth.service.js';
 
@@ -15,9 +15,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const initialized = useRef(false);
 
   // Initialize user state from localStorage on mount
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const token = authService.getStoredToken();
     const storedUser = authService.getStoredUser();
 
@@ -29,16 +33,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Registers a new user. Does not automatically log them in.
+   * Registers a new user — creates account and updates session state.
    * @param {Object} userData - { firstName, lastName, email, password }
    */
   const register = async userData => {
     setLoading(true);
     try {
       const { user } = await authService.register(userData);
+      setUser(user);
       return { success: true, user };
-    } catch (error) {
-      throw error;
     } finally {
       setLoading(false);
     }
@@ -54,8 +57,6 @@ export function AuthProvider({ children }) {
       const { user } = await authService.login(credentials);
       setUser(user);
       return { success: true };
-    } catch (error) {
-      throw error;
     } finally {
       setLoading(false);
     }
@@ -87,6 +88,7 @@ export function AuthProvider({ children }) {
  * Custom hook to access the authentication context.
  * @throws {Error} If used outside of AuthProvider
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
 

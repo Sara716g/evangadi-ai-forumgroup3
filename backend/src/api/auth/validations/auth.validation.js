@@ -42,3 +42,31 @@ export const loginValidation = [
 
   validationErrorHandler,
 ];
+
+export const forgotPasswordValidation = [
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email address is required')
+    .normalizeEmail(),
+
+  validationErrorHandler,
+];
+
+export const resetPasswordValidation = [
+  body('code')
+    .notEmpty()
+    .withMessage('Verification code is required')
+    .isString()
+    .withMessage('Verification code must be a string')
+    .isLength({ min: 6, max: 6 })
+    .withMessage('Verification code must be 6 digits'),
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
+
+  validationErrorHandler,
+];

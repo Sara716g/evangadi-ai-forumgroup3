@@ -1,16 +1,13 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, LogOut, MessageSquare, FileText } from 'lucide-react';
+import { LayoutDashboard, LogOut, MessageSquare, FileText, Search, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
-/**
- * Primary navigation: paths must match `App.jsx` routes.
- * Add rows here when you ship new sections (e.g. Admin, Bookmarks).
- */
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
   { icon: MessageSquare, label: 'Your Topics', path: '/my-questions' },
   { icon: FileText, label: 'Knowledge Base', path: '/rag-documents' },
+  { icon: Search, label: 'Community Search', path: '/community-search' },
 ];
 
 export default function Sidebar() {
@@ -76,6 +73,38 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {user?.role === 'admin' && (
+        <nav className={styles.sidebar__nav} aria-label='Admin navigation'>
+          <p className={styles.sidebar__navLabel}>Admin</p>
+          <div className={styles['sidebar__nav-item-wrapper']}>
+            <NavLink
+              to='/admin'
+              className={({ isActive }) =>
+                `${styles.sidebar__link} ${
+                  isActive
+                    ? styles['sidebar__link--active']
+                    : styles['sidebar__link--inactive']
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <Shield
+                    size={18}
+                    className={`${styles.sidebar__icon} ${
+                      isActive
+                        ? styles['sidebar__icon--active']
+                        : styles['sidebar__icon--inactive']
+                    }`}
+                  />
+                  <span>Admin Dashboard</span>
+                </>
+              )}
+            </NavLink>
+          </div>
+        </nav>
+      )}
 
       <div className={styles.sidebar__footer}>
         <button

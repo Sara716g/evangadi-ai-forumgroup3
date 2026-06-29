@@ -20,9 +20,46 @@ import { embedSearchQuery } from '../../../utils/gemini/embedding.service.js';
 import { generateQuestionDraftCoachService as generateQuestionDraftCoachFromGemini } from './GeminiTextCoach.service.js';
 import { generateHexString, cosineSimilarity, normalizeEmbedding } from './vector.service.js';
 import { parseEmbedding } from '../../../utils/vector/vector.utils.js';
+import { getAttachmentsForAnswerIds } from '../../answer/service/answer.service.js';
+import { createNotification } from '../../notification/service/notification.service.js';
 
 const DEFAULT_RECOMMEND_THRESHOLD = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75);
 const DEFAULT_K = 5;
+
+// ── SAFE JSON PARSER HELPER ──────────────────────────────────────────────────
+/**
+ * Safely parses stringified embedding vectors, repairing concatenated 
+ * JSON tokens or accidental formatting bugs gracefully.
+ */
+const safeJsonParse = (str, fallback = []) => {
+  if (!str) return fallback;
+  if (typeof str !== 'string') return str; // Already parsed by database layer
+
+  let cleanStr = str.trim();
+
+  // Strip unexpected markdown code blocks if present
+  if (cleanStr.startsWith("```json")) {
+    cleanStr = cleanStr.replace(/^```json/, "").replace(/```$/, "").trim();
+  } else if (cleanStr.startsWith("```")) {
+    cleanStr = cleanStr.replace(/^```/, "").replace(/```$/, "").trim();
+  }
+
+  try {
+    return JSON.parse(cleanStr);
+  } catch (e) {
+    try {
+      // Fix back-to-back concatenated json strings (e.g., {"id":1}{"id":2})
+      const structuralPatch = "[" + cleanStr.replace(/}\s*{/g, "},{") + "]";
+      return JSON.parse(structuralPatch);
+    } catch (secondError) {
+      console.error("── [Embedding Parse Failure] ───────────────────────────────");
+      console.error("Target String text context:", str);
+      console.error("Exception Message:", e.message);
+      console.error("────────────────────────────────────────────────────────────");
+      return fallback;
+    }
+  }
+};
 
 const mapQuestionRow = row => ({
   id: row.question_id,
@@ -95,18 +132,99 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
   }
 };
 
+/**
+ * Handles question publishing with strict vector duplicate checking logic.
+ */
 export const createQuestionWithVectorService = async ({ userId, title, content }) => {
-  const questionHash = generateHexString(16);
+   const sourceText = `${title}\n\n${content}`;
+  
+  // 1. Generate the vector embedding upfront for validation
+  const vector = await generateEmbedding(sourceText);
+  const incomingVector = normalizeEmbedding(vector);
+  
+  if (incomingVector.length > 0) {
+    // Prevent short selections from getting broken by MySQL default truncation boundaries
+    await safeExecute("SET SESSION group_concat_max_len = 1000000;", []);
 
+    // 2. Pull all existing ready question vectors to check for exact/near duplicates
+    const rows = await safeExecute(selectReadyQuestionVectorsSql, []);
+    
+    // Set a strict duplicate threshold (e.g., 0.85 similarity score or 85% match)
+    const DUPLICATE_THRESHOLD = 0.9;
+    
+    const duplicateMatch = rows
+      .map(row => {
+        const embedding = normalizeEmbedding(safeJsonParse(row.embedding, []));
+        
+        // Skip comparing against bad/un-indexed rows
+        if (embedding.length === 0) return { score: 0 };
+
+        return {
+          id: row.question_id,
+          title: row.title,
+          questionHash: row.question_hash,
+          score: cosineSimilarity(incomingVector, embedding),
+        };
+      })
+      .filter(item => item.score >= DUPLICATE_THRESHOLD)
+      .sort((a, b) => b.score - a.score)[0]; // Get the closest matching question
+
+    // 3. If a duplicate is found, abort creation and throw a clear exception
+    if (duplicateMatch && duplicateMatch.id) {
+      const error = new Error("A highly similar question already exists on the forum.");
+      error.statusCode = 409;
+      error.code = 'DuplicateDetected';
+      error.existingQuestion = {
+        id: duplicateMatch.id,
+        question_id: duplicateMatch.id, // Direct map fallback parameter
+        title: duplicateMatch.title,
+        hash: duplicateMatch.questionHash,
+        questionHash: duplicateMatch.questionHash,
+      };
+      throw error;
+    }
+  }
+
+  // 4. No Duplicate Found -> Proceed with normal insertion
+  const questionHash = generateHexString(16);
   const insertSql = `INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)`;
   const insertResult = await safeExecute(insertSql, [questionHash, userId, title, content]);
   const questionId = insertResult.insertId;
 
-  const sourceText = `${title}\n\n${content}`;
-  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
-  await safeExecute(vectorSql, [questionId, sourceText]);
+  // Save the pre-computed embedding safely right away to optimize system performance
+  // const sourceText = `${title}\n\n${content}`;
+  // const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
+  // await safeExecute(vectorSql, [questionId, sourceText]);
+  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, ?, 'ready')`;
+  await safeExecute(vectorSql, [questionId, sourceText, JSON.stringify(incomingVector)]);
 
-  await generateQuestionEmbeddingAsync({ questionId, sourceText });
+  // Notify all other users about the new question
+  try {
+    const [askerRows] = await safeExecute(
+      'SELECT first_name, last_name FROM users WHERE user_id = ?',
+      [userId]
+    );
+    const askerName = askerRows.length > 0
+      ? `${askerRows[0].first_name} ${askerRows[0].last_name}`
+      : 'Someone';
+
+    const allUsers = await safeExecute(
+      'SELECT user_id FROM users WHERE user_id != ?',
+      [userId]
+    );
+
+    for (const u of allUsers) {
+      await createNotification({
+        userId: u.user_id,
+        type: 'question',
+        title: 'New Question',
+        message: `${askerName} asked a new question "${title}"`,
+        link: `/question/${questionHash}`,
+      });
+    }
+  } catch (err) {
+    console.error('Failed to create question notifications:', err);
+  }
 
   return {
     id: questionId,
@@ -218,7 +336,16 @@ export const getSingleQuestionService = async ({ questionHash, userId }) => {
     ORDER BY a.created_at ASC
   `;
 
-  const answers = await safeExecute(answersSql, [userId || null, question.question_id]);
+  const answerRows = await safeExecute(answersSql, [userId || null, question.question_id]);
+
+  // Attach any images/PDFs uploaded with each answer.
+  const answerIds = answerRows.map(row => row.answer_id);
+  const attachmentsByAnswerId = await getAttachmentsForAnswerIds(answerIds);
+
+  const answers = answerRows.map(row => ({
+    ...mapAnswerRow(row),
+    attachments: attachmentsByAnswerId.get(row.answer_id) || [],
+  }));
 
   return {
     question: {
@@ -235,7 +362,7 @@ export const getSingleQuestionService = async ({ questionHash, userId }) => {
         lastName: question.last_name,
       },
     },
-    answers: answers.map(mapAnswerRow),
+    answers,
     answersMeta: {
       limit: 100,
       total: answers.length,
@@ -381,26 +508,43 @@ export const assessAnswerAgainstQuestionService = async ({ questionHash, answerT
 
   const question = rows[0];
   const prompt = `You are a skilled forum moderator.
-Evaluate the answer below against the question content. Provide:
-1) A short judgment whether the answer is relevant and on-topic.
-2) A relevance score from 0 to 100.
-3) Two improvement suggestions for the answer.
-4) If the answer misses the main point, explain what is missing.
+Evaluate the answer below against the question content.
+Determine if the answer is "strong", "partial", or "weak":
+- "strong": answer directly addresses the question with clear, accurate information
+- "partial": answer is related but incomplete or misses key points
+- "weak": answer is off-topic, incorrect, or insufficient
+
+Respond with valid JSON only, no markdown. Use this exact structure:
+{
+  "level": "strong" or "partial" or "weak",
+  "note": "A brief 1-2 sentence explanation of your assessment"
+}
 
 Question Title: ${question.title}
 Question Content: ${question.content}
-Answer: ${answerText}
+Answer: ${answerText}`;
 
-Respond clearly in plain text.`;
+  const raw = await generateText(prompt);
 
-  const assessment = await generateText(prompt);
-  return {
-    question: {
-      id: question.question_id,
-      title: question.title,
-      content: question.content,
-    },
-    answerText,
-    assessment,
-  };
+  // Strip markdown code fences if present
+  let jsonStr = raw.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
+
+  try {
+    const parsed = JSON.parse(jsonStr);
+    return {
+      level: ['strong', 'partial', 'weak'].includes(parsed.level) ? parsed.level : 'partial',
+      note: parsed.note || '',
+    };
+  } catch {
+    // Fallback: try to detect level from raw text
+    const lower = raw.toLowerCase();
+    let level = 'partial';
+    if (lower.includes('strong')) level = 'strong';
+    else if (lower.includes('weak')) level = 'weak';
+    return { level, note: raw };
+  }
 };

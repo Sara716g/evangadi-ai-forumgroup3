@@ -205,6 +205,13 @@
   padding: 0.375rem 0.625rem;
   border-radius: 0.375rem;
   text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.badgeOrange:hover {
+  opacity: 0.85;
 }
 
 .feedStateCenteringFrame { 

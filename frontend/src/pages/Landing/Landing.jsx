@@ -491,13 +491,13 @@ export default function Landing() {
             <span className={styles.landing__footerDot} aria-hidden>
               ·
             </span>
-            <a href='#' className={styles.landing__footerLinkAnchor}>
+            <a href='/privacy' className={styles.landing__footerLinkAnchor}>
               Privacy
             </a>
             <span className={styles.landing__footerDot} aria-hidden>
               ·
             </span>
-            <a href='#' className={styles.landing__footerLinkAnchor}>
+            <a href='/terms' className={styles.landing__footerLinkAnchor}>
               Terms
             </a>
           </div>

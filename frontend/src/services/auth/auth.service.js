@@ -1,13 +1,18 @@
 import { apiClient } from '../core/api.client.js';
 
 /**
- * Registers a new user.
+ * Registers a new user — creates account and returns token.
  * @param {Object} userData - User details for registration.
  */
 async function register(userData) {
   try {
     const response = await apiClient.post('/api/auth/register', userData);
-    return { user: response.data.user };
+    const { user, token } = response.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+
+    return { user, token };
   } catch (error) {
     throw handleAuthError(error);
   }
@@ -55,7 +60,7 @@ function getStoredUser() {
 
   try {
     return JSON.parse(userJson);
-  } catch (error) {
+  } catch {
     // If JSON parsing fails, clear invalid data
     localStorage.removeItem('user');
     return null;
@@ -101,6 +106,32 @@ function handleAuthError(error) {
 }
 
 /**
+ * Sends a forgot-password request to generate a reset email.
+ * @param {string} email - The user's email address.
+ */
+async function forgotPassword(email) {
+  try {
+    await apiClient.post('/api/auth/forgot-password', { email });
+    return { success: true };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
+ * Resets a user's password using a valid reset code.
+ * @param {Object} data - { code, password }
+ */
+async function resetPassword({ code, password }) {
+  try {
+    await apiClient.post('/api/auth/reset-password', { code, password });
+    return { success: true };
+  } catch (error) {
+    throw handleAuthError(error);
+  }
+}
+
+/**
  * Service for handling auth-related requests.
  */
 export const authService = {
@@ -110,4 +141,6 @@ export const authService = {
   getStoredToken,
   getStoredUser,
   isAuthenticated,
+  forgotPassword,
+  resetPassword,
 };

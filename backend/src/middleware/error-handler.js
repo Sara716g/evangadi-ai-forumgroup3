@@ -13,6 +13,10 @@ export const errorHandler = (err, req, res, next) => {
     customError.msg = 'Duplicate value entered for a unique field';
   }
 
-  return res.status(customError.statusCode).json({ msg: customError.msg });
+  const responsePayload = { msg: customError.msg };
+  if (err?.existingQuestion) responsePayload.existingQuestion = err.existingQuestion;
+  if (err?.code && err?.code !== 'ER_DUP_ENTRY') responsePayload.code = err.code;
+
+  return res.status(customError.statusCode).json(responsePayload);
 };
 

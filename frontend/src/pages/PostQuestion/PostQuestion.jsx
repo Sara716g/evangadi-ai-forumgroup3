@@ -1,5 +1,42 @@
 import { useState } from "react";
-import { questionService } from "../../services/question/question.service.js";
+import { useNavigate } from "react-router-dom";
+import MicButton from "../../components/MicButton/MicButton.jsx";
+import { apiClient } from "../../services/core/api.client.js";
+import styles from "./PostQuestion.module.css";
+
+// ── Service layer ─────────────────────────────────────────────────────────────
+const questionService = {
+  generateQuestionDraftCoach: async ({ title, content }, retries = 2) => {
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await apiClient.post(
+          "/api/questions/draft-coach",
+          { title, content },
+          { timeout: 30000 }
+        );
+        return response.data.data;
+      } catch (err) {
+        lastError = err;
+        const status = err?.response?.status;
+        if (status === 503 && attempt < retries) {
+          await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  },
+
+  createQuestion: async ({ title, content }) => {
+    const response = await apiClient.post("/api/questions", {
+      title,
+      content,
+    });
+    return response.data;
+  },
+};
 
 // ── Validation ────────────────────────────────────────────────────────────────
 function validate(title, content) {
@@ -35,6 +72,7 @@ function ToolbarBtn({ label, children, onClick }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PostQuestion() {
+  const navigate = useNavigate();
   const [formData, setFormData]       = useState({ title: "", content: "" });
   const [errors, setErrors]           = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,12 +81,36 @@ export default function PostQuestion() {
   const [showCoach, setShowCoach]     = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [createdQuestionHash, setCreatedQuestionHash] = useState(null);
   const [coachError, setCoachError]   = useState("");
+
+  // Custom tracking for incoming duplicate/similarity matches
+  const [duplicateMatch, setDuplicateMatch] = useState(null);
 
   const charCount = formData.content.length;
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (submitError) setSubmitError("");
+    if (duplicateMatch) setDuplicateMatch(null);
+  };
+
+  const appendVoiceText = (field) => (spokenText) => {
+    const cleaned = spokenText.trim();
+    if (!cleaned) return;
+
+    setFormData((prev) => {
+      const current = prev[field] || "";
+      const separator = current.trim().length > 0 ? " " : "";
+      const nextValue = `${current.trimEnd()}${separator}${cleaned}`;
+
+      return {
+        ...prev,
+        [field]: field === "title" ? nextValue.slice(0, 255) : nextValue,
+      };
+    });
+
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     if (submitError) setSubmitError("");
   };
@@ -79,7 +141,19 @@ export default function PostQuestion() {
       setCoachFeedback(result);
       setShowCoach(true);
     } catch (err) {
-      const errorMsg = err?.response?.data?.msg || "Could not reach AI service. Please try again.";
+      console.error('[AI Coach] Error:', err);
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.msg;
+      let errorMsg;
+      if (status === 503) {
+        errorMsg = "AI service is experiencing high demand. Please try again in a few moments.";
+      } else if (status === 500) {
+        errorMsg = "AI service encountered an internal error. Please try again later.";
+      } else if (!err.response || err.code === 'ECONNABORTED') {
+        errorMsg = "Request timed out. The AI service may be slow right now. Please try again.";
+      } else {
+        errorMsg = serverMsg || "Could not reach AI service. Please try again.";
+      }
       setCoachError(errorMsg);
     } finally {
       setIsCoaching(false);
@@ -99,14 +173,42 @@ export default function PostQuestion() {
     if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); return; }
     setIsSubmitting(true);
     setSubmitError("");
-    try {
-      await questionService.createQuestion(formData);
+        try {
+      const result = await questionService.createQuestion(formData);
+      const data = result?.data ?? result;
+      setCreatedQuestionHash(data?.questionHash || data?.id || null);
       setSubmitSuccess(true);
     } catch (err) {
-      setSubmitError(err.message || "Failed to post question. Please try again.");
+      const status = err?.response?.status;
+      const responseData = err?.response?.data;
+
+      // Check backend duplicate status signal
+      if (status === 409 || responseData?.code === "DuplicateDetected") {
+        const questionData = responseData?.existingQuestion;
+        
+        // Prefer the shareable hash route identifier, but fall back to any available ID.
+        const targetRouteIdentifier = questionData?.questionHash || questionData?.hash || questionData?.id || questionData?.question_id;
+
+        setDuplicateMatch({
+          title: questionData?.title || "Similar Question Thread",
+          id: targetRouteIdentifier
+        });
+      } else {
+        setSubmitError(responseData?.msg || "Failed to publish your question. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
+    // try {
+    //   const result = await questionService.createQuestion(formData);
+    //   const data = result.data || result;
+    //   setCreatedQuestionHash(data.questionHash || data.id);
+    //   setSubmitSuccess(true);
+    // } catch (err) {
+    //   setSubmitError(err.message || "Failed to post question. Please try again.");
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   const handleReset = () => {
@@ -117,6 +219,7 @@ export default function PostQuestion() {
     setShowCoach(false);
     setSubmitError("");
     setCoachError("");
+    setDuplicateMatch(null);
   };
 
   return (
@@ -213,6 +316,46 @@ export default function PostQuestion() {
           font-size: 0.85rem;
           color: #dc2626;
           margin-bottom: 20px;
+        }
+        /* ── INLINE DUPLICATE NOTIFICATION ── */
+        .pq-dup-alert {
+          background: #fffdfa;
+          border: 1px solid #fed7aa;
+          border-radius: 8px;
+          padding: 16px;
+          margin: 24px 0 16px;
+          display: flex;
+          gap: 12px;
+        }
+        .pq-dup-icon {
+          color: #ea580c;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+        .pq-dup-body h4 {
+          font-size: 0.88rem;
+          font-weight: 700;
+          color: #c2410c;
+          margin-bottom: 4px;
+        }
+        .pq-dup-body p {
+          font-size: 0.83rem;
+          color: #7c2d12;
+          line-height: 1.45;
+          margin-bottom: 10px;
+          font-weight: 400;
+        }
+        .pq-dup-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #ea580c;
+          font-size: 0.85rem;
+          font-weight: 700;
+          text-decoration: none;
+        }
+        .pq-dup-link:hover {
+          text-decoration: underline;
         }
 
         /* ── SUCCESS PANEL ── */
@@ -350,6 +493,18 @@ export default function PostQuestion() {
         .pq-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .pq-ai-hint { font-size: 0.8rem; color: #aaa; }
         .pq-ai-error { font-size: 0.8rem; color: #dc2626; }
+        .pq-ai-error-banner {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 6px;
+          padding: 8px 12px;
+          font-size: 0.82rem;
+          color: #b91c1c;
+          margin-top: 8px;
+        }
 
         /* ── AI COACH PANEL ── */
         .pq-coach {
@@ -539,8 +694,8 @@ export default function PostQuestion() {
                 link in study groups, or stay on the thread to answer follow-up questions from peers.
               </p>
               <div className="pq-success-actions">
-                <button className="pq-btn-cancel">Back to Dashboard</button>
-                <button className="pq-btn-post">
+                <button className="pq-btn-cancel" onClick={() => navigate("/dashboard")}>Back to Dashboard</button>
+                <button className="pq-btn-post" onClick={() => createdQuestionHash && navigate(`/question/${createdQuestionHash}`)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
@@ -589,7 +744,14 @@ export default function PostQuestion() {
 
               {/* Title */}
               <div className="pq-field">
-                <div className="pq-label">Title</div>
+                <div className={styles.fieldHeader}>
+                  <div className="pq-label">Title</div>
+                  <MicButton
+                    className={styles.voiceControl}
+                    label="voice input for the title"
+                    onTranscript={appendVoiceText("title")}
+                  />
+                </div>
                 <div className="pq-hint">Be specific and imagine you're asking a question to another person.</div>
                 <input
                   type="text"
@@ -604,7 +766,14 @@ export default function PostQuestion() {
 
               {/* Body */}
               <div className="pq-field">
-                <div className="pq-label">What are the details of your problem?</div>
+                <div className={styles.fieldHeader}>
+                  <div className="pq-label">What are the details of your problem?</div>
+                  <MicButton
+                    className={styles.voiceControl}
+                    label="voice input for the question details"
+                    onTranscript={appendVoiceText("content")}
+                  />
+                </div>
                 <div className="pq-hint">Introduce the problem and expand on what you put in the title. Minimum 10 characters.</div>
                 <div className={`pq-editor${errors.content ? " error" : ""}`}>
                   <div className="pq-toolbar">
@@ -663,12 +832,41 @@ export default function PostQuestion() {
                     </>
                   )}
                 </button>
-                {coachError
-                  ? <span className="pq-ai-error">{coachError}</span>
-                  : <span className="pq-ai-hint">Suggestions only. You still choose what to post.</span>
-                }
+                {!coachError && (
+                  <span className="pq-ai-hint">Suggestions only. You still choose what to post.</span>
+                )}
               </div>
-
+              {coachError && (
+                <div className="pq-ai-error-banner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span>{coachError}</span>
+                </div>
+              )}
+              {/* Custom Vector Duplicate Alert Section */}
+              {duplicateMatch && (
+                <div className="pq-dup-alert">
+                  <div className="pq-dup-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div className="pq-dup-body">
+                    <h4>Failed to publish your question.</h4>
+                    <p>
+                      A highly similar problem thread already exists in the forum database. To keep active discussions grouped cleanly, please view or follow-up on the existing thread:
+                    </p>
+                    <a href={`/question/${duplicateMatch.id}`} className="pq-dup-link">
+                      {duplicateMatch.title} &rarr;
+                    </a>
+                  </div>
+                </div>
+              )}
               {/* Actions */}
               <div className="pq-actions">
                 <button className="pq-btn-cancel" onClick={handleReset}>Cancel</button>

@@ -8,6 +8,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { SquarePen, Library, BookOpen } from "lucide-react";
 import { questionService } from "../../services/question/question.service.js";
 import { useAuth } from "../../contexts/AuthContext";
+import { timeAgo } from "../../lib/utils.js";
 import styles from "./Dashboard.module.css";
 
 export default function Dashboard() {
@@ -30,8 +31,8 @@ export default function Dashboard() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState("newest");
 
-  // Derive searchMode directly from URL params (no useState needed)
   const searchMode = isSemantic ? "semantic" : "keyword";
 
   // -----------------------------
@@ -84,6 +85,17 @@ export default function Dashboard() {
   // STATS CALCULATIONS
   // -----------------------------
   const safeQuestions = Array.isArray(questions) ? questions : [];
+  const sortedQuestions = [...safeQuestions].sort((a, b) => {
+    if (sortBy === "newest") {
+      const dateA = new Date(a.createdAt || a.created_at || 0).getTime() || 0;
+      const dateB = new Date(b.createdAt || b.created_at || 0).getTime() || 0;
+      return dateB - dateA;
+    }
+    if (sortBy === "active") {
+      return (b.answerCount || 0) - (a.answerCount || 0);
+    }
+    return 0;
+  });
   const totalQuestions = safeQuestions.length;
   const totalReplies = safeQuestions.reduce(
     (sum, q) => sum + (q.answerCount || 0),
@@ -200,7 +212,13 @@ export default function Dashboard() {
             <h3>Discussion Feed</h3>
             <p>Your threads use a slim left accent in this list.</p>
           </div>
-          <span className={styles.badgeOrange}>NEWEST THREADS</span>
+          <button
+            type="button"
+            className={styles.badgeOrange}
+            onClick={() => setSortBy(sortBy === "newest" ? "active" : "newest")}
+          >
+            {sortBy === "newest" ? "NEWEST THREADS" : "MOST ACTIVE"}
+          </button>
         </div>
 
         <div className={styles.feedViewportContentFrame}>
@@ -214,13 +232,13 @@ export default function Dashboard() {
             <div className={styles.feedStateCenteringFrame}>
               <p className={styles.feedErrorBannerMessage}>{error}</p>
             </div>
-          ) : safeQuestions.length === 0 ? (
+          ) : sortedQuestions.length === 0 ? (
             <div className={styles.feedEmptyState}>
               <p>No questions found. Be the first to ask!</p>
             </div>
           ) : (
             <div className={styles.feedThreadStreamList}>
-              {safeQuestions.map((q) => {
+              {sortedQuestions.map((q) => {
                 const isUserOwnedThread =
                   q.author?.id === user?.id || q.isUserOwned;
 
@@ -268,10 +286,12 @@ export default function Dashboard() {
                           <i className="fa-regular fa-comment"></i>{" "}
                           {q.answerCount || 0} replies
                         </span>
-                        <span>•</span>
+                        <span>&bull;</span>
                         <span>
-                          {q.timeAgo ||
-                            `Asked by ${q.author?.username || q.author?.firstName || "anonymous"}`}
+                          {timeAgo(q.createdAt)} by{" "}
+                          {isUserOwnedThread
+                            ? "You"
+                            : `${q.author?.firstName || ""} ${q.author?.lastName || ""}`.trim() || "anonymous"}
                         </span>
                       </div>
                     </div>

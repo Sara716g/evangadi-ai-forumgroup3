@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Navbar from '../Navbar/Navbar.jsx';
 import Sidebar from '../Sidebar/Sidebar.jsx';
@@ -20,6 +20,15 @@ export default function Layout() {
     if (path === '/questions/ask') return 'Ask a question';
     if (path.startsWith('/question/')) return 'Discussion';
     if (path === '/rag-documents') return 'Knowledge base';
+    if (path === '/notifications') return 'Notifications';
+    if (path === '/profile') return 'My Profile';
+    if (path === '/admin') return 'Admin Dashboard';
+    if (path === '/admin/users') return 'Manage Users';
+    if (path === '/admin/questions') return 'Manage Questions';
+    if (path === '/about') return 'About';
+    if (path === '/privacy') return 'Privacy Policy';
+    if (path === '/terms') return 'Terms of Service';
+    if (path === '/contact') return 'Contact Us';
     return 'Forum';
   };
 
@@ -36,6 +45,24 @@ export default function Layout() {
       return 'Read the thread, review related topics, and reply with markdown if you can help.';
     if (path === '/rag-documents')
       return 'Private PDF library: reader, semantic search, and AI answers with citations per document.';
+    if (path === '/notifications')
+      return 'Stay updated with activity on your questions and answers.';
+    if (path === '/profile')
+      return 'Manage your public profile information.';
+    if (path === '/admin')
+      return 'Overview of platform activity and management tools.';
+    if (path === '/admin/users')
+      return 'View and manage all registered users.';
+    if (path === '/admin/questions')
+      return 'Review and moderate community questions.';
+    if (path === '/about')
+      return 'Learn more about the Evangadi Forum platform.';
+    if (path === '/privacy')
+      return 'How we collect, use, and protect your information.';
+    if (path === '/terms')
+      return 'Guidelines and rules for using the platform.';
+    if (path === '/contact')
+      return 'Get in touch with the Evangadi Forum team.';
     return '';
   };
 
@@ -68,18 +95,18 @@ export default function Layout() {
               </p>
             </div>
             <nav className={styles['layout__footer-nav']}>
-              <a href='#' className={styles['layout__footer-link']}>
+              <Link to='/about' className={styles['layout__footer-link']}>
                 About
-              </a>
-              <a href='#' className={styles['layout__footer-link']}>
+              </Link>
+              <Link to='/privacy' className={styles['layout__footer-link']}>
                 Privacy
-              </a>
-              <a href='#' className={styles['layout__footer-link']}>
+              </Link>
+              <Link to='/terms' className={styles['layout__footer-link']}>
                 Terms
-              </a>
-              <a href='#' className={styles['layout__footer-link']}>
+              </Link>
+              <Link to='/contact' className={styles['layout__footer-link']}>
                 Contact
-              </a>
+              </Link>
             </nav>
           </div>
         </footer>

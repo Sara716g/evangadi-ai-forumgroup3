@@ -4,7 +4,7 @@
 import { useState } from 'react';
 
 import { motion as Motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Sparkles,
   Code,
@@ -22,7 +22,7 @@ export default function Auth() {
   const { register, login } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
 
-  // Registration form state
+  // Form state
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -103,24 +103,17 @@ export default function Auth() {
         const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else {
-        // Registration flow
+        // Registration flow — create account directly
         await register({
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
           email: normalizedEmail,
           password,
         });
-        setSuccessMessage('Registration successful! Please log in.');
-        // Clear form fields
-        setFirstName('');
-        setLastName('');
-        setEmail('');
-        setPassword('');
-        // Automatically switch to login form after 1.5 seconds
-        setTimeout(() => {
-          setIsLogin(true);
-          setSuccessMessage(null);
-        }, 1500);
+        setSuccessMessage('Account created! Redirecting...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const from = location.state?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
       }
     } catch (err) {
       setError(err.message || 'An unexpected error occurred.');
@@ -289,11 +282,9 @@ export default function Auth() {
                 </div>
 
                 <div className={styles.auth__inputGroup}>
-                  <div className={styles.auth__labelRow}>
-                    <label htmlFor='password' className={styles.auth__label}>
-                      Password
-                    </label>
-                  </div>
+                  <label htmlFor='password' className={styles.auth__label}>
+                    Password
+                  </label>
                   <div className={styles.auth__passwordWrap}>
                     <input
                       id='password'
@@ -319,6 +310,14 @@ export default function Auth() {
                       )}
                     </button>
                   </div>
+                  {isLogin && (
+                    <Link
+                      to='/auth/forgot-password'
+                      className={styles.auth__forgotPassword}
+                    >
+                      Forgot Password?
+                    </Link>
+                  )}
                 </div>
 
                 {successMessage && (
@@ -359,15 +358,27 @@ export default function Auth() {
 
               <footer className={styles.auth__formFooter}>
                 <p className={styles.auth__formFooterText}>
-                  {isLogin
-                    ? "Don't have an account?"
-                    : 'Already have an account?'}
-                  <button
-                    onClick={() => setIsLogin(!isLogin)}
-                    className={styles.auth__formFooterLink}
-                  >
-                    {isLogin ? 'Create an account' : 'Back to sign in'}
-                  </button>
+                  {isLogin ? (
+                    <>
+                      Don't have an account?
+                      <button
+                        onClick={() => setIsLogin(false)}
+                        className={styles.auth__formFooterLink}
+                      >
+                        Create an account
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?
+                      <button
+                        onClick={() => setIsLogin(true)}
+                        className={styles.auth__formFooterLink}
+                      >
+                        Back to sign in
+                      </button>
+                    </>
+                  )}
                 </p>
               </footer>
             </Motion.div>
