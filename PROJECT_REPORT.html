@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evangadi Forum — Project Report</title>
+  <style>
+    :root {
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --surface: #ffffff;
+      --background: #f8fafc;
+      --background-secondary: #f1f5f9;
+      --text-primary: #0f172a;
+      --text-secondary: #334155;
+      --text-tertiary: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --success-bg: #d1fae5;
+      --warning: #f59e0b;
+      --warning-bg: #fef3c7;
+      --error: #ef4444;
+      --error-bg: #fee2e2;
+      --info: #3b82f6;
+      --info-bg: #dbeafe;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: white;
+      padding: 60px 0 48px;
+      text-align: center;
+    }
+    .header h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: 8px; }
+    .header .subtitle { color: #94a3b8; font-size: 1.1rem; }
+    .header .meta {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+    .header .meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .header .meta-item .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .header .meta-item .value { font-size: 1.1rem; font-weight: 600; color: #f97316; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: -32px auto 40px;
+      position: relative;
+      z-index: 1;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .stat-card .number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .stat-card .label { font-size: 0.85rem; color: var(--text-tertiary); margin-top: 4px; }
+
+    /* Section */
+    .section { margin-bottom: 48px; }
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-title .icon { font-size: 1.3rem; }
+    .section-desc { color: var(--text-tertiary); margin-bottom: 20px; }
+
+    /* Milestone card */
+    .milestone {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .milestone-header {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .milestone-header h3 { font-size: 1.15rem; font-weight: 700; }
+    .milestone-header .status {
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .status-done { background: var(--success-bg); color: #065f46; }
+    .status-partial { background: var(--warning-bg); color: #92400e; }
+
+    /* Task table */
+    .task-table { width: 100%; border-collapse: collapse; }
+    .task-table th {
+      text-align: left;
+      padding: 12px 24px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-tertiary);
+      background: var(--background-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .task-table td {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .task-table tr:last-child td { border-bottom: none; }
+    .task-table tr:hover { background: var(--background); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-done { background: var(--success-bg); color: #065f46; }
+    .badge-partial { background: var(--warning-bg); color: #92400e; }
+    .badge-backend { background: var(--info-bg); color: #1e40af; }
+    .badge-frontend { background: #ede9fe; color: #5b21b6; }
+    .badge-both { background: #fce7f3; color: #9d174d; }
+
+    /* Test results */
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+    .test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .test-card h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .test-card .endpoint {
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      background: var(--background-secondary);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .test-steps { list-style: none; }
+    .test-steps li {
+      padding: 6px 0;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .test-steps li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .test-steps li.fail::before { content: "✗"; color: var(--error); }
+
+    /* API list */
+    .api-table { width: 100%; border-collapse: collapse; }
+    .api-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-tertiary);
+      background: var(--background-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .api-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+    .api-table tr:last-child td { border-bottom: none; }
+    .method {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+    .method-get { background: var(--info-bg); color: #1e40af; }
+    .method-post { background: var(--success-bg); color: #065f46; }
+    .method-put { background: var(--warning-bg); color: #92400e; }
+    .method-delete { background: var(--error-bg); color: #991b1b; }
+
+    /* Tech stack */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .tech-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+    .tech-card .emoji { font-size: 2rem; margin-bottom: 8px; }
+    .tech-card h4 { font-size: 0.95rem; margin-bottom: 4px; }
+    .tech-card p { font-size: 0.8rem; color: var(--text-tertiary); }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 32px 0;
+      color: var(--text-tertiary);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+    }
+
+    /* Code block */
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      margin: 12px 0;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 { font-size: 1.6rem; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .test-grid { grid-template-columns: 1fr; }
+      .task-table th:nth-child(4),
+      .task-table td:nth-child(4) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- HEADER                                                                -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="container">
+    <h1>Evangadi AI Forum</h1>
+    <p class="subtitle">Full-Stack AI-Powered Community Forum — Project Completion Report</p>
+    <div class="meta">
+      <div class="meta-item">
+        <span class="label">Team</span>
+        <span class="value">Group 3</span>
+      </div>
+      <div class="meta-item">
+        <span class="label">Repository</span>
+        <span class="value">evangadi-ai-forumgroup3</span>
+      </div>
+      <div class="meta-item">
+        <span class="label">Report Date</span>
+        <span class="value">June 29, 2026</span>
+      </div>
+      <div class="meta-item">
+        <span class="label">Status</span>
+        <span class="value">Production Ready</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- STATS BAR                                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="number">4</div>
+      <div class="label">Milestones</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">14</div>
+      <div class="label">Fully Functional Features</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">30+</div>
+      <div class="label">API Endpoints</div>
+    </div>
+    <div class="stat-card">
+      <div class="number">100%</div>
+      <div class="label">Milestones 1–3</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- TECH STACK                                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">🛠️</span> Tech Stack</h2>
+    <p class="section-desc">Core technologies powering the platform.</p>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="emoji">⚛️</div>
+        <h4>React + Vite</h4>
+        <p>Frontend SPA with fast HMR</p>
+      </div>
+      <div class="tech-card">
+        <div class="emoji">🚀</div>
+        <h4>Node.js + Express</h4>
+        <p>REST API backend</p>
+      </div>
+      <div class="tech-card">
+        <div class="emoji">🗄️</div>
+        <h4>MariaDB</h4>
+        <p>Relational database</p>
+      </div>
+      <div class="tech-card">
+        <div class="emoji">🤖</div>
+        <h4>Google Gemini AI</h4>
+        <p>Embeddings &amp; AI features</p>
+      </div>
+      <div class="tech-card">
+        <div class="emoji">📧</div>
+        <h4>Nodemailer</h4>
+        <p>Email delivery (SMTP)</p>
+      </div>
+      <div class="tech-card">
+        <div class="emoji">🔐</div>
+        <h4>JWT + bcrypt</h4>
+        <p>Authentication &amp; security</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MILESTONE 1                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">🔐</span> Milestone 1: Authentication</h2>
+    <p class="section-desc">Complete user authentication system with email verification, JWT tokens, and protected routes.</p>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Backend — Auth API</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-04</strong> Register User</td>
+            <td>POST /api/auth/register — validate input, hash password, create unverified user, send OTP</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-05</strong> Login User</td>
+            <td>POST /api/auth/login — verify credentials, block unverified users, issue JWT</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Forgot Password</td>
+            <td>POST /api/auth/forgot-password — send reset code via email with rate limiting</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Verify Reset Code</td>
+            <td>POST /api/auth/verify-reset-code — validate OTP before password change</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Reset Password</td>
+            <td>POST /api/auth/reset-password — update password with code verification</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Verify Email</td>
+            <td>POST /api/auth/verify-email — validate OTP, mark verified, send welcome email, return JWT</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Resend Verification</td>
+            <td>POST /api/auth/resend-verification — regenerate and send new OTP code</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Frontend — Auth Pages</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-06</strong> Axios + Auth Service</td>
+            <td>JWT interceptors, auto-attach tokens, 401 redirect handling</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-07</strong> Auth Page UI</td>
+            <td>Combined Login/Register page with Framer Motion transitions</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-08</strong> AuthContext + ProtectedRoute</td>
+            <td>Global auth context, route guards, verify email method</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-00</strong> Public Landing Page</td>
+            <td>Unauthenticated homepage with marketing content</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Forgot Password Page</td>
+            <td>3-step flow: Email → Verify Code → Set New Password</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Verification Code Form</td>
+            <td>OTP input form with resend countdown timer</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Auth Test Results -->
+    <div class="test-grid">
+      <div class="test-card">
+        <h4>🟢 Register User</h4>
+        <div class="endpoint">POST /api/auth/register</div>
+        <ul class="test-steps">
+          <li>Creates unverified user in database</li>
+          <li>Hashes password with bcrypt</li>
+          <li>Generates 6-digit OTP code</li>
+          <li>Sends verification email</li>
+          <li>Returns success (no JWT until verified)</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Verify Email</h4>
+        <div class="endpoint">POST /api/auth/verify-email</div>
+        <ul class="test-steps">
+          <li>Validates 6-digit OTP code</li>
+          <li>Marks user as verified (is_verified = TRUE)</li>
+          <li>Sends welcome email</li>
+          <li>Returns JWT token</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Login</h4>
+        <div class="endpoint">POST /api/auth/login</div>
+        <ul class="test-steps">
+          <li>Verifies email and password</li>
+          <li>Blocks unverified users with clear message</li>
+          <li>Returns JWT token for verified users</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Forgot Password</h4>
+        <div class="endpoint">POST /api/auth/forgot-password</div>
+        <ul class="test-steps">
+          <li>Generates reset code and sends email</li>
+          <li>Rate limited: 5 requests per 15 minutes</li>
+          <li>try/catch prevents 500 on SMTP failure</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Verify Reset Code</h4>
+        <div class="endpoint">POST /api/auth/verify-reset-code</div>
+        <ul class="test-steps">
+          <li>Validates reset code before password change</li>
+          <li>Checks code hasn't expired</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Reset Password</h4>
+        <div class="endpoint">POST /api/auth/reset-password</div>
+        <ul class="test-steps">
+          <li>Updates password with code verification</li>
+          <li>Hashes new password with bcrypt</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MILESTONE 2                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">💬</span> Milestone 2: Questions &amp; Answers</h2>
+    <p class="section-desc">Core forum functionality with AI-assisted drafting and answer evaluation.</p>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Backend — Q&amp;A API</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-09</strong> Create Question</td>
+            <td>POST /api/questions — save question + generate AI embeddings</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-10</strong> List Questions</td>
+            <td>GET /api/questions — keyword search + "mine" filter</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-10</strong> Single Question</td>
+            <td>GET /api/questions/:questionHash — question + answers + votes + comments</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-11</strong> Semantic Search</td>
+            <td>GET /api/questions/search — AI vector cosine similarity</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-11</strong> Similar Questions</td>
+            <td>GET /api/questions/:questionHash/similar — related questions</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-12</strong> Create Answer</td>
+            <td>POST /api/answers — answer questions (prevent self-answer)</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-17</strong> Draft Coach</td>
+            <td>POST /api/questions/draft-coach — AI writing feedback</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-18</strong> Answer Fit</td>
+            <td>POST /api/questions/:questionHash/answer-fit — AI evaluation</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Frontend — Q&amp;A Pages</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-13</strong> Layout Shell</td>
+            <td>Layout, Navbar, Sidebar components</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-14</strong> Dashboard Page</td>
+            <td>/dashboard — list questions, keyword/semantic search</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-15</strong> Post Question</td>
+            <td>/questions/ask — form with AI Draft Coach integration</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-16</strong> Question Detail</td>
+            <td>/questions/:hash — question, answers, new answer form, AI fit</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-21</strong> My Questions</td>
+            <td>/my-questions — personalized user questions list</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Q&A Test Results -->
+    <div class="test-grid">
+      <div class="test-card">
+        <h4>🟢 Create Question</h4>
+        <div class="endpoint">POST /api/questions</div>
+        <ul class="test-steps">
+          <li>Validates title and description</li>
+          <li>Generates AI embedding vectors</li>
+          <li>Stores question in database</li>
+          <li>Returns created question with hash</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 List Questions</h4>
+        <div class="endpoint">GET /api/questions</div>
+        <ul class="test-steps">
+          <li>Returns paginated question list</li>
+          <li>Supports keyword search</li>
+          <li>Supports "mine" filter</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Semantic Search</h4>
+        <div class="endpoint">GET /api/questions/search?q=...</div>
+        <ul class="test-steps">
+          <li>Uses AI vector cosine similarity</li>
+          <li>Returns conceptually related questions</li>
+          <li>Handles Gemini API quota limits with retry</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Create Answer</h4>
+        <div class="endpoint">POST /api/answers</div>
+        <ul class="test-steps">
+          <li>Prevents self-answering</li>
+          <li>Creates grouped notification for question author</li>
+          <li>Returns created answer</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Draft Coach</h4>
+        <div class="endpoint">POST /api/questions/draft-coach</div>
+        <ul class="test-steps">
+          <li>Analyzes question draft with AI</li>
+          <li>Returns improvement suggestions</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Answer Fit</h4>
+        <div class="endpoint">POST /api/questions/:hash/answer-fit</div>
+        <ul class="test-steps">
+          <li>Evaluates draft answer relevance</li>
+          <li>Returns Strong/Partial/Weak fit rating</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MILESTONE 3                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">📚</span> Milestone 3: Knowledge Base (RAG)</h2>
+    <p class="section-desc">PDF upload, semantic search within documents, and AI-grounded question answering.</p>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Backend — RAG API</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-22</strong> Upload Document</td>
+            <td>POST /api/rag/documents — upload PDF, parse, chunk, embed</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-23</strong> Semantic Search in RAG</td>
+            <td>GET /api/rag/documents/:id/search — vector search within PDF</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-23</strong> AI Query RAG</td>
+            <td>POST /api/rag/documents/:id/query — AI answers from PDF context</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-24</strong> Document Metadata</td>
+            <td>GET /api/rag/documents/:id — processing status and metadata</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-24</strong> Stream PDF</td>
+            <td>GET /api/rag/documents/:id/file — serve PDF blob for preview</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-24</strong> List Documents</td>
+            <td>GET /api/rag/documents — list user's uploaded PDFs</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-24</strong> Delete Document</td>
+            <td>DELETE /api/rag/documents/:id — remove PDF + cascade vectors</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Frontend — RAG Page</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-24/T-25</strong> RAG Documents Page</td>
+            <td>/rag-documents — document list, upload dropzone, 3-tab view</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="test-grid">
+      <div class="test-card">
+        <h4>🟢 Upload Document</h4>
+        <div class="endpoint">POST /api/rag/documents</div>
+        <ul class="test-steps">
+          <li>Accepts PDF upload (max 10MB)</li>
+          <li>Parses text and chunks paragraphs</li>
+          <li>Generates vector embeddings</li>
+          <li>Stores metadata in database</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Semantic Search in RAG</h4>
+        <div class="endpoint">GET /api/rag/documents/:id/search?q=...</div>
+        <ul class="test-steps">
+          <li>Searches within uploaded PDF</li>
+          <li>Returns relevant text excerpts</li>
+          <li>Uses vector cosine similarity</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 AI Query RAG</h4>
+        <div class="endpoint">POST /api/rag/documents/:id/query</div>
+        <ul class="test-steps">
+          <li>Generates AI answers from PDF context</li>
+          <li>Grounded in uploaded document content</li>
+          <li>Returns source excerpts</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 List &amp; Delete Documents</h4>
+        <div class="endpoint">GET / DELETE /api/rag/documents/:id</div>
+        <ul class="test-steps">
+          <li>Lists all user's uploaded PDFs</li>
+          <li>Deletes PDF from disk and database</li>
+          <li>Cascades vector deletion</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- MILESTONE 4                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">✨</span> Milestone 4: Enhanced Forum Features</h2>
+    <p class="section-desc">Voting, comments, notifications, file attachments, dark mode, and AI assistance.</p>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Backend — Enhanced Features</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-26</strong> Attachments</td>
+            <td>File upload/download/delete for images and documents (max 10MB)</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-28</strong> Voting &amp; Comments</td>
+            <td>Upvote/downvote toggle for answers, add/list comments on answers</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-29</strong> Notifications</td>
+            <td>CRUD for notifications with grouped answers, ownership verification</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-30</strong> AI Assistant</td>
+            <td>AI-powered answer generation for questions</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-32</strong> Duplicate Detection</td>
+            <td>Detect duplicate questions using AI vector similarity (&gt;90% threshold)</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-33</strong> External Forum Search</td>
+            <td>Search StackOverflow, Dev.to for related questions</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-35</strong> User Profiles</td>
+            <td>Get/update profile, upload avatar, profile stats</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-37</strong> Admin — Manage Users</td>
+            <td>List users, ban/unban, get stats</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-37</strong> Admin — Manage Questions</td>
+            <td>Admin delete questions and answers</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-backend">Backend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Frontend — Enhanced Features</h3>
+        <span class="status status-done">100% Complete</span>
+      </div>
+      <table class="task-table">
+        <thead>
+          <tr><th>Task</th><th>Description</th><th>Status</th><th>Type</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>T-26</strong> File Upload Component</td>
+            <td>Drag-and-drop file upload with image/document preview</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-28</strong> Voting &amp; Comments UI</td>
+            <td>Upvote/downvote buttons, comment section for answers</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-29</strong> Notifications UI</td>
+            <td>Notifications page and bell icon with unread count</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-31</strong> Forgot Password Page</td>
+            <td>/auth/forgot-password and /auth/reset-password pages</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-35</strong> User Profile</td>
+            <td>Profile page with edit form and avatar upload</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-36</strong> Dark Mode</td>
+            <td>Dark mode toggle with CSS variables and localStorage persistence</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+          <tr>
+            <td><strong>T-37</strong> Admin Dashboard</td>
+            <td>Admin dashboard with stats and management pages</td>
+            <td><span class="badge badge-done">Done</span></td>
+            <td><span class="badge badge-frontend">Frontend</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="test-grid">
+      <div class="test-card">
+        <h4>🟢 Voting System</h4>
+        <div class="endpoint">POST /api/answers/:id/vote</div>
+        <ul class="test-steps">
+          <li>Toggle upvote (click again to remove)</li>
+          <li>One vote per user per answer</li>
+          <li>Returns updated vote count</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Comments</h4>
+        <div class="endpoint">GET/POST /api/answers/:id/comments</div>
+        <ul class="test-steps">
+          <li>List all comments for an answer</li>
+          <li>Add new comment (authenticated)</li>
+          <li>Lazy-loaded on panel expand</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Grouped Notifications</h4>
+        <div class="endpoint">Automatic on new answers</div>
+        <ul class="test-steps">
+          <li>Multiple answers grouped into one notification</li>
+          <li>Example: "2 people answered your question"</li>
+          <li>Answer-viewed notification for answerers</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Share Button</h4>
+        <div class="endpoint">Question Detail Page</div>
+        <ul class="test-steps">
+          <li>Copies question URL to clipboard</li>
+          <li>Shows "✓ Copied!" feedback</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Answers Button</h4>
+        <div class="endpoint">Question Detail Page</div>
+        <ul class="test-steps">
+          <li>Smooth scrolls to community answers section</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🟢 Dark Mode</h4>
+        <div class="endpoint">All Pages</div>
+        <ul class="test-steps">
+          <li>Toggles via data-theme attribute</li>
+          <li>Persists in localStorage</li>
+          <li>All pages support dark theme via CSS variables</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FULL API REFERENCE                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">📋</span> Complete API Endpoints</h2>
+    <p class="section-desc">All 30+ verified endpoints across the platform.</p>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Authentication</h3>
+      </div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/register</td><td>No</td><td>Register new user (sends OTP)</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/verify-email</td><td>No</td><td>Verify email with OTP code</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/resend-verification</td><td>No</td><td>Resend verification code</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/login</td><td>No</td><td>Login and get JWT</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/forgot-password</td><td>No</td><td>Request password reset code</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/verify-reset-code</td><td>No</td><td>Verify reset code</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/auth/reset-password</td><td>No</td><td>Reset password with code</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Questions &amp; Answers</h3>
+      </div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/questions</td><td>Yes</td><td>Create question + AI embedding</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/questions</td><td>Yes</td><td>List questions (search/filter)</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/questions/search?q=</td><td>Yes</td><td>Semantic search (AI vectors)</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/questions/:hash</td><td>Yes</td><td>Get question + answers</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/questions/:hash/similar</td><td>Yes</td><td>Find similar questions</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/questions/draft-coach</td><td>Yes</td><td>AI writing feedback</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/questions/:hash/answer-fit</td><td>Yes</td><td>AI answer evaluation</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/answers</td><td>Yes</td><td>Create answer</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/answers/:id/vote</td><td>Yes</td><td>Toggle upvote</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/answers/:id/comments</td><td>Yes</td><td>Get comments</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/answers/:id/comments</td><td>Yes</td><td>Add comment</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>RAG Knowledge Base</h3>
+      </div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/rag/documents</td><td>Yes</td><td>Upload &amp; process PDF</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/rag/documents</td><td>Yes</td><td>List user's documents</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/rag/documents/:id</td><td>Yes</td><td>Get document metadata</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/rag/documents/:id/search?q=</td><td>Yes</td><td>Semantic search in PDF</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/rag/documents/:id/query</td><td>Yes</td><td>AI query grounded in PDF</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/rag/documents/:id/file</td><td>Yes</td><td>Stream PDF for preview</td></tr>
+          <tr><td><span class="method method-delete">DELETE</span></td><td>/api/rag/documents/:id</td><td>Yes</td><td>Delete document + vectors</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="milestone">
+      <div class="milestone-header">
+        <h3>Notifications &amp; Profile</h3>
+      </div>
+      <table class="api-table">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/notifications</td><td>Yes</td><td>List user notifications</td></tr>
+          <tr><td><span class="method method-put">PUT</span></td><td>/api/notifications/:id/read</td><td>Yes</td><td>Mark as read (ownership verified)</td></tr>
+          <tr><td><span class="method method-delete">DELETE</span></td><td>/api/notifications/:id</td><td>Yes</td><td>Delete notification (ownership verified)</td></tr>
+          <tr><td><span class="method method-get">GET</span></td><td>/api/profile</td><td>Yes</td><td>Get user profile</td></tr>
+          <tr><td><span class="method method-put">PUT</span></td><td>/api/profile</td><td>Yes</td><td>Update profile</td></tr>
+          <tr><td><span class="method method-post">POST</span></td><td>/api/profile/avatar</td><td>Yes</td><td>Upload avatar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECURITY FEATURES                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">🛡️</span> Security Features</h2>
+    <div class="test-grid">
+      <div class="test-card">
+        <h4>🔐 Authentication</h4>
+        <ul class="test-steps">
+          <li>JWT tokens with secure signing</li>
+          <li>bcrypt password hashing (salt rounds)</li>
+          <li>SHA-256 for verification codes</li>
+          <li>Email verification required before login</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🚫 Rate Limiting</h4>
+        <ul class="test-steps">
+          <li>Registration: 5 requests / 15 minutes</li>
+          <li>Forgot Password: 5 requests / 15 minutes</li>
+          <li>Verification: 10 requests / 15 minutes</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>🔒 Protected Routes</h4>
+        <ul class="test-steps">
+          <li>JWT middleware on all authenticated endpoints</li>
+          <li>Ownership verification for notifications</li>
+          <li>Prevent self-answering questions</li>
+        </ul>
+      </div>
+      <div class="test-card">
+        <h4>📧 Email Security</h4>
+        <ul class="test-steps">
+          <li>try/catch on all sendEmail calls</li>
+          <li>Graceful SMTP failure handling</li>
+          <li>No sensitive data in error responses</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- GIT HISTORY                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="container">
+  <div class="section">
+    <h2 class="section-title"><span class="icon">📝</span> Recent Git History</h2>
+    <div class="code-block">
+      <div>7ba3a01  chore: remove duplicate upvote/comment implementation guide</div>
+      <div>78b56d9  fix: use correct CSS variable names for dark mode</div>
+      <div>15c453e  fix: complete dark mode support for QuestionDetail page</div>
+      <div>d37836e  feat: email auth, notifications, share/answers buttons, dark mode</div>
+      <div>ffcfc97  feat: add email verification, forgot password, grouped notifications</div>
+      <div>5ac9edf  feat: complete milestone 4 — enhanced forum features</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                              -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+    <p>Evangadi AI Forum — Group 3 — Project Report — June 2026</p>
+    <p style="margin-top: 4px;">Repository: <strong>github.com/Sara716g/evangadi-ai-forumgroup3</strong></p>
+  </div>
+</footer>
+
+</body>
+</html>
