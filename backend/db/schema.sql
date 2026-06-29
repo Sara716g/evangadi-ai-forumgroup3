@@ -283,4 +283,23 @@ CREATE TABLE `ai_assistant_logs` (
     INDEX `idx_ai_assistant_logs_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- -----------------------------------------------------------------------------
+-- 12. Email Verifications Table
+-- Stores temporary registration data before email verification.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `email_verifications`;
+CREATE TABLE `email_verifications` (
+    `verification_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `email` VARCHAR(255) NOT NULL UNIQUE,
+    `code` VARCHAR(6) NOT NULL,
+    `first_name` VARCHAR(100) NOT NULL,
+    `last_name` VARCHAR(100) NOT NULL,
+    `password_hash` VARCHAR(255) NOT NULL,
+    `expires_at` DATETIME NOT NULL,
+    `verified` TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_email_verifications_email` (`email`),
+    INDEX `idx_email_verifications_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
