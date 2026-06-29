@@ -58,12 +58,12 @@ function ToolbarBtn({ label, children, onClick }) {
       onClick={onClick}
       style={{
         background: "none", border: "none", cursor: "pointer",
-        padding: "4px 7px", borderRadius: 4, color: "#555",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "4px 7px", borderRadius: 4, color: "var(--text-secondary)",
+        fontSize: "0.85rem",
         transition: "background 0.15s",
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#f0f0f0")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-hover)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
     >
       {children}
     </button>
@@ -241,18 +241,18 @@ export default function PostQuestion() {
           font-weight: 600;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: #f97316;
+          color: var(--primary);
           margin-bottom: 8px;
         }
         .pq-title {
           font-size: 1.85rem;
           font-weight: 700;
-          color: #1a1a1a;
+          color: var(--text-primary);
           margin-bottom: 10px;
         }
         .pq-subtitle {
           font-size: 0.9rem;
-          color: #666;
+          color: var(--text-tertiary);
           line-height: 1.55;
           margin-bottom: 28px;
           max-width: 560px;
@@ -260,28 +260,28 @@ export default function PostQuestion() {
 
         /* ── GUIDE BOX ── */
         .pq-guide {
-          border: 1px solid #f97316;
+          border: 1px solid var(--primary);
           border-radius: 10px;
-          background: #fffaf6;
+          background: var(--primary-light);
           padding: 22px 26px;
           margin-bottom: 28px;
         }
         .pq-guide h2 {
           font-size: 1rem;
           font-weight: 700;
-          color: #1a1a1a;
+          color: var(--text-primary);
           margin-bottom: 6px;
         }
         .pq-guide-intro {
           font-size: 0.84rem;
-          color: #555;
+          color: var(--text-secondary);
           margin-bottom: 14px;
           line-height: 1.5;
         }
         .pq-guide h3 {
           font-size: 0.86rem;
           font-weight: 700;
-          color: #1a1a1a;
+          color: var(--text-primary);
           margin-bottom: 8px;
           margin-top: 14px;
         }
@@ -294,33 +294,33 @@ export default function PostQuestion() {
         }
         .pq-guide li {
           font-size: 0.83rem;
-          color: #444;
+          color: var(--text-secondary);
           line-height: 1.45;
         }
-        .pq-guide li strong { color: #1a1a1a; }
+        .pq-guide li strong { color: var(--text-primary); }
 
         /* ── FORM CARD ── */
         .pq-card {
-          background: #fff;
-          border: 1px solid #e8e8e8;
+          background: var(--surface);
+          border: 1px solid var(--border);
           border-radius: 10px;
           padding: 28px 30px 30px;
         }
 
         /* ── ERROR BANNER ── */
         .pq-error-banner {
-          background: #fff5f5;
-          border: 1px solid #fca5a5;
+          background: var(--error-light);
+          border: 1px solid var(--error-light);
           border-radius: 7px;
           padding: 11px 16px;
           font-size: 0.85rem;
-          color: #dc2626;
+          color: var(--error);
           margin-bottom: 20px;
         }
         /* ── INLINE DUPLICATE NOTIFICATION ── */
         .pq-dup-alert {
-          background: #fffdfa;
-          border: 1px solid #fed7aa;
+          background: var(--primary-light);
+          border: 1px solid var(--primary-light);
           border-radius: 8px;
           padding: 16px;
           margin: 24px 0 16px;
@@ -328,19 +328,19 @@ export default function PostQuestion() {
           gap: 12px;
         }
         .pq-dup-icon {
-          color: #ea580c;
+          color: var(--primary);
           flex-shrink: 0;
           margin-top: 1px;
         }
         .pq-dup-body h4 {
           font-size: 0.88rem;
           font-weight: 700;
-          color: #c2410c;
+          color: var(--primary-hover);
           margin-bottom: 4px;
         }
         .pq-dup-body p {
           font-size: 0.83rem;
-          color: #7c2d12;
+          color: var(--text-secondary);
           line-height: 1.45;
           margin-bottom: 10px;
           font-weight: 400;
@@ -349,7 +349,7 @@ export default function PostQuestion() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          color: #ea580c;
+          color: var(--primary);
           font-size: 0.85rem;
           font-weight: 700;
           text-decoration: none;
@@ -367,7 +367,7 @@ export default function PostQuestion() {
           width: 72px;
           height: 72px;
           border-radius: 50%;
-          background: #dcfce7;
+          background: var(--success-light);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -376,12 +376,12 @@ export default function PostQuestion() {
         .pq-success h2 {
           font-size: 1.3rem;
           font-weight: 700;
-          color: #1a1a1a;
+          color: var(--text-primary);
           margin-bottom: 10px;
         }
         .pq-success p {
           font-size: 0.88rem;
-          color: #666;
+          color: var(--text-tertiary);
           max-width: 400px;
           margin: 0 auto 28px;
           line-height: 1.55;
@@ -399,55 +399,56 @@ export default function PostQuestion() {
         .pq-label {
           font-size: 0.88rem;
           font-weight: 700;
-          color: #1a1a1a;
+          color: var(--text-primary);
           margin-bottom: 3px;
         }
         .pq-hint {
           font-size: 0.79rem;
-          color: #888;
+          color: var(--text-placeholder);
           margin-bottom: 8px;
         }
         .pq-field-error {
           font-size: 0.79rem;
-          color: #dc2626;
+          color: var(--error);
           margin-top: 5px;
         }
 
         .pq-title-input {
           width: 100%;
-          border: 1px solid #e0e0e0;
+          border: 1px solid var(--border);
           border-radius: 7px;
           padding: 10px 13px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.9rem;
-          color: #1a1a1a;
+          color: var(--text-primary);
+          background: var(--surface);
           outline: none;
           transition: border-color 0.15s;
         }
-        .pq-title-input:focus { border-color: #f97316; }
-        .pq-title-input::placeholder { color: #bbb; }
-        .pq-title-input.error { border-color: #dc2626; }
+        .pq-title-input:focus { border-color: var(--primary); }
+        .pq-title-input::placeholder { color: var(--text-placeholder); }
+        .pq-title-input.error { border-color: var(--error); }
 
         /* ── CONTENT EDITOR ── */
         .pq-editor {
-          border: 1px solid #e0e0e0;
+          border: 1px solid var(--border);
           border-radius: 7px;
           overflow: hidden;
           transition: border-color 0.15s;
         }
-        .pq-editor:focus-within { border-color: #f97316; }
-        .pq-editor.error { border-color: #dc2626; }
+        .pq-editor:focus-within { border-color: var(--primary); }
+        .pq-editor.error { border-color: var(--error); }
 
         .pq-toolbar {
-          background: #fafafa;
-          border-bottom: 1px solid #ececec;
+          background: var(--surface-container-low);
+          border-bottom: 1px solid var(--border);
           padding: 6px 10px;
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
         .pq-toolbar-left { display: flex; gap: 2px; }
-        .pq-toolbar-chars { font-size: 0.78rem; color: #aaa; }
+        .pq-toolbar-chars { font-size: 0.78rem; color: var(--text-placeholder); }
 
         .pq-textarea {
           width: 100%;
@@ -458,11 +459,11 @@ export default function PostQuestion() {
           padding: 12px 14px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.88rem;
-          color: #1a1a1a;
+          color: var(--text-primary);
           line-height: 1.6;
-          background: #fff;
+          background: var(--surface);
         }
-        .pq-textarea::placeholder { color: #bbb; }
+        .pq-textarea::placeholder { color: var(--text-placeholder); }
 
         /* ── AI ROW ── */
         .pq-ai-row {
@@ -476,40 +477,40 @@ export default function PostQuestion() {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: #fff;
-          border: 1px solid #e0e0e0;
+          background: var(--surface);
+          border: 1px solid var(--border);
           border-radius: 6px;
           padding: 7px 13px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.83rem;
           font-weight: 500;
-          color: #444;
+          color: var(--text-secondary);
           cursor: pointer;
           transition: all 0.15s;
           white-space: nowrap;
           flex-shrink: 0;
         }
-        .pq-ai-btn:hover:not(:disabled) { border-color: #f97316; color: #f97316; }
+        .pq-ai-btn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
         .pq-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pq-ai-hint { font-size: 0.8rem; color: #aaa; }
-        .pq-ai-error { font-size: 0.8rem; color: #dc2626; }
+        .pq-ai-hint { font-size: 0.8rem; color: var(--text-placeholder); }
+        .pq-ai-error { font-size: 0.8rem; color: var(--error); }
         .pq-ai-error-banner {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
+          background: var(--error-light);
+          border: 1px solid var(--error-light);
           border-radius: 6px;
           padding: 8px 12px;
           font-size: 0.82rem;
-          color: #b91c1c;
+          color: var(--error);
           margin-top: 8px;
         }
 
         /* ── AI COACH PANEL ── */
         .pq-coach {
-          background: #fffaf6;
-          border: 1px solid #fed7aa;
+          background: var(--primary-light);
+          border: 1px solid var(--primary-light);
           border-radius: 8px;
           padding: 18px 20px;
           margin-bottom: 22px;
@@ -528,7 +529,7 @@ export default function PostQuestion() {
         .pq-coach-title {
           font-size: 0.88rem;
           font-weight: 700;
-          color: #c2410c;
+          color: var(--primary-hover);
           display: flex;
           align-items: center;
           gap: 6px;
@@ -537,15 +538,15 @@ export default function PostQuestion() {
           background: none;
           border: none;
           cursor: pointer;
-          color: #aaa;
+          color: var(--text-placeholder);
           font-size: 1rem;
           line-height: 1;
           padding: 0;
         }
-        .pq-coach-dismiss:hover { color: #555; }
+        .pq-coach-dismiss:hover { color: var(--text-secondary); }
         .pq-coach-overall {
           font-size: 0.84rem;
-          color: #7c3c1a;
+          color: var(--text-secondary);
           margin-bottom: 10px;
           line-height: 1.5;
         }
@@ -560,23 +561,23 @@ export default function PostQuestion() {
           display: flex;
           gap: 8px;
           font-size: 0.83rem;
-          color: #555;
+          color: var(--text-secondary);
           line-height: 1.45;
         }
-        .pq-coach-tip::before { content: "→"; color: #f97316; flex-shrink: 0; }
+        .pq-coach-tip::before { content: "→"; color: var(--primary); flex-shrink: 0; }
         .pq-coach-apply {
           background: none;
-          border: 1px solid #f97316;
+          border: 1px solid var(--primary);
           border-radius: 6px;
           padding: 6px 14px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.8rem;
           font-weight: 600;
-          color: #f97316;
+          color: var(--primary);
           cursor: pointer;
           transition: all 0.15s;
         }
-        .pq-coach-apply:hover { background: #f97316; color: #fff; }
+        .pq-coach-apply:hover { background: var(--primary); color: var(--text-inverse); }
 
         /* ── ACTION BUTTONS ── */
         .pq-actions {
@@ -591,55 +592,55 @@ export default function PostQuestion() {
           font-family: 'DM Sans', sans-serif;
           font-size: 0.88rem;
           font-weight: 500;
-          color: #555;
+          color: var(--text-secondary);
           cursor: pointer;
           padding: 9px 16px;
           border-radius: 6px;
           transition: background 0.13s;
         }
-        .pq-btn-cancel:hover { background: #f0f0f0; }
+        .pq-btn-cancel:hover { background: var(--surface-hover); }
         .pq-btn-post {
           display: flex;
           align-items: center;
           gap: 7px;
-          background: #f97316;
+          background: var(--primary);
           border: none;
           border-radius: 6px;
           padding: 9px 20px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.88rem;
           font-weight: 700;
-          color: #fff;
+          color: var(--text-inverse);
           cursor: pointer;
           transition: background 0.15s;
         }
-        .pq-btn-post:hover:not(:disabled) { background: #ea6c0c; }
+        .pq-btn-post:hover:not(:disabled) { background: var(--primary-hover); }
         .pq-btn-post:disabled { opacity: 0.5; cursor: not-allowed; }
         .pq-btn-outline {
-          background: #fff;
-          border: 1px solid #e0e0e0;
+          background: var(--surface);
+          border: 1px solid var(--border);
           border-radius: 6px;
           padding: 9px 20px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.88rem;
           font-weight: 600;
-          color: #555;
+          color: var(--text-secondary);
           cursor: pointer;
           transition: all 0.15s;
         }
-        .pq-btn-outline:hover { border-color: #aaa; color: #222; }
+        .pq-btn-outline:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
 
         .pq-spinner {
           width: 14px; height: 14px;
-          border: 2px solid #ffffff44;
-          border-top-color: #fff;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: var(--text-inverse);
           border-radius: 50%;
           animation: pq-spin 0.7s linear infinite;
         }
         .pq-spinner-orange {
           width: 12px; height: 12px;
-          border: 2px solid #f9731633;
-          border-top-color: #f97316;
+          border: 2px solid rgba(249,115,22,0.2);
+          border-top-color: var(--primary);
           border-radius: 50%;
           animation: pq-spin 0.7s linear infinite;
         }
