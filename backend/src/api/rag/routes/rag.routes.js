@@ -1,3 +1,11 @@
+/**
+ * @file RAG (Retrieval-Augmented Generation) API routes.
+ *
+ * Provides endpoints for uploading PDF documents, searching within them
+ * using semantic similarity, and querying them with AI-generated answers
+ * grounded in the document's content.
+ */
+
 import express from "express";
 import {
   createDocumentController,

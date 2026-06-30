@@ -113,7 +113,7 @@
 }
 
 .unread:hover {
-  background-color: #ffedd5;
+  background-color: var(--primary-light, #ffedd5);
 }
 
 .notificationContent {

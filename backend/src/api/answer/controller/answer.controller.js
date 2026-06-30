@@ -1,3 +1,10 @@
+/**
+ * @file Answer controller.
+ *
+ * Handles HTTP request/response for answer CRUD, attachment streaming,
+ * and attachment deletion. Delegates business logic to the service layer.
+ */
+
 import { StatusCodes } from 'http-status-codes';
 import {
   createAnswerService,
@@ -7,6 +14,7 @@ import {
   getUserAnswersService,
 } from '../service/answer.service.js';
 
+/** POST / — Create an answer with optional file attachments. */
 export const createAnswerController = async (req, res, next) => {
   try {
     const { questionId, content } = req.body;
@@ -30,6 +38,7 @@ export const createAnswerController = async (req, res, next) => {
   }
 };
 
+/** GET / — List answers, optionally filtered by questionId or userId. */
 export const getAnswersController = async (req, res, next) => {
   try {
     const { questionId, userId } = req.query;
@@ -47,6 +56,7 @@ export const getAnswersController = async (req, res, next) => {
   }
 };
 
+/** GET /attachments/:attachmentId — Stream an attachment file (image/PDF). */
 export const getAnswerAttachmentFileController = async (req, res, next) => {
   try {
     const attachmentId = Number(req.params.attachmentId);
@@ -65,6 +75,7 @@ export const getAnswerAttachmentFileController = async (req, res, next) => {
   }
 };
 
+/** DELETE /attachments/:attachmentId — Remove an attachment (author only). */
 export const deleteAnswerAttachmentController = async (req, res, next) => {
   try {
     const attachmentId = Number(req.params.attachmentId);

@@ -1,3 +1,7 @@
+/**
+ * AdminDashboard — top-level admin page showing platform statistics and quick-access
+ * navigation cards to manage users and questions. Redirects non-admins to home.
+ */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, MessageSquare, Shield } from 'lucide-react';

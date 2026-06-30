@@ -1,3 +1,7 @@
+/**
+ * UserTable — paginated, searchable table of users for the admin dashboard.
+ * Supports ban/unban, promote/demote actions via callback props.
+ */
 import { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, Ban, CheckCircle, Shield, ShieldOff } from 'lucide-react';
 import styles from './UserTable.module.css';

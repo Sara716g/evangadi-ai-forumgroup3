@@ -1,3 +1,10 @@
+/**
+ * @file Answer API routes.
+ *
+ * All routes require JWT authentication. Supports CRUD for answers,
+ * file attachments (images/PDFs), voting, and comments.
+ */
+
 import express from 'express';
 import { authenticateUser } from '../../../middleware/authentication.js';
 import { validationErrorHandler } from '../../../middleware/validation-handler.js';
@@ -14,12 +21,13 @@ import {
 import {
   uploadAnswerAttachments,
   createAnswerAttachmentMulterErrorHandler,
-} from '../answer.upload.config.js';
+} from '../config/answer.upload.config.js';
 import { toggleAnswerVoteController } from '../controller/answerVote.controller.js';
 import { getAnswerCommentsController, createAnswerCommentController } from '../controller/answerComment.controller.js';
 
 const router = express.Router();
 
+/** Require authentication for all answer routes. */
 router.use(authenticateUser);
 
 // List answers (optionally filtered by questionId or userId via query params).

@@ -125,7 +125,7 @@ export const registerService = async ({
     throw error;
   }
 
-  // Send verification email
+  // Send verification email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: normalizedEmail,
@@ -135,14 +135,6 @@ export const registerService = async ({
   } catch (err) {
     console.error('Failed to send verification email:', err);
   }
-
-  // Log verification code (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  EMAIL VERIFICATION CODE                 ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${verificationCode}`);
-  console.log('╚══════════════════════════════════════════╝\n');
 
   // Return user info but NO token — user must verify email first
   return {
@@ -276,6 +268,7 @@ export const resendVerificationService = async email => {
   await safeExecute(updateSql, [verificationCode, codeExpiresAt, user.user_id]);
 
   // Send verification email
+  // Resend verification email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: normalizedEmail,
@@ -285,14 +278,6 @@ export const resendVerificationService = async email => {
   } catch (err) {
     console.error('Failed to send verification email:', err);
   }
-
-  // Log verification code (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  RESENT VERIFICATION CODE                ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${verificationCode}`);
-  console.log('╚══════════════════════════════════════════╝\n');
 };
 
 /**

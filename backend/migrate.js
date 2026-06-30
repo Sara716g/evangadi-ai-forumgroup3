@@ -1,3 +1,12 @@
+/**
+ * @file One-time database migration script.
+ *
+ * Adds missing columns and creates tables required by Milestone 4 features
+ * (admin roles, user profiles, notifications, voice messages, RAG, etc.).
+ * Safe to run repeatedly — each step catches "Duplicate column" / already-exists
+ * errors so previously-applied changes are skipped.
+ */
+
 import { db } from './db/config.js';
 
 async function migrate() {
@@ -175,10 +184,10 @@ async function migrate() {
     console.error('✗ email_verifications error:', e.message);
   }
 
-  // Install nodemailer
+  // Remind about optional dependency
   console.log('\nIf nodemailer is missing, run: npm install nodemailer');
 
-  // Summary
+  /** Print a quick summary of existing users after migration. */
   const [users] = await db.execute('SELECT user_id, email, role, status FROM users');
   console.log('\nCurrent users:');
   users.forEach(u => console.log(`  ${u.user_id}. ${u.email} — role: ${u.role}, status: ${u.status}`));

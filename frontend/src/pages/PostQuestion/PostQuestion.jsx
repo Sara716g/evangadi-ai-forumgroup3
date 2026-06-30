@@ -745,36 +745,29 @@ export default function PostQuestion() {
 
               {/* Title */}
               <div className="pq-field">
-                <div className={styles.fieldHeader}>
-                  <div className="pq-label">Title</div>
+                <div className="pq-label">Title</div>
+                <div className="pq-hint">Be specific and imagine you're asking a question to another person.</div>
+                <div className={styles.inputWrapper}>
+                  <input
+                    type="text"
+                    className={`pq-title-input${errors.title ? " error" : ""} ${styles.titleInput}`}
+                    placeholder="e.g. How do I handle state management using Context API in React?"
+                    value={formData.title}
+                    onChange={handleChange("title")}
+                    maxLength={255}
+                  />
                   <MicButton
-                    className={styles.voiceControl}
+                    className={styles.micBtn}
                     label="voice input for the title"
                     onTranscript={appendVoiceText("title")}
                   />
                 </div>
-                <div className="pq-hint">Be specific and imagine you're asking a question to another person.</div>
-                <input
-                  type="text"
-                  className={`pq-title-input${errors.title ? " error" : ""}`}
-                  placeholder="e.g. How do I handle state management using Context API in React?"
-                  value={formData.title}
-                  onChange={handleChange("title")}
-                  maxLength={255}
-                />
                 {errors.title && <div className="pq-field-error">{errors.title}</div>}
               </div>
 
               {/* Body */}
               <div className="pq-field">
-                <div className={styles.fieldHeader}>
-                  <div className="pq-label">What are the details of your problem?</div>
-                  <MicButton
-                    className={styles.voiceControl}
-                    label="voice input for the question details"
-                    onTranscript={appendVoiceText("content")}
-                  />
-                </div>
+                <div className="pq-label">What are the details of your problem?</div>
                 <div className="pq-hint">Introduce the problem and expand on what you put in the title. Minimum 10 characters.</div>
                 <div className={`pq-editor${errors.content ? " error" : ""}`}>
                   <div className="pq-toolbar">
@@ -805,7 +798,14 @@ export default function PostQuestion() {
                         </svg>
                       </ToolbarBtn>
                     </div>
-                    <span className="pq-toolbar-chars">{charCount} characters</span>
+                    <div className={styles.toolbarRight}>
+                      <span className="pq-toolbar-chars">{charCount} characters</span>
+                      <MicButton
+                        className={styles.toolbarMic}
+                        label="voice input for the question details"
+                        onTranscript={appendVoiceText("content")}
+                      />
+                    </div>
                   </div>
                   <textarea
                     id="ev-content"

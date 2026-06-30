@@ -68,7 +68,7 @@
 }
 
 .codeBlock {
-  background-color: #1e293b;
+  background-color: var(--surface, #1e293b);
   border-radius: 0.5rem;
   padding: 1rem;
   overflow-x: auto;
@@ -76,7 +76,7 @@
 }
 
 .codeBlock code {
-  color: #e2e8f0;
+  color: var(--text-secondary, #cbd5e1);
   font-size: 0.8125rem;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   line-height: 1.5;

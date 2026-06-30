@@ -17,7 +17,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { safeExecute } from '../../../../db/config.js';
 import { BadRequestError, NotFoundError } from '../../../utils/errors/index.js';
-import { classifyAttachmentType } from '../answer.upload.config.js';
+import { classifyAttachmentType } from '../config/answer.upload.config.js';
 import { createNotification, groupNewAnswerNotification } from '../../notification/service/notification.service.js';
 
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'answers');
@@ -115,8 +115,11 @@ export const createAnswerService = async ({ userId, questionId, content, files =
     throw new BadRequestError('You cannot answer your own question.');
   }
 
+  // When posting with files only (no text), use a placeholder so the NOT NULL constraint is satisfied.
+  const answerContent = (content && content.trim()) || (files.length > 0 ? '(See attachment)' : '');
+
   const insertSql = 'INSERT INTO answers (question_id, user_id, content) VALUES (?, ?, ?)';
-  const insertResult = await safeExecute(insertSql, [questionId, userId, content]);
+  const insertResult = await safeExecute(insertSql, [questionId, userId, answerContent]);
   const answerId = insertResult.insertId;
 
   const attachmentRows = await insertAttachmentsForAnswer({ answerId, userId, files });

@@ -1,3 +1,7 @@
+/**
+ * PdfUploadDropzone — file picker for uploading PDFs to the RAG knowledge base.
+ * Enforces a 10 MB client-side size limit and shows upload progress/errors inline.
+ */
 import { useState } from 'react';
 import { ragService } from '../../services/rag/rag.service.js';
 import styles from './PdfUploadDropzone.module.css';

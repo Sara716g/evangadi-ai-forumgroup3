@@ -1,3 +1,7 @@
+/**
+ * ManageUsers — admin page for listing, searching, banning, and role-toggling users.
+ * Uses UserTable for display and delegates actions to adminService.
+ */
 import { useState, useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import { adminService } from '../../services/admin.service.js';

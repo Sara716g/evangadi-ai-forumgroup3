@@ -6,6 +6,34 @@
   margin-bottom: 3px;
 }
 
+.inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.inputWrapper .titleInput {
+  padding-right: 44px;
+}
+
+.inputWrapper .micBtn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbarMic {
+  flex-shrink: 0;
+}
+
 .voiceControl {
   flex-shrink: 0;
 }

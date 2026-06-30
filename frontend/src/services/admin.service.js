@@ -1,3 +1,6 @@
+/**
+ * Admin API service — dashboard stats, user/question management, role/status toggles.
+ */
 import { apiClient } from './core/api.client.js';
 
 export const adminService = {
@@ -17,12 +20,14 @@ export const adminService = {
       .then((r) => r.data);
   },
 
+  /** Set a user's status (active/suspended). */
   updateUserStatus(userId, status) {
     return apiClient
       .put(`/api/admin/users/${userId}/status`, { status })
       .then((r) => r.data);
   },
 
+  /** Toggle a user between admin and regular role. */
   toggleUserRole(userId) {
     return apiClient
       .put(`/api/admin/users/${userId}/role`)

@@ -52,15 +52,7 @@ export const forgotPasswordService = async email => {
     'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)';
   await safeExecute(insertSql, [user.user_id, code, expiresAt]);
 
-  // Log verification code to console (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  PASSWORD RESET CODE                     ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${code}`);
-  console.log('╚══════════════════════════════════════════╝\n');
-
-  // Build the email with the verification code using template.
+  // Send password reset email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: user.email,

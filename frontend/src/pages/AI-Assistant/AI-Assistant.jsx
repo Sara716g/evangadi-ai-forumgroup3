@@ -1,5 +1,10 @@
+/**
+ * AI-Assistant — chat-style interface for the Gemini-backed Q&A assistant.
+ * Sends user questions (with conversation history) and renders Markdown responses
+ * with syntax-highlighted code blocks via Prism.
+ */
 import React, { useState, useRef, useEffect } from "react";
-import styles from "./ai-assistant.module.css";
+import styles from "./AI-Assistant.module.css";
 import { aiAssistantService } from "../../services/ai-assistant.service";
 import Markdown from "markdown-to-jsx";
 import Prism from "prismjs";

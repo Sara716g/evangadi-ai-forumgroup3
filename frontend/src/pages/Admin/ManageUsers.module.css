@@ -24,7 +24,7 @@
 
 .errorBanner {
   background-color: var(--error-light);
-  border: 1px solid #fecaca;
+  border: 1px solid var(--error-light, #fee2e2);
   color: var(--error);
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);

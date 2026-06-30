@@ -1,9 +1,14 @@
+/**
+ * Notifications — full-page notifications list with mark-as-read, mark-all-read,
+ * and delete actions. Shows a time-relative timestamp for each notification.
+ */
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck, Trash2, Inbox } from 'lucide-react';
 import { notificationService } from '../../services/notification.service.js';
 import styles from './Notifications.module.css';
 
+/** Local time-ago formatter (shorter format than the shared lib/utils version). */
 function timeAgo(dateStr) {
   const now = new Date();
   const date = new Date(dateStr);

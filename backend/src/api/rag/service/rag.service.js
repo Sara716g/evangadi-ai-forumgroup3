@@ -1,3 +1,19 @@
+/**
+ * @file RAG (Retrieval-Augmented Generation) service.
+ *
+ * Handles the full lifecycle of user-uploaded PDF documents:
+ * 1. Upload & store the PDF on disk
+ * 2. Extract text via pdf-parse
+ * 3. Chunk the text into overlapping segments (default 1000 chars, 150 overlap)
+ * 4. Generate vector embeddings for each chunk via Gemini
+ * 5. Store chunks + embeddings in MySQL
+ * 6. At query time: embed the user's query, rank chunks by cosine similarity,
+ *    then prompt Gemini to answer using only the top-ranked excerpts.
+ *
+ * Embedding calls use exponential-backoff retry (up to 5 attempts) to
+ * handle Gemini API quota limits (HTTP 429).
+ */
+
 import fs from "fs/promises";
 import path from "path";
 import { PDFParse } from "pdf-parse";
@@ -16,11 +32,24 @@ import {
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const textAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+/** Base directory where uploaded RAG PDFs are stored on disk. */
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), "uploads", "rag");
+
+/** Default number of top chunks to return for search / query. */
 const DEFAULT_K = 5;
+
+/** Minimum cosine similarity score for a chunk to be considered relevant. */
 const DEFAULT_THRESHOLD = 0.45;
+
+/** Gemini model used for free-form text generation (answer generation). */
 const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash-lite";
 
+/**
+ * Resolve the Gemini embedding model name from the environment.
+ * Falls back to gemini-embedding-001 if the configured model is the
+ * legacy "embedding-001" identifier.
+ */
 const resolveEmbeddingModel = () => {
   const configured = process.env.GEMINI_EMBEDDING_MODEL?.trim();
   return !configured || configured === "embedding-001"
@@ -28,9 +57,19 @@ const resolveEmbeddingModel = () => {
     : configured;
 };
 
+/** Convert a relative DB storage_path to an absolute filesystem path. */
 const resolveStorageAbsolutePath = (storagePath) =>
   path.join(UPLOAD_BASE_DIR, storagePath);
 
+/**
+ * Verify that a document exists and belongs to the given user.
+ * Optionally enforces that the document has finished processing.
+ *
+ * @param {number} documentId
+ * @param {number} userId
+ * @param {object} options - { requireReady: boolean }
+ * @returns {object} The document row from the database.
+ */
 const assertOwnedDocument = async (
   documentId,
   userId,
@@ -53,16 +92,26 @@ const assertOwnedDocument = async (
   return document;
 };
 
+/** Maximum number of retry attempts for embedding API calls on quota errors. */
 const EMBEDDING_MAX_RETRIES = 5;
+
+/** Base delay (ms) for exponential backoff between embedding retries. */
 const EMBEDDING_BASE_DELAY_MS = 2000;
 
+/** Promise-based sleep helper for retry delays. */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Detect HTTP 429 (quota/rate-limit) errors from the Gemini API. */
 const isQuotaError = (error) => {
   const status = error?.status || error?.response?.status || error?.cause?.status;
   return status === 429;
 };
 
+/**
+ * Generate a vector embedding for a document chunk.
+ * Uses RETRIEVAL_DOCUMENT task type. Retries on quota errors with
+ * exponential backoff (2s, 4s, 8s, ...).
+ */
 const generateDocumentEmbedding = async (text, attempt = 1) => {
   try {
     const model = genAI.getGenerativeModel({ model: resolveEmbeddingModel() });
@@ -90,6 +139,10 @@ const generateDocumentEmbedding = async (text, attempt = 1) => {
   }
 };
 
+/**
+ * Generate a vector embedding for a user search query.
+ * Uses RETRIEVAL_QUERY task type (as opposed to RETRIEVAL_DOCUMENT).
+ */
 const generateQueryEmbedding = async (text, attempt = 1) => {
   try {
     const model = genAI.getGenerativeModel({ model: resolveEmbeddingModel() });
@@ -119,6 +172,15 @@ const generateQueryEmbedding = async (text, attempt = 1) => {
   }
 };
 
+/**
+ * Split text into overlapping chunks for embedding.
+ * The overlap ensures context continuity across chunk boundaries.
+ *
+ * @param {string} text - Full extracted PDF text.
+ * @param {number} chunkSize - Characters per chunk (default 1000).
+ * @param {number} overlap - Overlap between consecutive chunks (default 150).
+ * @returns {string[]} Array of non-empty chunk strings.
+ */
 const chunkText = (text, chunkSize = 1000, overlap = 150) => {
   const chunks = [];
   let i = 0;
@@ -132,6 +194,7 @@ const chunkText = (text, chunkSize = 1000, overlap = 150) => {
   return chunks.filter(Boolean);
 };
 
+/** Fetch all chunk rows with their embeddings for a given document. */
 const fetchDocumentChunkRows = async (documentId) =>
   safeExecute(
     `SELECT dcv.chunk_id, dcv.embedding, dc.chunk_index, dc.content
@@ -141,6 +204,10 @@ const fetchDocumentChunkRows = async (documentId) =>
     [documentId],
   );
 
+/**
+ * Rank document chunks by cosine similarity to the query embedding.
+ * Returns the top-k chunks that exceed the similarity threshold.
+ */
 const rankDocumentChunks = async (documentId, query, k = DEFAULT_K) => {
   const queryVector = await generateQueryEmbedding(query);
   const rows = await fetchDocumentChunkRows(documentId);
@@ -157,8 +224,13 @@ const rankDocumentChunks = async (documentId, query, k = DEFAULT_K) => {
     .slice(0, Number(k) || DEFAULT_K);
 };
 
+/** Number of chunks to embed concurrently in a single batch. */
 const EMBEDDING_BATCH_SIZE = 5;
 
+/**
+ * Full PDF processing pipeline: extract text → chunk → embed → store.
+ * Called in the background after upload so the HTTP response returns immediately.
+ */
 const processUploadedPdf = async (documentId, filePath) => {
   const pdfBuffer = await fs.readFile(filePath);
   const parser = new PDFParse({ data: pdfBuffer });
@@ -222,12 +294,18 @@ const processUploadedPdf = async (documentId, filePath) => {
   );
 };
 
+/** Fire-and-forget wrapper for background PDF processing. */
 const processPdfBackground = (documentId, filePath) => {
   processUploadedPdf(documentId, filePath).catch((err) => {
     console.error("[RAG] Background processing crashed:", err);
   });
 };
 
+/**
+ * Create a document record and kick off background PDF processing.
+ * Returns the document row immediately (status: 'processing') while
+ * chunking and embedding happen asynchronously.
+ */
 export const createDocumentFromUploadService = async (file, userId) => {
   if (!file) {
     throw new BadRequestError("No file provided.");
@@ -255,6 +333,7 @@ export const createDocumentFromUploadService = async (file, userId) => {
   return rows[0];
 };
 
+/** List all documents belonging to a user, newest first. */
 export const getDocumentsByUserIdService = async (userId) => {
   try {
     return await safeExecute(
@@ -267,6 +346,7 @@ export const getDocumentsByUserIdService = async (userId) => {
   }
 };
 
+/** Fetch metadata for a single document (title, status, size, timestamps). */
 export const getDocumentMetaService = async (documentId, userId) => {
   const rows = await safeExecute(
     `SELECT document_id, title, mime_type, byte_size, status, error_message,
@@ -284,6 +364,7 @@ export const getDocumentMetaService = async (documentId, userId) => {
   return rows[0];
 };
 
+/** Delete a document's file from disk and its record (cascades to chunks/vectors). */
 export const deleteDocumentService = async (documentId, userId) => {
   const document = await assertOwnedDocument(documentId, userId);
   const absolutePath = resolveStorageAbsolutePath(document.storage_path);
@@ -301,6 +382,7 @@ export const deleteDocumentService = async (documentId, userId) => {
   return { id: documentId };
 };
 
+/** Semantic search within a document — returns ranked chunk excerpts. */
 export const searchInDocumentService = async (
   documentId,
   userId,
@@ -321,6 +403,13 @@ export const searchInDocumentService = async (
   };
 };
 
+/**
+ * AI-grounded Q&A on a document.
+ * 1. Rank chunks by cosine similarity to the query.
+ * 2. Build a prompt with the top chunks as context.
+ * 3. Ask Gemini to answer using only those chunks.
+ * 4. Return the answer with inline citations.
+ */
 export const queryDocumentService = async (documentId, userId, query) => {
   await assertOwnedDocument(documentId, userId, { requireReady: true });
   const rankedChunks = await rankDocumentChunks(documentId, query, DEFAULT_K);
@@ -383,6 +472,7 @@ export const queryDocumentService = async (documentId, userId, query) => {
   }
 };
 
+/** Return the absolute filesystem path and title for streaming the PDF. */
 export const getDocumentFilePathService = async (documentId, userId) => {
   const document = await assertOwnedDocument(documentId, userId, {
     requireReady: true,
@@ -394,6 +484,7 @@ export const getDocumentFilePathService = async (documentId, userId) => {
   };
 };
 
+/** Re-process a failed document: delete old chunks, reset status, restart background processing. */
 export const retryDocumentService = async (documentId, userId) => {
   const document = await assertOwnedDocument(documentId, userId);
 
