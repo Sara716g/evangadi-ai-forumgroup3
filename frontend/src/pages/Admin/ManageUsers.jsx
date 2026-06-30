@@ -104,6 +104,7 @@ export default function ManageUsers() {
         onSearch={handleSearch}
         onStatusChange={handleStatusChange}
         onRoleChange={handleRoleChange}
+        currentUserId={user?.id}
       />
     </div>
   );

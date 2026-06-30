@@ -195,6 +195,12 @@
   border-color: var(--text-tertiary, #475569);
 }
 
+.actionBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .pagination {
   display: flex;
   align-items: center;
