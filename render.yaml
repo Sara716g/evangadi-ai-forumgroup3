@@ -49,10 +49,8 @@ services:
     autoDeploy: true
 
   # ─── Frontend (Static Site) ────────────────────────────────────
-  - type: web
+  - type: static_site
     name: evangadi-frontend
-    runtime: static
-    region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
