@@ -39,7 +39,7 @@ const requireAdmin = (req, res, next) => {
 };
 
 /** Require authentication + admin role for all admin routes. */
-router.use(authenticateUser);
+router.use(authenticateUser); 
 router.use(requireAdmin);
 
 router.get('/stats', getStatsController);

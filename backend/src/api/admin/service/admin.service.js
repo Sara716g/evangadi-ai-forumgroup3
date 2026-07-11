@@ -1,11 +1,11 @@
 import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError, BadRequestError } from '../../../utils/errors/index.js';
-
+// Service functions for admin operations
 export const getStatsService = async () => {
-  const [usersRow] = await safeExecute('SELECT COUNT(*) AS count FROM users', []);
-  const [questionsRow] = await safeExecute('SELECT COUNT(*) AS count FROM questions', []);
-  const [answersRow] = await safeExecute('SELECT COUNT(*) AS count FROM answers', []);
-
+  const [usersRow] = await safeExecute('SELECT COUNT(*) AS count FROM users', []);// Get total number of users
+  const [questionsRow] = await safeExecute('SELECT COUNT(*) AS count FROM questions', []);// Get total number of questions
+  const [answersRow] = await safeExecute('SELECT COUNT(*) AS count FROM answers', []);// Get total number of answers
+// Get number of active users
   const [activeUsersRow] = await safeExecute(
     "SELECT COUNT(*) AS count FROM users WHERE status = 'active'", []
   );
@@ -27,7 +27,7 @@ export const getStatsService = async () => {
     newQuestionsToday: newQuestionsRow.count,
   };
 };
-
+// 
 export const getAllUsersService = async ({ page = 1, limit = 20, search = '' }) => {
   const offset = (page - 1) * limit;
   let whereClause = '';
