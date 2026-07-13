@@ -4,10 +4,13 @@ import axios from 'axios';
  * Configured axios instance for API communication.
  */
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3777',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    // Edited for deployment on Render.com
+    "https://eva-ai-powered-forum-project.onrender.com",
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
