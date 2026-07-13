@@ -42,11 +42,10 @@ services:
     autoDeploy: true
 
   # ─── PostgreSQL Database ──────────────────────────────────────
-  - type: pserv
+  - type: database
     name: evangadi-db
     plan: free
     databaseName: evangadi_forum
-    ipAllowList: []
 
   # ─── Frontend (Static Site) ────────────────────────────────────
   - type: web
