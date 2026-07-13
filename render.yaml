@@ -41,12 +41,6 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-  # ─── PostgreSQL Database ──────────────────────────────────────
-  - type: postgresql
-    name: evangadi-db
-    plan: free
-    databaseName: evangadi_forum
-
   # ─── Frontend (Static Site) ────────────────────────────────────
   - type: web
     name: evangadi-frontend
