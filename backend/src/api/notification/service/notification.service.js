@@ -5,7 +5,7 @@ export const getNotificationsByUserId = async (userId) => {
   const sql = `
     SELECT notification_id, user_id, type, title, message, link, is_read, created_at
     FROM notifications
-    WHERE user_id = ?
+    WHERE user_id = $1
     ORDER BY created_at DESC
     LIMIT 50
   `;
@@ -14,7 +14,7 @@ export const getNotificationsByUserId = async (userId) => {
 
 export const getUnreadCount = async (userId) => {
   const sql =
-    'SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND is_read = FALSE';
+    'SELECT COUNT(*) AS count FROM notifications WHERE user_id = $1 AND is_read = FALSE';
   const rows = await safeExecute(sql, [userId]);
   return rows[0].count;
 };
@@ -30,11 +30,12 @@ export const createNotification = async ({
 }) => {
   const sql = `
     INSERT INTO notifications (user_id, type, title, message, link, is_read)
-    VALUES (?, ?, ?, ?, ?, FALSE)
+    VALUES ($1, $2, $3, $4, $5, FALSE)
+    RETURNING notification_id
   `;
-  const result = await safeExecute(sql, [userId, type, title, message, link]);
+  const rows = await safeExecute(sql, [userId, type, title, message, link]);
   return {
-    id: result.insertId,
+    id: rows[0].notification_id,
     userId,
     type,
     title,
@@ -64,10 +65,10 @@ export const groupNewAnswerNotification = async ({
   const existingSql = `
     SELECT notification_id, message
     FROM notifications
-    WHERE user_id = ?
+    WHERE user_id = $1
       AND type = 'new_answer'
       AND is_read = FALSE
-      AND link LIKE ?
+      AND link LIKE $2
     ORDER BY created_at DESC
     LIMIT 1
   `;
@@ -96,8 +97,8 @@ export const groupNewAnswerNotification = async ({
 
   const updateSql = `
     UPDATE notifications
-    SET message = ?, link = ?, created_at = NOW()
-    WHERE notification_id = ?
+    SET message = $1, link = $2, created_at = NOW()
+    WHERE notification_id = $3
   `;
   await safeExecute(updateSql, [newMessage, link, existing.notification_id]);
 
@@ -130,7 +131,7 @@ export const notifyAnswerSeen = async ({
 
   const existingSql = `
     SELECT notification_id FROM notifications
-    WHERE type = 'answer_seen' AND link = ? AND user_id = ?
+    WHERE type = 'answer_seen' AND link = $1 AND user_id = $2
   `;
   const link = `/question/${questionHash}#answer-${answerId}`;
 
@@ -152,14 +153,14 @@ export const notifyAnswerSeen = async ({
 // Marks a single notification as read, only if it belongs to this user.
 export const markAsRead = async (notificationId, userId) => {
   const checkSql =
-    'SELECT notification_id FROM notifications WHERE notification_id = ? AND user_id = ?';
+    'SELECT notification_id FROM notifications WHERE notification_id = $1 AND user_id = $2';
   const rows = await safeExecute(checkSql, [notificationId, userId]);
   if (rows.length === 0) {
     throw new NotFoundError('Notification not found.');
   }
 
   const updateSql =
-    'UPDATE notifications SET is_read = TRUE WHERE notification_id = ?';
+    'UPDATE notifications SET is_read = TRUE WHERE notification_id = $1';
   await safeExecute(updateSql, [notificationId]);
   return { id: notificationId, isRead: true };
 };
@@ -167,7 +168,7 @@ export const markAsRead = async (notificationId, userId) => {
 // Marks every notification belonging to this user as read.
 export const markAllAsRead = async (userId) => {
   const sql =
-    'UPDATE notifications SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE';
+    'UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE';
   await safeExecute(sql, [userId]);
   return { success: true };
 };
@@ -175,13 +176,13 @@ export const markAllAsRead = async (userId) => {
 // Deletes a notification, only if it belongs to this user.
 export const deleteNotification = async (notificationId, userId) => {
   const checkSql =
-    'SELECT notification_id FROM notifications WHERE notification_id = ? AND user_id = ?';
+    'SELECT notification_id FROM notifications WHERE notification_id = $1 AND user_id = $2';
   const rows = await safeExecute(checkSql, [notificationId, userId]);
   if (rows.length === 0) {
     throw new NotFoundError('Notification not found.');
   }
 
-  const deleteSql = 'DELETE FROM notifications WHERE notification_id = ?';
+  const deleteSql = 'DELETE FROM notifications WHERE notification_id = $1';
   await safeExecute(deleteSql, [notificationId]);
   return { id: notificationId, deleted: true };
 };

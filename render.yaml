@@ -13,16 +13,9 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: DB_HOST
+      # PostgreSQL connection (set DATABASE_URL in Render dashboard)
+      - key: DATABASE_URL
         sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASS
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: DB_PORT
-        value: 3306
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -47,6 +40,13 @@ services:
         sync: false
     healthCheckPath: /health
     autoDeploy: true
+
+  # ─── PostgreSQL Database ──────────────────────────────────────
+  - type: pserv
+    name: evangadi-db
+    plan: free
+    databaseName: evangadi_forum
+    ipAllowList: []
 
   # ─── Frontend (Static Site) ────────────────────────────────────
   - type: web

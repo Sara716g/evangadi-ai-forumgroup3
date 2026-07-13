@@ -5,7 +5,7 @@ import path from 'path';
 
 export const getProfileService = async (userId) => {
   const rows = await safeExecute(
-    'SELECT user_id, first_name, last_name, email, bio, avatar_url, created_at FROM users WHERE user_id = ?',
+    'SELECT user_id, first_name, last_name, email, bio, avatar_url, created_at FROM users WHERE user_id = $1',
     [userId]
   );
 
@@ -16,17 +16,17 @@ export const getProfileService = async (userId) => {
   const user = rows[0];
 
   const questionCount = await safeExecute(
-    'SELECT COUNT(*) as count FROM questions WHERE user_id = ?',
+    'SELECT COUNT(*) as count FROM questions WHERE user_id = $1',
     [userId]
   );
 
   const answerCount = await safeExecute(
-    'SELECT COUNT(*) as count FROM answers WHERE user_id = ?',
+    'SELECT COUNT(*) as count FROM answers WHERE user_id = $1',
     [userId]
   );
 
   const credentials = await safeExecute(
-    'SELECT credential_id, credential_type, title FROM user_credentials WHERE user_id = ?',
+    'SELECT credential_id, credential_type, title FROM user_credentials WHERE user_id = $1',
     [userId]
   );
 
@@ -56,7 +56,7 @@ export const updateProfileService = async (userId, { firstName, lastName, bio })
   }
 
   await safeExecute(
-    'UPDATE users SET first_name = ?, last_name = ?, bio = ?, updated_at = NOW() WHERE user_id = ?',
+    'UPDATE users SET first_name = $1, last_name = $2, bio = $3, updated_at = NOW() WHERE user_id = $4',
     [firstName, lastName, bio || null, userId]
   );
 
@@ -71,7 +71,7 @@ export const uploadAvatarService = async (userId, file) => {
   const avatarUrl = `/uploads/avatars/${file.filename}`;
 
   await safeExecute(
-    'UPDATE users SET avatar_url = ?, updated_at = NOW() WHERE user_id = ?',
+    'UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE user_id = $2',
     [avatarUrl, userId]
   );
 
@@ -88,7 +88,7 @@ export const addCredentialService = async (userId, { type, title }) => {
   }
 
   await safeExecute(
-    'INSERT INTO user_credentials (user_id, credential_type, title) VALUES (?, ?, ?)',
+    'INSERT INTO user_credentials (user_id, credential_type, title) VALUES ($1, $2, $3)',
     [userId, type, title]
   );
 
@@ -97,7 +97,7 @@ export const addCredentialService = async (userId, { type, title }) => {
 
 export const deleteCredentialService = async (userId, credentialId) => {
   await safeExecute(
-    'DELETE FROM user_credentials WHERE credential_id = ? AND user_id = ?',
+    'DELETE FROM user_credentials WHERE credential_id = $1 AND user_id = $2',
     [credentialId, userId]
   );
 

@@ -76,7 +76,7 @@ const assertOwnedDocument = async (
   { requireReady = false } = {},
 ) => {
   const rows = await safeExecute(
-    "SELECT * FROM documents WHERE document_id = ? AND user_id = ? LIMIT 1",
+    "SELECT * FROM documents WHERE document_id = $1 AND user_id = $2 LIMIT 1",
     [documentId, userId],
   );
 
@@ -200,7 +200,7 @@ const fetchDocumentChunkRows = async (documentId) =>
     `SELECT dcv.chunk_id, dcv.embedding, dc.chunk_index, dc.content
      FROM document_chunk_vectors dcv
      JOIN document_chunks dc ON dc.chunk_id = dcv.chunk_id
-     WHERE dc.document_id = ?`,
+     WHERE dc.document_id = $1`,
     [documentId],
   );
 
@@ -253,10 +253,10 @@ const processUploadedPdf = async (documentId, filePath) => {
   const chunkIds = [];
   for (const [index, content] of chunks.entries()) {
     const chunkResult = await safeExecute(
-      "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES (?, ?, ?)",
+      "INSERT INTO document_chunks (document_id, chunk_index, content) VALUES ($1, $2, $3) RETURNING chunk_id",
       [documentId, index, content],
     );
-    chunkIds.push({ id: chunkResult.insertId, content });
+    chunkIds.push({ id: chunkResult[0].chunk_id, content });
   }
 
   for (let i = 0; i < chunkIds.length; i += EMBEDDING_BATCH_SIZE) {
@@ -275,7 +275,7 @@ const processUploadedPdf = async (documentId, filePath) => {
       if (result.status === "fulfilled") {
         const { chunkId, content: srcText, embedding } = result.value;
         await safeExecute(
-          "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES (?, ?, ?)",
+          "INSERT INTO document_chunk_vectors (chunk_id, source_text, embedding) VALUES ($1, $2, $3)",
           [chunkId, srcText, JSON.stringify(embedding)],
         );
       } else {
@@ -289,7 +289,7 @@ const processUploadedPdf = async (documentId, filePath) => {
   }
 
   await safeExecute(
-    "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = ?",
+    "UPDATE documents SET status = 'ready', error_message = NULL WHERE document_id = $1",
     [documentId],
   );
 };
@@ -317,16 +317,16 @@ export const createDocumentFromUploadService = async (file, userId) => {
 
   const insertResult = await safeExecute(
     `INSERT INTO documents (user_id, title, storage_path, mime_type, byte_size, status)
-     VALUES (?, ?, ?, ?, ?, 'processing')`,
+     VALUES ($1, $2, $3, $4, $5, 'processing') RETURNING document_id`,
     [userId, file.originalname, storagePath, file.mimetype, file.size],
   );
 
-  const documentId = insertResult.insertId;
+  const documentId = insertResult[0].document_id;
 
   setImmediate(() => processPdfBackground(documentId, file.path));
 
   const rows = await safeExecute(
-    "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
+    "SELECT * FROM documents WHERE document_id = $1 LIMIT 1",
     [documentId],
   );
 
@@ -337,7 +337,7 @@ export const createDocumentFromUploadService = async (file, userId) => {
 export const getDocumentsByUserIdService = async (userId) => {
   try {
     return await safeExecute(
-      "SELECT * FROM documents WHERE user_id = ? ORDER BY created_at DESC",
+      "SELECT * FROM documents WHERE user_id = $1 ORDER BY created_at DESC",
       [userId],
     );
   } catch (error) {
@@ -352,7 +352,7 @@ export const getDocumentMetaService = async (documentId, userId) => {
     `SELECT document_id, title, mime_type, byte_size, status, error_message,
             created_at, updated_at, user_id, storage_path
      FROM documents
-     WHERE document_id = ? AND user_id = ?
+     WHERE document_id = $1 AND user_id = $2
      LIMIT 1`,
     [documentId, userId],
   );
@@ -377,7 +377,7 @@ export const deleteDocumentService = async (documentId, userId) => {
     }
   }
 
-  await safeExecute("DELETE FROM documents WHERE document_id = ?", [documentId]);
+  await safeExecute("DELETE FROM documents WHERE document_id = $1", [documentId]);
 
   return { id: documentId };
 };
@@ -501,22 +501,22 @@ export const retryDocumentService = async (documentId, userId) => {
   }
 
   await safeExecute(
-    "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = ?)",
+    "DELETE FROM document_chunk_vectors WHERE chunk_id IN (SELECT chunk_id FROM document_chunks WHERE document_id = $1)",
     [documentId],
   );
   await safeExecute(
-    "DELETE FROM document_chunks WHERE document_id = ?",
+    "DELETE FROM document_chunks WHERE document_id = $1",
     [documentId],
   );
   await safeExecute(
-    "UPDATE documents SET status = 'processing', error_message = NULL WHERE document_id = ?",
+    "UPDATE documents SET status = 'processing', error_message = NULL WHERE document_id = $1",
     [documentId],
   );
 
   setImmediate(() => processPdfBackground(documentId, absolutePath));
 
   const rows = await safeExecute(
-    "SELECT * FROM documents WHERE document_id = ? LIMIT 1",
+    "SELECT * FROM documents WHERE document_id = $1 LIMIT 1",
     [documentId],
   );
 

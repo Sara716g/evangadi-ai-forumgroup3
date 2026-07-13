@@ -1,305 +1,285 @@
 -- Database Schema for Evangadi Forum
--- Platform: MySQL 
-
-SET FOREIGN_KEY_CHECKS = 0;
+-- Platform: PostgreSQL
 
 -- -----------------------------------------------------------------------------
 -- 1. Users Table
 -- Stores user account information.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `users`;
-CREATE TABLE `users` (
-    `user_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `first_name` VARCHAR(50) NOT NULL,
-    `last_name` VARCHAR(50) NOT NULL,
-    `email` VARCHAR(320) NOT NULL UNIQUE,
-    `password_hash` VARCHAR(255) NOT NULL,
-    `role` ENUM('user', 'admin') DEFAULT 'user',
-    `status` ENUM('active', 'banned', 'suspended') DEFAULT 'active',
-    `is_verified` BOOLEAN NOT NULL DEFAULT FALSE,
-    `verification_code` VARCHAR(64) DEFAULT NULL,
-    `verification_code_expires_at` DATETIME DEFAULT NULL,
-    `bio` TEXT DEFAULT NULL,
-    `avatar_url` VARCHAR(500) DEFAULT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CHECK (`email` = LOWER(`email`)),
-    
-    INDEX `idx_users_email` (`email`),
-    INDEX `idx_users_role` (`role`),
-    INDEX `idx_users_status` (`status`),
-    INDEX `idx_users_verification_code` (`verification_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS users CASCADE;
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(320) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(10) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    status VARCHAR(10) DEFAULT 'active' CHECK (status IN ('active', 'banned', 'suspended')),
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    verification_code VARCHAR(64) DEFAULT NULL,
+    verification_code_expires_at TIMESTAMP DEFAULT NULL,
+    bio TEXT DEFAULT NULL,
+    avatar_url VARCHAR(500) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (email = LOWER(email))
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_users_verification_code ON users(verification_code);
 
 -- -----------------------------------------------------------------------------
 -- 2. Questions Table
 -- Stores the main questions posted by users.
 -- Supports full-text search on title and content for exact match search.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `questions`;
-CREATE TABLE `questions` (
-    `question_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `question_hash` CHAR(16) NOT NULL UNIQUE, -- Used for /question/:hash routing
-    `user_id` INT NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
-    `content` TEXT NOT NULL, -- Detailed content including code sections
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CHECK (CHAR_LENGTH(`title`) >= 5),
-    CHECK (CHAR_LENGTH(`content`) >= 10),
-    
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    
-    INDEX `idx_questions_user_id` (`user_id`),
-    INDEX `idx_questions_created_at` (`created_at`),
-    
-    -- Full-text search index for exact match search mode
-    FULLTEXT KEY `ft_questions_search` (`title`, `content`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS questions CASCADE;
+CREATE TABLE questions (
+    question_id SERIAL PRIMARY KEY,
+    question_hash CHAR(16) NOT NULL UNIQUE,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CHECK (CHAR_LENGTH(title) >= 5),
+    CHECK (CHAR_LENGTH(content) >= 10)
+);
+
+CREATE INDEX idx_questions_user_id ON questions(user_id);
+CREATE INDEX idx_questions_created_at ON questions(created_at);
+
+-- Full-text search index for exact match search mode
+CREATE INDEX ft_questions_search ON questions USING GIN (to_tsvector('english', title || ' ' || content));
 
 -- -----------------------------------------------------------------------------
 -- 3. Question Vectors Table
 -- Stores embeddings for the AI Semantic Search feature (Gemini default model).
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `question_vectors`;
-CREATE TABLE `question_vectors` (
-    `vector_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `question_id` INT NOT NULL,
-    `source_text` TEXT NOT NULL, -- Text used to generate the embedding
-    `embedding` JSON NOT NULL,   -- Gemini embedding vector
-    `status` VARCHAR(20) DEFAULT 'ready', -- e.g., 'ready', 'pending', 'failed'
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`question_id`) REFERENCES `questions`(`question_id`) ON DELETE CASCADE,
-    UNIQUE KEY `uniq_question_vectors_question_id` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS question_vectors CASCADE;
+CREATE TABLE question_vectors (
+    vector_id BIGSERIAL PRIMARY KEY,
+    question_id INT NOT NULL UNIQUE REFERENCES questions(question_id) ON DELETE CASCADE,
+    source_text TEXT NOT NULL,
+    embedding JSONB NOT NULL,
+    status VARCHAR(20) DEFAULT 'ready',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- -----------------------------------------------------------------------------
 -- 4. Answers Table
 -- Stores answers to questions.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `answers`;
-CREATE TABLE `answers` (
-    `answer_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `question_id` INT NOT NULL,
-    `user_id` INT NOT NULL,
-    `content` TEXT NOT NULL, -- Content including code sections
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (`question_id`) REFERENCES `questions`(`question_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    
-    INDEX `idx_answers_question_id` (`question_id`),
-    INDEX `idx_answers_user_id` (`user_id`),
-    INDEX `idx_answers_created_at` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS answers CASCADE;
+CREATE TABLE answers (
+    answer_id SERIAL PRIMARY KEY,
+    question_id INT NOT NULL REFERENCES questions(question_id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_answers_question_id ON answers(question_id);
+CREATE INDEX idx_answers_user_id ON answers(user_id);
+CREATE INDEX idx_answers_created_at ON answers(created_at);
 
 -- -----------------------------------------------------------------------------
 -- 4b. Answer Attachments Table
 -- Stores images and PDF files attached to an answer.
--- An answer can have many attachments (1:N).
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `answer_attachments`;
-CREATE TABLE `answer_attachments` (
-    `attachment_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `answer_id` INT NOT NULL,
-    `file_type` ENUM('image', 'pdf') NOT NULL,
-    `original_name` VARCHAR(255) NOT NULL,
-    `mime_type` VARCHAR(128) NOT NULL,
-    `storage_path` VARCHAR(1024) NOT NULL,
-    `byte_size` BIGINT NOT NULL DEFAULT 0,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+DROP TABLE IF EXISTS answer_attachments CASCADE;
+CREATE TABLE answer_attachments (
+    attachment_id SERIAL PRIMARY KEY,
+    answer_id INT NOT NULL REFERENCES answers(answer_id) ON DELETE CASCADE,
+    file_type VARCHAR(10) NOT NULL CHECK (file_type IN ('image', 'pdf')),
+    original_name VARCHAR(255) NOT NULL,
+    mime_type VARCHAR(128) NOT NULL,
+    storage_path VARCHAR(1024) NOT NULL,
+    byte_size BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE CASCADE,
-
-    INDEX `idx_answer_attachments_answer_id` (`answer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX idx_answer_attachments_answer_id ON answer_attachments(answer_id);
 
 -- -----------------------------------------------------------------------------
 -- 5. Answer Votes Table
 -- Stores upvotes for answers (one vote per user per answer).
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `answer_votes`;
-CREATE TABLE `answer_votes` (
-    `vote_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `answer_id` INT NOT NULL,
-    `user_id` INT NOT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    UNIQUE KEY `uniq_answer_votes` (`answer_id`, `user_id`),
-    INDEX `idx_answer_votes_answer_id` (`answer_id`),
-    INDEX `idx_answer_votes_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS answer_votes CASCADE;
+CREATE TABLE answer_votes (
+    vote_id SERIAL PRIMARY KEY,
+    answer_id INT NOT NULL REFERENCES answers(answer_id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(answer_id, user_id)
+);
+
+CREATE INDEX idx_answer_votes_answer_id ON answer_votes(answer_id);
+CREATE INDEX idx_answer_votes_user_id ON answer_votes(user_id);
 
 -- -----------------------------------------------------------------------------
 -- 5b. Answer Comments Table
--- Stores comments on answers (one user can comment multiple times).
+-- Stores comments on answers.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `answer_comments`;
-CREATE TABLE `answer_comments` (
-    `comment_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `answer_id` INT NOT NULL,
-    `user_id` INT NOT NULL,
-    `content` TEXT NOT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    INDEX `idx_answer_comments_answer_id` (`answer_id`),
-    INDEX `idx_answer_comments_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS answer_comments CASCADE;
+CREATE TABLE answer_comments (
+    comment_id SERIAL PRIMARY KEY,
+    answer_id INT NOT NULL REFERENCES answers(answer_id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_answer_comments_answer_id ON answer_comments(answer_id);
+CREATE INDEX idx_answer_comments_user_id ON answer_comments(user_id);
 
 -- -----------------------------------------------------------------------------
 -- 6. RAG: user-owned PDF documents, text chunks, and chunk embeddings
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `documents`;
-CREATE TABLE `documents` (
-    `document_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `title` VARCHAR(512) NOT NULL,
-    `mime_type` VARCHAR(128) NOT NULL DEFAULT 'application/pdf',
-    `storage_path` VARCHAR(1024) NOT NULL,
-    `byte_size` BIGINT NOT NULL DEFAULT 0,
-    `status` VARCHAR(20) NOT NULL DEFAULT 'pending',
-    `error_message` TEXT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    INDEX `idx_documents_user_created` (`user_id`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS documents CASCADE;
+CREATE TABLE documents (
+    document_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    title VARCHAR(512) NOT NULL,
+    mime_type VARCHAR(128) NOT NULL DEFAULT 'application/pdf',
+    storage_path VARCHAR(1024) NOT NULL,
+    byte_size BIGINT NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    error_message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-DROP TABLE IF EXISTS `document_chunks`;
-CREATE TABLE `document_chunks` (
-    `chunk_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `document_id` INT NOT NULL,
-    `chunk_index` INT NOT NULL,
-    `content` TEXT NOT NULL,
-    `page_start` INT NULL,
-    `page_end` INT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`document_id`) REFERENCES `documents`(`document_id`) ON DELETE CASCADE,
-    UNIQUE KEY `uniq_document_chunks_doc_index` (`document_id`, `chunk_index`),
-    INDEX `idx_document_chunks_document_id` (`document_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE INDEX idx_documents_user_created ON documents(user_id, created_at);
 
-DROP TABLE IF EXISTS `document_chunk_vectors`;
-CREATE TABLE `document_chunk_vectors` (
-    `chunk_vector_id` BIGINT AUTO_INCREMENT PRIMARY KEY,
-    `chunk_id` BIGINT NOT NULL,
-    `source_text` TEXT NOT NULL,
-    `embedding` JSON NOT NULL,
-    `status` VARCHAR(20) NOT NULL DEFAULT 'ready',
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`chunk_id`) REFERENCES `document_chunks`(`chunk_id`) ON DELETE CASCADE,
-    UNIQUE KEY `uniq_chunk_vectors_chunk_id` (`chunk_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS document_chunks CASCADE;
+CREATE TABLE document_chunks (
+    chunk_id BIGSERIAL PRIMARY KEY,
+    document_id INT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+    chunk_index INT NOT NULL,
+    content TEXT NOT NULL,
+    page_start INT NULL,
+    page_end INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(document_id, chunk_index)
+);
+
+CREATE INDEX idx_document_chunks_document_id ON document_chunks(document_id);
+
+DROP TABLE IF EXISTS document_chunk_vectors CASCADE;
+CREATE TABLE document_chunk_vectors (
+    chunk_vector_id BIGSERIAL PRIMARY KEY,
+    chunk_id BIGINT NOT NULL UNIQUE REFERENCES document_chunks(chunk_id) ON DELETE CASCADE,
+    source_text TEXT NOT NULL,
+    embedding JSONB NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ready',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- -----------------------------------------------------------------------------
 -- 7. Password Reset Tokens Table
 -- Stores tokens for the forgot-password flow.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `password_reset_tokens`;
-CREATE TABLE `password_reset_tokens` (
-    `token_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `token` VARCHAR(64) NOT NULL UNIQUE,
-    `expires_at` DATETIME NOT NULL,
-    `used` TINYINT(1) NOT NULL DEFAULT 0,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    INDEX `idx_password_reset_tokens_token` (`token`),
-    INDEX `idx_password_reset_tokens_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS password_reset_tokens CASCADE;
+CREATE TABLE password_reset_tokens (
+    token_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    token VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
+CREATE INDEX idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
 
 -- -----------------------------------------------------------------------------
 -- 8. User Credentials Table
 -- Stores profile credentials (employment, education, location).
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `user_credentials`;
-CREATE TABLE `user_credentials` (
-    `credential_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `credential_type` ENUM('employment', 'education', 'location') NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS user_credentials CASCADE;
+CREATE TABLE user_credentials (
+    credential_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    credential_type VARCHAR(20) NOT NULL CHECK (credential_type IN ('employment', 'education', 'location')),
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- -----------------------------------------------------------------------------
 -- 9. Notifications Table
 -- Stores user notifications (answers, mentions, etc.).
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `notifications`;
-CREATE TABLE `notifications` (
-    `notification_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `type` VARCHAR(50) NOT NULL,
-    `title` VARCHAR(255) NOT NULL,
-    `message` TEXT NOT NULL,
-    `link` VARCHAR(500) DEFAULT NULL,
-    `is_read` BOOLEAN DEFAULT FALSE,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    INDEX `idx_notifications_user_id` (`user_id`),
-    INDEX `idx_notifications_is_read` (`is_read`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS notifications CASCADE;
+CREATE TABLE notifications (
+    notification_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    link VARCHAR(500) DEFAULT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_is_read ON notifications(is_read);
 
 -- -----------------------------------------------------------------------------
 -- 10. Voice Messages Table
 -- Stores voice messages attached to questions or answers.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `voice_messages`;
-CREATE TABLE `voice_messages` (
-    `voice_message_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `file_name` VARCHAR(255) NOT NULL,
-    `file_type` VARCHAR(50) NOT NULL,
-    `file_size` INT NOT NULL,
-    `duration` FLOAT NOT NULL,
-    `file_path` VARCHAR(500) NOT NULL,
-    `question_id` INT DEFAULT NULL,
-    `answer_id` INT DEFAULT NULL,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    FOREIGN KEY (`question_id`) REFERENCES `questions`(`question_id`) ON DELETE SET NULL,
-    FOREIGN KEY (`answer_id`) REFERENCES `answers`(`answer_id`) ON DELETE SET NULL,
-    INDEX `idx_voice_messages_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS voice_messages CASCADE;
+CREATE TABLE voice_messages (
+    voice_message_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_type VARCHAR(50) NOT NULL,
+    file_size INT NOT NULL,
+    duration FLOAT NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    question_id INT DEFAULT NULL REFERENCES questions(question_id) ON DELETE SET NULL,
+    answer_id INT DEFAULT NULL REFERENCES answers(answer_id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_voice_messages_user_id ON voice_messages(user_id);
 
 -- -----------------------------------------------------------------------------
 -- 11. AI Assistant Logs Table
 -- Stores AI assistant interactions for debugging and analytics.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `ai_assistant_logs`;
-CREATE TABLE `ai_assistant_logs` (
-    `log_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT NOT NULL,
-    `prompt` TEXT NOT NULL,
-    `response` TEXT,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
-    INDEX `idx_ai_assistant_logs_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS ai_assistant_logs CASCADE;
+CREATE TABLE ai_assistant_logs (
+    log_id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    prompt TEXT NOT NULL,
+    response TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_ai_assistant_logs_user_id ON ai_assistant_logs(user_id);
 
 -- -----------------------------------------------------------------------------
 -- 12. Email Verifications Table
 -- Stores temporary registration data before email verification.
 -- -----------------------------------------------------------------------------
-DROP TABLE IF EXISTS `email_verifications`;
-CREATE TABLE `email_verifications` (
-    `verification_id` INT AUTO_INCREMENT PRIMARY KEY,
-    `email` VARCHAR(255) NOT NULL UNIQUE,
-    `code` VARCHAR(6) NOT NULL,
-    `first_name` VARCHAR(100) NOT NULL,
-    `last_name` VARCHAR(100) NOT NULL,
-    `password_hash` VARCHAR(255) NOT NULL,
-    `expires_at` DATETIME NOT NULL,
-    `verified` TINYINT(1) NOT NULL DEFAULT 0,
-    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX `idx_email_verifications_email` (`email`),
-    INDEX `idx_email_verifications_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+DROP TABLE IF EXISTS email_verifications CASCADE;
+CREATE TABLE email_verifications (
+    verification_id SERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    code VARCHAR(6) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    verified SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
-SET FOREIGN_KEY_CHECKS = 1;
+CREATE INDEX idx_email_verifications_email ON email_verifications(email);
+CREATE INDEX idx_email_verifications_code ON email_verifications(code);

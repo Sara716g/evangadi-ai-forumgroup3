@@ -2,7 +2,7 @@ import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError, BadRequestError } from '../../../utils/errors/index.js';
 
 export const getAnswerCommentsService = async ({ answerId }) => {
-  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = ? LIMIT 1';
+  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = $1 LIMIT 1';
   const answerRows = await safeExecute(answerSql, [answerId]);
 
   if (answerRows.length === 0) {
@@ -19,7 +19,7 @@ export const getAnswerCommentsService = async ({ answerId }) => {
       u.last_name
     FROM answer_comments c
     JOIN users u ON c.user_id = u.user_id
-    WHERE c.answer_id = ?
+    WHERE c.answer_id = $1
     ORDER BY c.created_at ASC
   `;
 
@@ -38,7 +38,7 @@ export const getAnswerCommentsService = async ({ answerId }) => {
 };
 
 export const createAnswerCommentService = async ({ answerId, userId, content }) => {
-  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = ? LIMIT 1';
+  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = $1 LIMIT 1';
   const answerRows = await safeExecute(answerSql, [answerId]);
 
   if (answerRows.length === 0) {
@@ -49,9 +49,9 @@ export const createAnswerCommentService = async ({ answerId, userId, content }) 
     throw new BadRequestError('Comment content cannot be empty.');
   }
 
-  const insertSql = 'INSERT INTO answer_comments (answer_id, user_id, content) VALUES (?, ?, ?)';
+  const insertSql = 'INSERT INTO answer_comments (answer_id, user_id, content) VALUES ($1, $2, $3) RETURNING comment_id';
   const insertResult = await safeExecute(insertSql, [answerId, userId, content.trim()]);
-  const commentId = insertResult.insertId;
+  const commentId = insertResult[0].comment_id;
 
   const fetchSql = `
     SELECT
@@ -63,7 +63,7 @@ export const createAnswerCommentService = async ({ answerId, userId, content }) 
       u.last_name
     FROM answer_comments c
     JOIN users u ON c.user_id = u.user_id
-    WHERE c.comment_id = ?
+    WHERE c.comment_id = $1
     LIMIT 1
   `;
 

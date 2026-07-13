@@ -3,9 +3,10 @@
  *
  * Initializes the database (runs schema.sql then migrate.js) and starts
  * the Express server. Used by Render and other PaaS deployments.
+ *
+ * Adapted for PostgreSQL: uses db.query() instead of db.execute().
  */
 
-import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -22,23 +23,16 @@ async function initDatabase() {
     const schemaPath = path.join(__dirname, 'db', 'schema.sql');
     const schema = readFileSync(schemaPath, 'utf8');
 
-    // Split by semicolons and execute each statement
-    const statements = schema
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
-
-    for (const stmt of statements) {
-      try {
-        await db.execute(stmt);
-      } catch (e) {
-        // Ignore "table already exists" errors during fresh schema load
-        if (!e.message.includes('already exists') && !e.message.includes('Duplicate')) {
-          console.warn('Schema statement warning:', e.message.substring(0, 100));
-        }
+    // Execute the entire schema as one statement (PostgreSQL handles multiple statements)
+    try {
+      await db.query(schema);
+      console.log('Schema loaded successfully.');
+    } catch (e) {
+      // Ignore "already exists" errors during fresh schema load
+      if (!e.message.includes('already exists') && !e.message.includes('Duplicate')) {
+        console.warn('Schema statement warning:', e.message.substring(0, 100));
       }
     }
-    console.log('Schema loaded successfully.');
   } catch (e) {
     console.warn('Schema load skipped (tables may already exist):', e.message.substring(0, 80));
   }
