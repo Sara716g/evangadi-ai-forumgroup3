@@ -42,7 +42,7 @@ services:
     autoDeploy: true
 
   # ─── PostgreSQL Database ──────────────────────────────────────
-  - type: database
+  - type: postgresql
     name: evangadi-db
     plan: free
     databaseName: evangadi_forum
