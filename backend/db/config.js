@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 import mysql from "mysql2/promise";
 
-// Normalize env values and support both DB_PASSWORD and DB_PASS
 const dbHost = process.env.DB_HOST?.trim() || "localhost";
 const dbUser =
   process.env.DB_USER?.trim() || process.env.DB_USERNAME?.trim() || "Customer2";
