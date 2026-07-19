@@ -1,3 +1,7 @@
+/**
+ * Profile — user profile page showing avatar, bio, credentials, and activity tabs
+ * (questions/answers). Allows editing own profile fields inline.
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';

@@ -1,4 +1,15 @@
-// backend/src/utils/ai.js
+/**
+ * @file Gemini AI client utilities.
+ *
+ * Provides two core capabilities used across the backend:
+ * 1. generateEmbedding — converts text into a vector for semantic search.
+ * 2. generateText — sends a prompt to Gemini and returns the text response.
+ *
+ * Both functions include input validation and translate Gemini-specific
+ * error codes (429 quota, 503 overloaded) into ApplicationErrors that
+ * the global error handler can format.
+ */
+
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import { BadRequestError, ServiceUnavailableError } from './errors/index.js';
@@ -9,9 +20,13 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
 const GEMINI_TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.0-flash-lite';
 
-// Initialize the client instance using the standard SDK
+/** Shared Google Generative AI client instance. */
 export const aiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
+/**
+ * Flatten the Gemini response parts array into a single text string.
+ * Gemini may return multiple { text } parts; this joins them.
+ */
 const parsePartsText = (content) => {
   if (!content || !Array.isArray(content.parts)) {
     return '';
@@ -19,6 +34,13 @@ const parsePartsText = (content) => {
   return content.parts.map(part => part.text || '').join('');
 };
 
+/**
+ * Generate a vector embedding for the given text using Gemini.
+ * Used by the RAG and question modules to enable semantic search.
+ *
+ * @param {string} text - The text to embed (must be non-empty after trim).
+ * @returns {Promise<number[]>} The embedding vector.
+ */
 export const generateEmbedding = async (text) => {
   if (!text || typeof text !== 'string') {
     throw new BadRequestError('Text is required for embedding generation.');
@@ -45,6 +67,13 @@ export const generateEmbedding = async (text) => {
   return values;
 };
 
+/**
+ * Generate a free-form text response from Gemini.
+ * Used by the draft coach, answer-fit evaluator, AI assistant, and RAG query.
+ *
+ * @param {string} prompt - The user/system prompt to send.
+ * @returns {Promise<string>} The generated text.
+ */
 export const generateText = async (prompt) => {
   if (!prompt || typeof prompt !== 'string') {
     throw new BadRequestError('Prompt is required for text generation.');
@@ -79,6 +108,7 @@ export const generateText = async (prompt) => {
     throw new Error('Failed to generate text from Gemini.');
   }
 
+  // Warn when the response was cut short by the token limit
   if (candidate.finishReason === 'MAX_TOKENS') {
     console.warn('[Gemini generateText] Response truncated: hit maxOutputTokens limit');
   }

@@ -101,7 +101,7 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
   try {
     if (!sourceText || typeof sourceText !== 'string' || sourceText.trim().length === 0) {
       await safeExecute(
-        `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+        `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = $1`,
         [questionId],
       );
       return { success: false, error: 'Source text is required' };
@@ -110,7 +110,7 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
     const vector = await generateEmbedding(sourceText);
     if (Array.isArray(vector) && vector.length > 0) {
       await safeExecute(
-        `UPDATE question_vectors SET embedding = ?, status = 'ready', updated_at = NOW() WHERE question_id = ?`,
+        `UPDATE question_vectors SET embedding = $1, status = 'ready', updated_at = NOW() WHERE question_id = $2`,
         [JSON.stringify(vector), questionId],
       );
       return { success: true, status: 'ready' };
@@ -118,14 +118,14 @@ export const generateQuestionEmbeddingAsync = async ({ questionId, sourceText })
 
     console.error('[Embedding] Empty vector returned from Gemini');
     await safeExecute(
-      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = $1`,
       [questionId],
     );
     return { success: false, error: 'Embedding generation returned empty vector' };
   } catch (error) {
     console.error('[Embedding] Failed to generate embedding:', error);
     await safeExecute(
-      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = ?`,
+      `UPDATE question_vectors SET status = 'failed', updated_at = NOW() WHERE question_id = $1`,
       [questionId],
     );
     return { success: false, error: error.message };
@@ -143,9 +143,6 @@ export const createQuestionWithVectorService = async ({ userId, title, content }
   const incomingVector = normalizeEmbedding(vector);
   
   if (incomingVector.length > 0) {
-    // Prevent short selections from getting broken by MySQL default truncation boundaries
-    await safeExecute("SET SESSION group_concat_max_len = 1000000;", []);
-
     // 2. Pull all existing ready question vectors to check for exact/near duplicates
     const rows = await safeExecute(selectReadyQuestionVectorsSql, []);
     
@@ -187,21 +184,21 @@ export const createQuestionWithVectorService = async ({ userId, title, content }
 
   // 4. No Duplicate Found -> Proceed with normal insertion
   const questionHash = generateHexString(16);
-  const insertSql = `INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)`;
+  const insertSql = `INSERT INTO questions (question_hash, user_id, title, content) VALUES ($1, $2, $3, $4) RETURNING question_id`;
   const insertResult = await safeExecute(insertSql, [questionHash, userId, title, content]);
-  const questionId = insertResult.insertId;
+  const questionId = insertResult[0].question_id;
 
   // Save the pre-computed embedding safely right away to optimize system performance
   // const sourceText = `${title}\n\n${content}`;
   // const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, '[]', 'pending')`;
   // await safeExecute(vectorSql, [questionId, sourceText]);
-  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES (?, ?, ?, 'ready')`;
+  const vectorSql = `INSERT INTO question_vectors (question_id, source_text, embedding, status) VALUES ($1, $2, $3, 'ready')`;
   await safeExecute(vectorSql, [questionId, sourceText, JSON.stringify(incomingVector)]);
 
   // Notify all other users about the new question
   try {
     const [askerRows] = await safeExecute(
-      'SELECT first_name, last_name FROM users WHERE user_id = ?',
+      'SELECT first_name, last_name FROM users WHERE user_id = $1',
       [userId]
     );
     const askerName = askerRows.length > 0
@@ -209,7 +206,7 @@ export const createQuestionWithVectorService = async ({ userId, title, content }
       : 'Someone';
 
     const allUsers = await safeExecute(
-      'SELECT user_id FROM users WHERE user_id != ?',
+      'SELECT user_id FROM users WHERE user_id != $1',
       [userId]
     );
 
@@ -241,13 +238,13 @@ export const getQuestionsService = async ({ userId, search, mine }) => {
   let whereClause = '';
 
   if (mine) {
-    filters.push('q.user_id = ?');
+    filters.push(`q.user_id = $${params.length + 1}`);
     params.push(userId);
   }
 
   if (search && String(search).trim().length > 0) {
-    filters.push('(q.title LIKE ? OR q.content LIKE ?)');
     const likeValue = `%${String(search).trim()}%`;
+    filters.push(`(q.title LIKE $${params.length + 1} OR q.content LIKE $${params.length + 2})`);
     params.push(likeValue, likeValue);
   }
 
@@ -296,7 +293,7 @@ export const getSingleQuestionService = async ({ questionHash, userId }) => {
       u.last_name
     FROM questions q
     JOIN users u ON q.user_id = u.user_id
-    WHERE q.question_hash = ?
+    WHERE q.question_hash = $1
     LIMIT 1
   `;
 
@@ -331,8 +328,8 @@ export const getSingleQuestionService = async ({ questionHash, userId }) => {
       FROM answer_comments
       GROUP BY answer_id
     ) c ON c.answer_id = a.answer_id
-    LEFT JOIN answer_votes uv ON uv.answer_id = a.answer_id AND uv.user_id = ?
-    WHERE a.question_id = ?
+    LEFT JOIN answer_votes uv ON uv.answer_id = a.answer_id AND uv.user_id = $1
+    WHERE a.question_id = $2
     ORDER BY a.created_at ASC
   `;
 
@@ -447,7 +444,7 @@ export const getSimilarQuestionsService = async ({ questionHash, k, threshold })
       qv.embedding
     FROM question_vectors qv
     JOIN questions q ON qv.question_id = q.question_id
-    WHERE q.question_hash = ?
+    WHERE q.question_hash = $1
     LIMIT 1
   `;
 
@@ -461,7 +458,7 @@ export const getSimilarQuestionsService = async ({ questionHash, k, threshold })
     throw new ServiceUnavailableError('Source question embedding is unavailable');
   }
 
-  const rows = await safeExecute(`${selectReadyQuestionVectorsSql} AND q.question_id != ?`, [sourceRows[0].question_id]);
+  const rows = await safeExecute(`${selectReadyQuestionVectorsSql} AND q.question_id != $1`, [sourceRows[0].question_id]);
   const results = rows
     .map(row => {
         const embedding = normalizeEmbedding(parseEmbedding(row.embedding));
@@ -497,7 +494,7 @@ export const assessAnswerAgainstQuestionService = async ({ questionHash, answerT
       q.title,
       q.content
     FROM questions q
-    WHERE q.question_hash = ?
+    WHERE q.question_hash = $1
     LIMIT 1
   `;
 

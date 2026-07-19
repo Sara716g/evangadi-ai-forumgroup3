@@ -8,23 +8,23 @@ import { NotFoundError } from '../../../utils/errors/index.js';
  * Returns { voted: true/false, voteCount: number }
  */
 export const toggleAnswerVoteService = async ({ answerId, userId }) => {
-  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = ? LIMIT 1';
+  const answerSql = 'SELECT answer_id FROM answers WHERE answer_id = $1 LIMIT 1';
   const answerRows = await safeExecute(answerSql, [answerId]);
 
   if (answerRows.length === 0) {
     throw new NotFoundError('Answer not found');
   }
 
-  const existingVoteSql = 'SELECT vote_id FROM answer_votes WHERE answer_id = ? AND user_id = ? LIMIT 1';
+  const existingVoteSql = 'SELECT vote_id FROM answer_votes WHERE answer_id = $1 AND user_id = $2 LIMIT 1';
   const existingVotes = await safeExecute(existingVoteSql, [answerId, userId]);
 
   if (existingVotes.length > 0) {
-    await safeExecute('DELETE FROM answer_votes WHERE answer_id = ? AND user_id = ?', [answerId, userId]);
+    await safeExecute('DELETE FROM answer_votes WHERE answer_id = $1 AND user_id = $2', [answerId, userId]);
   } else {
-    await safeExecute('INSERT INTO answer_votes (answer_id, user_id) VALUES (?, ?)', [answerId, userId]);
+    await safeExecute('INSERT INTO answer_votes (answer_id, user_id) VALUES ($1, $2)', [answerId, userId]);
   }
 
-  const countSql = 'SELECT COUNT(*) AS vote_count FROM answer_votes WHERE answer_id = ?';
+  const countSql = 'SELECT COUNT(*) AS vote_count FROM answer_votes WHERE answer_id = $1';
   const countRows = await safeExecute(countSql, [answerId]);
 
   return {
@@ -37,12 +37,12 @@ export const toggleAnswerVoteService = async ({ answerId, userId }) => {
  * Get vote count and whether the current user has voted for a single answer.
  */
 export const getAnswerVoteStatusService = async ({ answerId, userId }) => {
-  const countSql = 'SELECT COUNT(*) AS vote_count FROM answer_votes WHERE answer_id = ?';
+  const countSql = 'SELECT COUNT(*) AS vote_count FROM answer_votes WHERE answer_id = $1';
   const countRows = await safeExecute(countSql, [answerId]);
 
   let userHasVoted = false;
   if (userId) {
-    const voteSql = 'SELECT 1 FROM answer_votes WHERE answer_id = ? AND user_id = ? LIMIT 1';
+    const voteSql = 'SELECT 1 FROM answer_votes WHERE answer_id = $1 AND user_id = $2 LIMIT 1';
     const voteRows = await safeExecute(voteSql, [answerId, userId]);
     userHasVoted = voteRows.length > 0;
   }

@@ -1,7 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { BadRequestError } from '../../utils/errors/index.js';
+import { BadRequestError } from '../../../utils/errors/index.js';
 
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'answers');
 fs.mkdirSync(UPLOAD_BASE_DIR, { recursive: true });
@@ -54,13 +54,13 @@ export const createAnswerAttachmentMulterErrorHandler = (err, req, res, next) =>
 
   if (err instanceof multer.MulterError || err.name === 'MulterError') {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      throw new BadRequestError('Each file must be 10MB or smaller.');
+      return next(new BadRequestError('Each file must be 10MB or smaller.'));
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
-      throw new BadRequestError(`You can attach up to ${MAX_FILES_PER_ANSWER} files per answer.`);
+      return next(new BadRequestError(`You can attach up to ${MAX_FILES_PER_ANSWER} files per answer.`));
     }
-    throw new BadRequestError(err.message);
+    return next(new BadRequestError(err.message));
   }
 
-  throw err;
+  return next(err);
 };

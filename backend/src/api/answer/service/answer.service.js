@@ -17,7 +17,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { safeExecute } from '../../../../db/config.js';
 import { BadRequestError, NotFoundError } from '../../../utils/errors/index.js';
-import { classifyAttachmentType } from '../answer.upload.config.js';
+import { classifyAttachmentType } from '../config/answer.upload.config.js';
 import { createNotification, groupNewAnswerNotification } from '../../notification/service/notification.service.js';
 
 const UPLOAD_BASE_DIR = path.resolve(process.cwd(), 'uploads', 'answers');
@@ -41,7 +41,8 @@ const insertAttachmentsForAnswer = async ({ answerId, userId, files }) => {
   const insertSql = `
     INSERT INTO answer_attachments
       (answer_id, file_type, original_name, mime_type, storage_path, byte_size)
-    VALUES (?, ?, ?, ?, ?, ?)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING attachment_id
   `;
 
   const inserted = [];
@@ -59,7 +60,7 @@ const insertAttachmentsForAnswer = async ({ answerId, userId, files }) => {
     ]);
 
     inserted.push({
-      attachment_id: result.insertId,
+      attachment_id: result[0].attachment_id,
       answer_id: answerId,
       file_type: fileType,
       original_name: file.originalname,
@@ -78,7 +79,7 @@ export const getAttachmentsForAnswerIds = async answerIds => {
     return new Map();
   }
 
-  const placeholders = answerIds.map(() => '?').join(',');
+  const placeholders = answerIds.map((_, i) => '$' + (i + 1)).join(',');
   const sql = `
     SELECT
       attachment_id, answer_id, file_type, original_name,
@@ -103,7 +104,7 @@ export const getAttachmentsForAnswerIds = async answerIds => {
 };
 
 export const createAnswerService = async ({ userId, questionId, content, files = [] }) => {
-  const questionSql = 'SELECT question_id, user_id, question_hash FROM questions WHERE question_id = ? LIMIT 1';
+  const questionSql = 'SELECT question_id, user_id, question_hash FROM questions WHERE question_id = $1 LIMIT 1';
   const questionRows = await safeExecute(questionSql, [questionId]);
 
   if (questionRows.length === 0) {
@@ -115,9 +116,12 @@ export const createAnswerService = async ({ userId, questionId, content, files =
     throw new BadRequestError('You cannot answer your own question.');
   }
 
-  const insertSql = 'INSERT INTO answers (question_id, user_id, content) VALUES (?, ?, ?)';
-  const insertResult = await safeExecute(insertSql, [questionId, userId, content]);
-  const answerId = insertResult.insertId;
+  // When posting with files only (no text), use a placeholder so the NOT NULL constraint is satisfied.
+  const answerContent = (content && content.trim()) || (files.length > 0 ? '(See attachment)' : '');
+
+  const insertSql = 'INSERT INTO answers (question_id, user_id, content) VALUES ($1, $2, $3) RETURNING answer_id';
+  const insertResult = await safeExecute(insertSql, [questionId, userId, answerContent]);
+  const answerId = insertResult[0].answer_id;
 
   const attachmentRows = await insertAttachmentsForAnswer({ answerId, userId, files });
 
@@ -147,7 +151,7 @@ export const createAnswerService = async ({ userId, questionId, content, files =
       u.last_name
     FROM answers a
     JOIN users u ON a.user_id = u.user_id
-    WHERE a.answer_id = ?
+    WHERE a.answer_id = $1
     LIMIT 1
   `;
 
@@ -176,7 +180,7 @@ export const getAnswerAttachmentFileService = async ({ attachmentId }) => {
   const sql = `
     SELECT attachment_id, original_name, mime_type, storage_path
     FROM answer_attachments
-    WHERE attachment_id = ?
+    WHERE attachment_id = $1
     LIMIT 1
   `;
 
@@ -200,7 +204,7 @@ export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) =>
     SELECT aa.attachment_id, aa.storage_path, a.user_id AS answer_owner_id
     FROM answer_attachments aa
     JOIN answers a ON aa.answer_id = a.answer_id
-    WHERE aa.attachment_id = ?
+    WHERE aa.attachment_id = $1
     LIMIT 1
   `;
 
@@ -222,7 +226,7 @@ export const deleteAnswerAttachmentService = async ({ attachmentId, userId }) =>
     // File may already be missing on disk; proceed with removing the DB record.
   }
 
-  await safeExecute('DELETE FROM answer_attachments WHERE attachment_id = ?', [attachmentId]);
+  await safeExecute('DELETE FROM answer_attachments WHERE attachment_id = $1', [attachmentId]);
   return { id: attachmentId };
 };
 
@@ -244,7 +248,7 @@ export const getAnswersService = async (questionId) => {
   `;
   const params = [];
   if (questionId) {
-    sql += ' WHERE a.question_id = ?';
+    sql += ' WHERE a.question_id = $1';
     params.push(questionId);
   }
   sql += ' ORDER BY a.created_at DESC';
@@ -280,7 +284,7 @@ export const getUserAnswersService = async (userId) => {
     FROM answers a
     JOIN users u ON a.user_id = u.user_id
     LEFT JOIN questions q ON a.question_id = q.question_id
-    WHERE a.user_id = ?
+    WHERE a.user_id = $1
     ORDER BY a.created_at DESC
   `;
   const rows = await safeExecute(sql, [userId]);

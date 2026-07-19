@@ -1,3 +1,7 @@
+/**
+ * ManageQuestions — admin page for searching, deleting, and viewing questions.
+ * Paginated table with search input and direct links to question detail views.
+ */
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Trash2, ExternalLink, Shield, ChevronLeft, ChevronRight } from 'lucide-react';

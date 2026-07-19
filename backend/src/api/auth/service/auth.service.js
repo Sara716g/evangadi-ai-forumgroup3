@@ -62,7 +62,7 @@ const validateEmailWithMx = email => {
  */
 export const checkUserExists = async email => {
   const normalizedEmail = normalizeEmail(email);
-  const sql = 'SELECT user_id FROM users WHERE email = ? LIMIT 1';
+  const sql = 'SELECT user_id FROM users WHERE email = $1 LIMIT 1';
   const rows = await safeExecute(sql, [normalizedEmail]);
   return rows.length > 0;
 };
@@ -106,7 +106,8 @@ export const registerService = async ({
   // Create the user account as unverified
   const sql = `
     INSERT INTO users (first_name, last_name, email, password_hash, is_verified, verification_code, verification_code_expires_at)
-    VALUES (?, ?, ?, ?, FALSE, ?, ?)
+    VALUES ($1, $2, $3, $4, FALSE, $5, $6)
+    RETURNING user_id
   `;
   let result;
   try {
@@ -119,13 +120,13 @@ export const registerService = async ({
       codeExpiresAt,
     ]);
   } catch (error) {
-    if (error?.code === 'ER_DUP_ENTRY') {
+    if (error?.code === '23505') {
       throw new BadRequestError('User already exists with this email.');
     }
     throw error;
   }
 
-  // Send verification email
+  // Send verification email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: normalizedEmail,
@@ -136,18 +137,10 @@ export const registerService = async ({
     console.error('Failed to send verification email:', err);
   }
 
-  // Log verification code (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  EMAIL VERIFICATION CODE                 ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${verificationCode}`);
-  console.log('╚══════════════════════════════════════════╝\n');
-
   // Return user info but NO token — user must verify email first
   return {
     user: {
-      id: result.insertId,
+      id: result[0].user_id,
       firstName,
       lastName,
       email: normalizedEmail,
@@ -170,7 +163,7 @@ export const verifyEmailService = async ({ email, code }) => {
     SELECT user_id, first_name, last_name, email, role, is_verified,
            verification_code, verification_code_expires_at
     FROM users
-    WHERE email = ? AND verification_code = ?
+    WHERE email = $1 AND verification_code = $2
     LIMIT 1
   `;
   const rows = await safeExecute(sql, [normalizedEmail, code]);
@@ -198,7 +191,7 @@ export const verifyEmailService = async ({ email, code }) => {
     SET is_verified = TRUE,
         verification_code = NULL,
         verification_code_expires_at = NULL
-    WHERE user_id = ?
+    WHERE user_id = $1
   `;
   await safeExecute(updateSql, [user.user_id]);
 
@@ -246,7 +239,7 @@ export const resendVerificationService = async email => {
 
   const userSql = `
     SELECT user_id, first_name, is_verified
-    FROM users WHERE email = ? LIMIT 1
+    FROM users WHERE email = $1 LIMIT 1
   `;
   const rows = await safeExecute(userSql, [normalizedEmail]);
 
@@ -270,12 +263,13 @@ export const resendVerificationService = async email => {
 
   const updateSql = `
     UPDATE users
-    SET verification_code = ?, verification_code_expires_at = ?
-    WHERE user_id = ?
+    SET verification_code = $1, verification_code_expires_at = $2
+    WHERE user_id = $3
   `;
   await safeExecute(updateSql, [verificationCode, codeExpiresAt, user.user_id]);
 
   // Send verification email
+  // Resend verification email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: normalizedEmail,
@@ -285,14 +279,6 @@ export const resendVerificationService = async email => {
   } catch (err) {
     console.error('Failed to send verification email:', err);
   }
-
-  // Log verification code (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  RESENT VERIFICATION CODE                ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${verificationCode}`);
-  console.log('╚══════════════════════════════════════════╝\n');
 };
 
 /**
@@ -302,7 +288,7 @@ export const resendVerificationService = async email => {
 export const loginService = async ({ email, password }) => {
   const normalizedEmail = normalizeEmail(email);
   const sql =
-    'SELECT user_id, first_name, last_name, email, password_hash, role, status, is_verified, avatar_url FROM users WHERE email = ? LIMIT 1';
+    'SELECT user_id, first_name, last_name, email, password_hash, role, status, is_verified, avatar_url FROM users WHERE email = $1 LIMIT 1';
   const rows = await safeExecute(sql, [normalizedEmail]);
 
   if (rows.length === 0) {

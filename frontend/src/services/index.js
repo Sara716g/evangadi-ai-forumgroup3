@@ -1,4 +1,7 @@
-// Barrel file for services
+/**
+ * Barrel file — re-exports all service modules so consumers can import
+ * from '@/services' instead of deep paths.
+ */
 export { authService } from "./auth/auth.service.js";
 export { getSingleQuestion, getSimilarQuestions, questionService } from "./question/question.service.js";
 export * from "./answer/answer.service.js";

@@ -1,3 +1,7 @@
+/**
+ * NotificationBell — navbar icon that polls for unread notifications every 30s,
+ * shows a badge count, and opens a dropdown with mark-as-read / mark-all-read actions.
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';

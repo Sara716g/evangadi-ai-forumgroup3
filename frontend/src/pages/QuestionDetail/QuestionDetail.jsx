@@ -1,3 +1,8 @@
+/**
+ * QuestionDetail — main question page showing question content, answer list,
+ * answer submission form with AI quality scoring, comments, voting, and
+ * similar-question recommendations sidebar.
+ */
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Square, Volume2 } from "lucide-react";
@@ -646,8 +651,10 @@ export default function QuestionDetail() {
   }
 
   async function handlePostAnswer() {
-    if (answerText.trim().length < 20) {
-      setPostError("Your answer must be at least 20 characters.");
+    const hasText = answerText.trim().length >= 20;
+    const hasFiles = answerFiles.length > 0;
+    if (!hasText && !hasFiles) {
+      setPostError("Your answer must be at least 20 characters, or include an attachment.");
       return;
     }
     setIsPosting(true);
@@ -660,8 +667,9 @@ export default function QuestionDetail() {
       setFitResult(null);
       setAnswerFiles([]);
       setAttachmentError("");
-    } catch {
-      setPostError("Failed to post answer. Please try again.");
+    } catch (err) {
+      const msg = err?.response?.data?.msg || err?.message || "Failed to post answer. Please try again.";
+      setPostError(msg);
     } finally {
       setIsPosting(false);
     }

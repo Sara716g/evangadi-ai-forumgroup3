@@ -1,3 +1,4 @@
+/** Static "Contact" page with support email and social links. */
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, MessageSquare, ExternalLink } from 'lucide-react';
 import styles from '../StaticPages/StaticPages.module.css';

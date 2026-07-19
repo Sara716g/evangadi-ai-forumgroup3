@@ -47,7 +47,7 @@ const getRelevantContext = async (userId, question, limit = 3) => {
     FROM document_chunk_vectors dcv
     JOIN document_chunks dc ON dcv.chunk_id = dc.chunk_id
     JOIN documents d ON dc.document_id = d.document_id
-    WHERE d.user_id = ? AND dcv.status = 'ready'
+    WHERE d.user_id = $1 AND dcv.status = 'ready'
   `;
 
   const chunks = await safeExecute(query, [userId]);
@@ -125,7 +125,7 @@ export const generateAssistantResponseService = async (
     // 7. Log the interaction to the database (Executes safely since the table exists)
     if (userId) {
       await safeExecute(
-        "INSERT INTO ai_assistant_logs (user_id, prompt, response) VALUES (?, ?, ?)",
+        "INSERT INTO ai_assistant_logs (user_id, prompt, response) VALUES ($1, $2, $3)",
         [userId, question, responseText],
       );
     }

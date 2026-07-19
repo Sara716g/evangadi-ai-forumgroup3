@@ -1,3 +1,8 @@
+/**
+ * RagDocuments — RAG knowledge-base page. Left sidebar lists uploaded PDFs with
+ * status badges; main area shows PDF viewer with zoom/rotate controls, semantic
+ * search, AI Q&A panel, and document retry/delete actions.
+ */
 import { useState, useEffect, useRef } from "react";
 import {
   Search,
