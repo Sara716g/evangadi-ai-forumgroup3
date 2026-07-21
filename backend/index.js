@@ -1,7 +1,7 @@
 /**
  * @file Backend application entry point.
  * 
- * Bootstraps the Express server, connects to MySQL, registers middleware
+ * Bootstraps the Express server, connects to PostgreSQL, registers middleware
  * and route modules, and starts listening on the configured port.
  */
 
@@ -14,51 +14,31 @@ import { mainRouter } from './src/api/routes.js';
 import { errorHandler } from './src/middleware/error-handler.js';
 import cors from 'cors';
 
-/**
- * Resolve __filename and __dirname for ES modules.
- * Express static serving and path resolution depend on these values.
- */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3777;
 
-// --- Global middleware ---
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-/** Serve uploaded files (avatars, RAG PDFs, answer attachments, voice messages) */
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-/** Root health message — prevents "Cannot GET /" when visiting the base URL. */
-app.get("/", (req, res) => {
-  res.send(
-    "Welcome to the Evangadi AI Forum Backend! Server is running smoothly.",
-  );
-});
-
-/** Lightweight health-check endpoint for uptime monitors and load balancers. */
+// Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date() });
 });
 
-/** Mount all API routes under /api prefix. */
 app.use("/api", mainRouter);
 
-/** Global error handler — catches unhandled errors thrown in route handlers. */
 app.use(errorHandler);
 
-/**
- * Start the server after verifying the database connection.
- * Exits the process immediately if the DB pool cannot connect or the port
- * is already in use, so container orchestrators know the startup failed.
- */
+// Start server
 const startServer = async () => {
   try {
     const client = await db.connect();
-
     console.log("Database connection established successfully.");
     client.release();
 
@@ -85,4 +65,3 @@ const startServer = async () => {
 };
 
 startServer();
-
