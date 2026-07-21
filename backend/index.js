@@ -57,10 +57,10 @@ app.use(errorHandler);
  */
 const startServer = async () => {
   try {
-    const connection = await db.getConnection();
+    const client = await db.connect();
 
     console.log("Database connection established successfully.");
-    connection.release();
+    client.release();
 
     app.listen(port, (err) => {
       if (err) {
