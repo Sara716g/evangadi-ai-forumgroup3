@@ -107,7 +107,7 @@ export default function Auth() {
         navigate(from, { replace: true });
       } else {
         // Registration flow — create account (unverified)
-        const result = await register({
+        await register({
           firstName: trimmedFirstName,
           lastName: trimmedLastName,
           email: normalizedEmail,
@@ -457,6 +457,7 @@ export default function Auth() {
                     className={styles.auth__input}
                     value={email}
                     onChange={e => setEmail(e.target.value)}
+                    autoComplete='off'
                   />
                 </div>
 

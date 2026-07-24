@@ -135,11 +135,13 @@ function ReaderPanel({ activeDocument }) {
     setCurrentPage(1);
   }
 
-function goToPrevPage() {
+// eslint-disable-next-line no-unused-vars
+  function goToPrevPage() {
     pushToUndo();
     setCurrentPage((p) => Math.max(p - 1, 1));
   }
 
+  // eslint-disable-next-line no-unused-vars
   function goToNextPage() {
     pushToUndo();
     setCurrentPage((p) => Math.min(p + 1, numPages || 1));

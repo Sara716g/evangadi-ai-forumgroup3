@@ -30,6 +30,33 @@ async function migrate() {
     else console.error('✗ avatar_url error:', e.message);
   }
 
+  // 3b. Add is_verified column
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN is_verified TINYINT(1) NOT NULL DEFAULT 0 AFTER avatar_url');
+    console.log('✓ Added is_verified column to users');
+  } catch (e) {
+    if (e.message.includes('Duplicate column')) console.log('- is_verified column already exists');
+    else console.error('✗ is_verified error:', e.message);
+  }
+
+  // 3c. Add verification_code column
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN verification_code VARCHAR(6) DEFAULT NULL AFTER is_verified');
+    console.log('✓ Added verification_code column to users');
+  } catch (e) {
+    if (e.message.includes('Duplicate column')) console.log('- verification_code column already exists');
+    else console.error('✗ verification_code error:', e.message);
+  }
+
+  // 3d. Add verification_code_expires_at column
+  try {
+    await db.execute('ALTER TABLE users ADD COLUMN verification_code_expires_at DATETIME DEFAULT NULL AFTER verification_code');
+    console.log('✓ Added verification_code_expires_at column to users');
+  } catch (e) {
+    if (e.message.includes('Duplicate column')) console.log('- verification_code_expires_at column already exists');
+    else console.error('✗ verification_code_expires_at error:', e.message);
+  }
+
   // 4. Create password_reset_tokens table
   try {
     await db.execute(`

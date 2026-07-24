@@ -19,29 +19,32 @@ import styles from './Auth.module.css';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+
+  // Tracks which step of the flow the user is on
   const [step, setStep] = useState('email'); // 'email' | 'verify' | 'password' | 'success'
 
-  // Email step
+  // --- Email step state ---
   const [email, setEmail] = useState('');
 
-  // Verify code step
+  // --- Verify code step state ---
   const [code, setCode] = useState('');
 
-  // Password step
+  // --- Password step state ---
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Common state
+  // --- Shared UI state ---
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Step 1: Send reset code
+  // Step 1: Validate email and request a reset code from the server
   const handleEmailSubmit = async e => {
     e.preventDefault();
     setError(null);
 
+    // Normalize and validate the email before sending
     const normalizedEmail = email.trim().toLowerCase();
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -58,6 +61,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
+      // Call the API to send a verification code to the email
       await authService.forgotPassword(normalizedEmail);
       setStep('verify');
     } catch (err) {
@@ -67,11 +71,12 @@ export default function ForgotPassword() {
     }
   };
 
-  // Step 2: Verify code
+  // Step 2: Verify the 6-digit code the user received
   const handleCodeSubmit = async e => {
     e.preventDefault();
     setError(null);
 
+    // Ensure code is exactly 6 digits before sending
     if (!code || code.length !== 6) {
       setError('Please enter a valid 6-digit verification code.');
       return;
@@ -80,6 +85,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
+      // Confirm the code matches what was sent to the email
       await authService.verifyResetCode({ email: email.trim().toLowerCase(), code });
       setStep('password');
     } catch (err) {
@@ -89,11 +95,12 @@ export default function ForgotPassword() {
     }
   };
 
-  // Step 3: Reset password
+  // Step 3: Set the new password after code verification
   const handlePasswordSubmit = async e => {
     e.preventDefault();
     setError(null);
 
+    // Basic password validation before submission
     if (!password) {
       setError('Password is required.');
       return;
@@ -112,6 +119,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
+      // Send the verified code and new password to finalize the reset
       await authService.resetPassword({ code, password });
       setStep('success');
     } catch (err) {
@@ -121,7 +129,7 @@ export default function ForgotPassword() {
     }
   };
 
-  // Success screen
+  // --- Success screen: shown after password is reset ---
   if (step === 'success') {
     return (
       <div className={styles.forgotPassword}>
@@ -152,7 +160,7 @@ export default function ForgotPassword() {
     );
   }
 
-  // Password step
+  // --- Password step: enter and confirm the new password ---
   if (step === 'password') {
     return (
       <div className={styles.forgotPassword}>
@@ -176,6 +184,7 @@ export default function ForgotPassword() {
           </div>
 
           <form className={styles.forgotPassword__form} onSubmit={handlePasswordSubmit}>
+            {/* New password input with show/hide toggle */}
             <div className={styles.forgotPassword__inputGroup}>
               <label htmlFor='password' className={styles.forgotPassword__label}>
                 New Password
@@ -200,6 +209,7 @@ export default function ForgotPassword() {
               </div>
             </div>
 
+            {/* Confirm password input with show/hide toggle */}
             <div className={styles.forgotPassword__inputGroup}>
               <label htmlFor='confirmPassword' className={styles.forgotPassword__label}>
                 Confirm New Password
@@ -236,6 +246,7 @@ export default function ForgotPassword() {
             </button>
           </form>
 
+          {/* Go back to re-enter the verification code */}
           <div className={styles.forgotPassword__footer}>
             <button
               type='button'
@@ -251,7 +262,7 @@ export default function ForgotPassword() {
     );
   }
 
-  // Verify code step
+  // --- Verify code step: enter the 6-digit code sent to email ---
   if (step === 'verify') {
     return (
       <div className={styles.forgotPassword}>
@@ -276,6 +287,7 @@ export default function ForgotPassword() {
           </div>
 
           <form className={styles.forgotPassword__form} onSubmit={handleCodeSubmit}>
+            {/* 6-digit code input */}
             <div className={styles.forgotPassword__inputGroup}>
               <label htmlFor='code' className={styles.forgotPassword__label}>
                 Verification Code
@@ -304,6 +316,7 @@ export default function ForgotPassword() {
             </button>
           </form>
 
+          {/* Go back to change the email address */}
           <div className={styles.forgotPassword__footer}>
             <button
               type='button'
@@ -319,7 +332,7 @@ export default function ForgotPassword() {
     );
   }
 
-  // Email input step (default)
+  // --- Email step (default): enter email to receive a reset code ---
   return (
     <div className={styles.forgotPassword}>
       <Motion.div
@@ -343,6 +356,7 @@ export default function ForgotPassword() {
         </div>
 
         <form className={styles.forgotPassword__form} onSubmit={handleEmailSubmit}>
+          {/* Email input field */}
           <div className={styles.forgotPassword__inputGroup}>
             <label htmlFor='email' className={styles.forgotPassword__label}>
               Email Address
@@ -369,6 +383,7 @@ export default function ForgotPassword() {
           </button>
         </form>
 
+        {/* Return to the main login page */}
         <div className={styles.forgotPassword__footer}>
           <Link to='/auth' className={styles.forgotPassword__backLink}>
             <ArrowLeft size={16} />
