@@ -1,8 +1,12 @@
+/**
+ * UserTable — paginated, searchable table of users for the admin dashboard.
+ * Supports ban/unban, promote/demote actions via callback props.
+ */
 import { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, Ban, CheckCircle, Shield, ShieldOff } from 'lucide-react';
 import styles from './UserTable.module.css';
 
-export default function UserTable({ users, pagination, onPageChange, onSearch, onStatusChange, onRoleChange }) {
+export default function UserTable({ users, pagination, onPageChange, onSearch, onStatusChange, onRoleChange, currentUserId }) {
   const [searchInput, setSearchInput] = useState('');
 
   function handleSearch(e) {
@@ -70,6 +74,7 @@ export default function UserTable({ users, pagination, onPageChange, onSearch, o
                         className={`${styles.actionBtn} ${user.status === 'banned' ? styles.unbanBtn : styles.banBtn}`}
                         onClick={() => onStatusChange(user.id, user.status === 'banned' ? 'active' : 'banned')}
                         title={user.status === 'banned' ? 'Unban user' : 'Ban user'}
+                        disabled={user.id === currentUserId}
                       >
                         {user.status === 'banned' ? <CheckCircle size={14} /> : <Ban size={14} />}
                       </button>
@@ -78,6 +83,7 @@ export default function UserTable({ users, pagination, onPageChange, onSearch, o
                         className={`${styles.actionBtn} ${user.role === 'admin' ? styles.demoteBtn : styles.promoteBtn}`}
                         onClick={() => onRoleChange(user.id)}
                         title={user.role === 'admin' ? 'Demote to user' : 'Promote to admin'}
+                        disabled={user.id === currentUserId}
                       >
                         {user.role === 'admin' ? <ShieldOff size={14} /> : <Shield size={14} />}
                       </button>

@@ -1,32 +1,30 @@
 .root {
   align-items: center;
   display: inline-flex;
-  gap: 8px;
-  min-height: 36px;
+  gap: 6px;
 }
 
 .button {
   align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-placeholder);
   cursor: pointer;
   display: inline-flex;
   flex-shrink: 0;
-  height: 34px;
+  height: 32px;
   justify-content: center;
+  padding: 0;
   transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
     color 0.15s ease,
-    box-shadow 0.15s ease;
-  width: 34px;
+    background 0.15s ease;
+  width: 32px;
 }
 
 .button:hover:not(:disabled) {
-  border-color: var(--primary);
   color: var(--primary);
+  background: var(--primary-light);
 }
 
 .button:focus-visible {
@@ -41,7 +39,6 @@
 
 .listening {
   background: var(--primary-light);
-  border-color: var(--primary);
   color: var(--primary);
 }
 

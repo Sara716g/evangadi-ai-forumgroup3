@@ -1,3 +1,8 @@
+/**
+ * ExternalSearch — community search page that queries external forum sources
+ * (Stack Overflow / Discourse) and displays results as clickable cards.
+ * Minimum 3-character query enforced client-side.
+ */
 import React, { useState } from 'react';
 import { externalForumSearch } from '../../services/community/community.service';
 import styles from './ExternalSearch.module.css';

@@ -1,7 +1,10 @@
+/**
+ * Community API service — search external forum data (Stack Overflow / Discourse).
+ */
 import { apiClient } from '../core/api.client.js';
 
 /**
- * Connects with the Express backend to query external forum data.
+ * Search external forum sources for a query string (minimum 3 characters).
  * @param {string} query - The search text string (must be >= 3 characters)
  * @returns {Promise<Array>} - Resolves to an array of formatted query matches
  */

@@ -1,3 +1,9 @@
+/**
+ * useVoiceInput — encapsulates the Web Speech API (SpeechRecognition) lifecycle.
+ * Exposes start/stop/toggle controls, interim transcripts, and error state.
+ * Automatically restarts recognition on end (when shouldKeepListening is true)
+ * to work around the browser-imposed single-utterance limit.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const getSpeechRecognition = () => {

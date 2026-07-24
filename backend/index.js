@@ -1,3 +1,10 @@
+/**
+ * @file Backend application entry point.
+ * 
+ * Bootstraps the Express server, connects to PostgreSQL, registers middleware
+ * and route modules, and starts listening on the configured port.
+ */
+
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
@@ -36,13 +43,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Base Route (Fixes the "Cannot GET /" error)
-app.get("/", (req, res) => {
-  res.send(
-    "Welcome to the Evangadi AI Forum Backend! Server is running smoothly.",
-  );
-});
-
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date() });
@@ -55,11 +55,9 @@ app.use(errorHandler);
 // Start server
 const startServer = async () => {
   try {
-    // Test database connection
-    const connection = await db.getConnection();
-
+    const client = await db.connect();
     console.log("Database connection established successfully.");
-    connection.release();
+    client.release();
 
     app.listen(port, (err) => {
       if (err) {
@@ -84,4 +82,3 @@ const startServer = async () => {
 };
 
 startServer();
-

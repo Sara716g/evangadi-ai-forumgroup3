@@ -1,6 +1,15 @@
+/**
+ * @file RAG controller.
+ *
+ * Handles HTTP request/response for document upload, search, query,
+ * metadata, file streaming, deletion, and retry operations.
+ * Each handler delegates to rag.service.js for business logic.
+ */
+
 import fs from "fs";
 import * as ragService from "../service/rag.service.js";
 
+/** POST /documents — Upload a PDF and start background processing (chunking + embedding). */
 export const createDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -26,6 +35,7 @@ export const createDocumentController = async (req, res, next) => {
   }
 };
 
+/** GET /documents — List all documents owned by the authenticated user. */
 export const getDocumentsController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -37,6 +47,7 @@ export const getDocumentsController = async (req, res, next) => {
   }
 };
 
+/** GET /documents/:documentId — Fetch metadata (status, size, timestamps) for a document. */
 export const getDocumentMetaController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -53,6 +64,7 @@ export const getDocumentMetaController = async (req, res, next) => {
   }
 };
 
+/** DELETE /documents/:documentId — Delete a document and its chunks from disk and DB. */
 export const deleteDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -69,6 +81,7 @@ export const deleteDocumentController = async (req, res, next) => {
   }
 };
 
+/** GET /documents/:documentId/search — Semantic search within a document's chunks. */
 export const searchInDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -93,6 +106,7 @@ export const searchInDocumentController = async (req, res, next) => {
   }
 };
 
+/** POST /documents/:documentId/query — AI-grounded Q&A with inline citations. */
 export const queryDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -115,6 +129,7 @@ export const queryDocumentController = async (req, res, next) => {
   }
 };
 
+/** GET /documents/:documentId/file — Stream the raw PDF file for browser preview. */
 export const getDocumentFileController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -140,6 +155,7 @@ export const getDocumentFileController = async (req, res, next) => {
   }
 };
 
+/** POST /documents/:documentId/retry — Re-process a failed document from scratch. */
 export const retryDocumentController = async (req, res, next) => {
   try {
     const userId = req.user.id;

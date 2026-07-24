@@ -1,3 +1,11 @@
+/**
+ * @file Central API router.
+ *
+ * Aggregates every feature-module router and mounts it under a
+ * single /api prefix. Add new feature routers here as the
+ * application grows.
+ */
+
 import express from "express";
 import authRoutes from "./auth/routes/auth.routes.js";
 import questionRoutes from "./question/routes/question.routes.js";
@@ -12,34 +20,36 @@ import aiAssistantRoutes from "./ai-assistant/routes/ai-assistant.routes.js";
 
 export const mainRouter = express.Router();
 
-// Authentication routes
+// --- Feature-module routers ---
+
+/** Authentication — register, login, email verification, forgot/reset password. */
 mainRouter.use("/auth", authRoutes);
 
-// Question routes
+/** Questions — CRUD, semantic search, draft coach, answer-fit, similar questions. */
 mainRouter.use("/questions", questionRoutes);
 
-// Answer routes
+/** Answers — create, update, delete answers + comments + votes. */
 mainRouter.use("/answers", answerRoutes);
 
-// RAG routes
+/** RAG — PDF upload, chunking, vector search, AI-grounded queries. */
 mainRouter.use("/rag", ragRoutes);
 
-// AI Assistant routes
+/** AI Assistant — floating chat widget that answers user questions. */
 mainRouter.use("/ai-assistant", aiAssistantRoutes);
 
-// Notification routes
+/** Notifications — create, list, mark-read for user alerts. */
 mainRouter.use('/notifications', notificationRoutes);
 
-// Profile routes
+/** User profiles — get/update profile, upload avatar, credentials. */
 mainRouter.use('/profile', profileRoutes);
 
-// Voice message routes
+/** Voice messages — upload and stream audio attached to questions/answers. */
 mainRouter.use('/voice-messages', voiceMessageRoutes);
 
-// Admin routes
+/** Admin — platform stats, user management, content moderation. */
 mainRouter.use('/admin', adminRoutes);
 
-// Community routes
+/** Community — search external forums (StackOverflow, Dev.to). */
 mainRouter.use('/community', communityRoutes);
 
 export default mainRouter;

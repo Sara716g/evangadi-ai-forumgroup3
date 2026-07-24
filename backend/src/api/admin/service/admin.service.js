@@ -1,21 +1,21 @@
 import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError, BadRequestError } from '../../../utils/errors/index.js';
-
+// Service functions for admin operations
 export const getStatsService = async () => {
-  const [usersRow] = await safeExecute('SELECT COUNT(*) AS count FROM users', []);
-  const [questionsRow] = await safeExecute('SELECT COUNT(*) AS count FROM questions', []);
-  const [answersRow] = await safeExecute('SELECT COUNT(*) AS count FROM answers', []);
-
+  const [usersRow] = await safeExecute('SELECT COUNT(*) AS count FROM users', []);// Get total number of users
+  const [questionsRow] = await safeExecute('SELECT COUNT(*) AS count FROM questions', []);// Get total number of questions
+  const [answersRow] = await safeExecute('SELECT COUNT(*) AS count FROM answers', []);// Get total number of answers
+// Get number of active users
   const [activeUsersRow] = await safeExecute(
     "SELECT COUNT(*) AS count FROM users WHERE status = 'active'", []
   );
 
   const [newUsersRow] = await safeExecute(
-    "SELECT COUNT(*) AS count FROM users WHERE DATE(created_at) = CURDATE()", []
+    "SELECT COUNT(*) AS count FROM users WHERE DATE(created_at) = CURRENT_DATE", []
   );
 
   const [newQuestionsRow] = await safeExecute(
-    "SELECT COUNT(*) AS count FROM questions WHERE DATE(created_at) = CURDATE()", []
+    "SELECT COUNT(*) AS count FROM questions WHERE DATE(created_at) = CURRENT_DATE", []
   );
 
   return {
@@ -27,14 +27,14 @@ export const getStatsService = async () => {
     newQuestionsToday: newQuestionsRow.count,
   };
 };
-
+// 
 export const getAllUsersService = async ({ page = 1, limit = 20, search = '' }) => {
   const offset = (page - 1) * limit;
   let whereClause = '';
   const params = [];
 
   if (search) {
-    whereClause = 'WHERE (u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ?)';
+    whereClause = 'WHERE (u.first_name ILIKE $1 OR u.last_name ILIKE $2 OR u.email ILIKE $3)';
     const searchPattern = `%${search}%`;
     params.push(searchPattern, searchPattern, searchPattern);
   }
@@ -42,6 +42,9 @@ export const getAllUsersService = async ({ page = 1, limit = 20, search = '' }) 
   const countSql = `SELECT COUNT(*) AS total FROM users u ${whereClause}`;
   const [countRow] = await safeExecute(countSql, params);
   const total = countRow.total;
+
+  const limitParam = params.length + 1;
+  const offsetParam = params.length + 2;
 
   const usersSql = `
     SELECT u.user_id, u.first_name, u.last_name, u.email, u.role, u.status, u.created_at,
@@ -52,7 +55,7 @@ export const getAllUsersService = async ({ page = 1, limit = 20, search = '' }) 
     LEFT JOIN (SELECT user_id, COUNT(*) AS answer_count FROM answers GROUP BY user_id) a ON a.user_id = u.user_id
     ${whereClause}
     ORDER BY u.created_at DESC
-    LIMIT ? OFFSET ?
+    LIMIT $${limitParam} OFFSET $${offsetParam}
   `;
 
   const users = await safeExecute(usersSql, [...params, Number(limit), offset]);
@@ -88,12 +91,12 @@ export const updateUserStatusService = async (userId, status, adminId) => {
     throw new BadRequestError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
   }
 
-  const rows = await safeExecute('SELECT user_id FROM users WHERE user_id = ?', [userId]);
+  const rows = await safeExecute('SELECT user_id FROM users WHERE user_id = $1', [userId]);
   if (rows.length === 0) {
     throw new NotFoundError('User not found.');
   }
 
-  await safeExecute('UPDATE users SET status = ? WHERE user_id = ?', [status, userId]);
+  await safeExecute('UPDATE users SET status = $1 WHERE user_id = $2', [status, userId]);
 
   return { id: userId, status };
 };
@@ -104,7 +107,7 @@ export const getAllQuestionsService = async ({ page = 1, limit = 20, search = ''
   const params = [];
 
   if (search) {
-    whereClause = 'WHERE (q.title LIKE ? OR q.content LIKE ?)';
+    whereClause = 'WHERE (q.title ILIKE $1 OR q.content ILIKE $2)';
     const searchPattern = `%${search}%`;
     params.push(searchPattern, searchPattern);
   }
@@ -112,6 +115,9 @@ export const getAllQuestionsService = async ({ page = 1, limit = 20, search = ''
   const countSql = `SELECT COUNT(*) AS total FROM questions q ${whereClause}`;
   const [countRow] = await safeExecute(countSql, params);
   const total = countRow.total;
+
+  const limitParam = params.length + 1;
+  const offsetParam = params.length + 2;
 
   const questionsSql = `
     SELECT q.question_id, q.question_hash, q.title, q.content, q.created_at,
@@ -122,7 +128,7 @@ export const getAllQuestionsService = async ({ page = 1, limit = 20, search = ''
     LEFT JOIN (SELECT question_id, COUNT(*) AS answer_count FROM answers GROUP BY question_id) a ON a.question_id = q.question_id
     ${whereClause}
     ORDER BY q.created_at DESC
-    LIMIT ? OFFSET ?
+    LIMIT $${limitParam} OFFSET $${offsetParam}
   `;
 
   const questions = await safeExecute(questionsSql, [...params, Number(limit), offset]);
@@ -152,20 +158,20 @@ export const toggleUserRoleService = async (userId, adminId) => {
     throw new BadRequestError('You cannot change your own role.');
   }
 
-  const rows = await safeExecute('SELECT user_id, role FROM users WHERE user_id = ?', [userId]);
+  const rows = await safeExecute('SELECT user_id, role FROM users WHERE user_id = $1', [userId]);
   if (rows.length === 0) {
     throw new NotFoundError('User not found.');
   }
 
   const newRole = rows[0].role === 'admin' ? 'user' : 'admin';
-  await safeExecute('UPDATE users SET role = ? WHERE user_id = ?', [newRole, userId]);
+  await safeExecute('UPDATE users SET role = $1 WHERE user_id = $2', [newRole, userId]);
 
   return { id: userId, role: newRole };
 };
 
 export const deleteQuestionService = async (questionHash) => {
   const rows = await safeExecute(
-    'SELECT question_id FROM questions WHERE question_hash = ?',
+    'SELECT question_id FROM questions WHERE question_hash = $1',
     [questionHash]
   );
 
@@ -173,14 +179,14 @@ export const deleteQuestionService = async (questionHash) => {
     throw new NotFoundError('Question not found.');
   }
 
-  await safeExecute('DELETE FROM questions WHERE question_hash = ?', [questionHash]);
+  await safeExecute('DELETE FROM questions WHERE question_hash = $1', [questionHash]);
 
   return { success: true };
 };
 
 export const deleteAnswerService = async (answerId) => {
   const rows = await safeExecute(
-    'SELECT answer_id FROM answers WHERE answer_id = ?',
+    'SELECT answer_id FROM answers WHERE answer_id = $1',
     [answerId]
   );
 
@@ -188,7 +194,7 @@ export const deleteAnswerService = async (answerId) => {
     throw new NotFoundError('Answer not found.');
   }
 
-  await safeExecute('DELETE FROM answers WHERE answer_id = ?', [answerId]);
+  await safeExecute('DELETE FROM answers WHERE answer_id = $1', [answerId]);
 
   return { success: true };
 };

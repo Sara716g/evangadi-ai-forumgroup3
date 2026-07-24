@@ -26,7 +26,7 @@ export const forgotPasswordService = async email => {
   // Look up the user – silently succeed even if the email doesn't exist
   // to prevent email enumeration attacks.
   const userSql =
-    'SELECT user_id, first_name, email FROM users WHERE email = ? LIMIT 1';
+    'SELECT user_id, first_name, email FROM users WHERE email = $1 LIMIT 1';
   const rows = await safeExecute(userSql, [normalizedEmail]);
 
   if (rows.length === 0) {
@@ -38,7 +38,7 @@ export const forgotPasswordService = async email => {
 
   // Invalidate any previously unused tokens/codes for this user.
   const invalidateSql =
-    'UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0';
+    'UPDATE password_reset_tokens SET used = 1 WHERE user_id = $1 AND used = 0';
   await safeExecute(invalidateSql, [user.user_id]);
 
   // Generate and store the new verification code (expires in 15 minutes).
@@ -49,18 +49,10 @@ export const forgotPasswordService = async email => {
     .replace('T', ' ');
 
   const insertSql =
-    'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)';
+    'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)';
   await safeExecute(insertSql, [user.user_id, code, expiresAt]);
 
-  // Log verification code to console (useful in development)
-  console.log('\n╔══════════════════════════════════════════╗');
-  console.log('║  PASSWORD RESET CODE                     ║');
-  console.log('╠══════════════════════════════════════════╣');
-  console.log(`║  Email: ${normalizedEmail}`);
-  console.log(`║  Code:  ${code}`);
-  console.log('╚══════════════════════════════════════════╝\n');
-
-  // Build the email with the verification code using template.
+  // Send password reset email (in dev mode, sendEmail logs the code to console instead)
   try {
     await sendEmail({
       to: user.email,
@@ -88,7 +80,7 @@ export const verifyResetCodeService = async ({ email, code }) => {
     SELECT prt.token_id, prt.user_id, prt.expires_at, prt.used
     FROM password_reset_tokens prt
     INNER JOIN users u ON u.user_id = prt.user_id
-    WHERE prt.token = ? AND u.email = ? AND prt.used = 0
+    WHERE prt.token = $1 AND u.email = $2 AND prt.used = 0
     LIMIT 1
   `;
   const rows = await safeExecute(tokenSql, [code, normalizedEmail]);

@@ -110,7 +110,7 @@
 
 .unread {
   background-color: var(--primary-light);
-  border-color: #fed7aa;
+  border-color: var(--primary-light, #ffedd5);
 }
 
 .notificationContent {

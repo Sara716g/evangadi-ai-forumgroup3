@@ -1,3 +1,11 @@
+/**
+ * @file Question controller.
+ *
+ * Handles HTTP request/response for all question-related endpoints.
+ * Each handler delegates business logic to the service layer and
+ * forwards errors to the global error handler via next(error).
+ */
+
 import { StatusCodes } from 'http-status-codes';
 import {
   createQuestionWithVectorService,
@@ -9,6 +17,7 @@ import {
   assessAnswerAgainstQuestionService,
 } from '../service/question.service.js';
 
+/** POST / — Create a new question with vector embedding and duplicate detection. */
 export const createQuestionController = async (req, res, next) => {
   try {
     const { title, content } = req.body;
@@ -30,6 +39,7 @@ export const createQuestionController = async (req, res, next) => {
   }
 };
 
+/** POST /draft-coach — Get AI feedback on a question draft. */
 export const generateQuestionDraftCoachController = async (req, res, next) => {
   try {
     const { title, content } = req.body;
@@ -46,6 +56,7 @@ export const generateQuestionDraftCoachController = async (req, res, next) => {
   }
 };
 
+/** POST /:questionHash/answer-fit — Evaluate answer quality against a question. */
 export const assessAnswerAgainstQuestionController = async (req, res, next) => {
   try {
     const { questionHash } = req.params;
@@ -66,6 +77,7 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
   }
 };
 
+/** GET / — List questions with optional keyword search and "mine" filter. */
 export const getQuestionsController = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -93,6 +105,7 @@ export const getQuestionsController = async (req, res, next) => {
   }
 };
 
+/** GET /:questionHash — Fetch a single question with its answers. */
 export const getSingleQuestionController = async (req, res, next) => {
   try {
     const { questionHash } = req.params;
@@ -115,6 +128,7 @@ export const getSingleQuestionController = async (req, res, next) => {
   }
 };
 
+/** GET /search — Semantic search using vector cosine similarity. */
 export const searchQuestionsController = async (req, res, next) => {
   try {
     const { query: searchQuery, k, threshold } = req.query;
@@ -136,6 +150,7 @@ export const searchQuestionsController = async (req, res, next) => {
   }
 };
 
+/** GET /:questionHash/similar — Get questions similar to a given question. */
 export const getSimilarQuestionsController = async (req, res, next) => {
   try {
     const { questionHash } = req.params;

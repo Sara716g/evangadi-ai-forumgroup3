@@ -380,9 +380,9 @@
 .auth__error {
   padding: 0.75rem 1rem;
   font-size: var(--text-sm);
-  color: #dc2626;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--error, #ef4444);
+  background-color: var(--error-light, #fee2e2);
+  border: 1px solid var(--error-light, #fee2e2);
   border-radius: var(--radius-md);
   line-height: 1.5;
 }
@@ -391,9 +391,9 @@
 .auth__success {
   padding: 0.75rem 1rem;
   font-size: var(--text-sm);
-  color: #16a34a;
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  color: var(--success, #10b981);
+  background-color: var(--success-light, #d1fae5);
+  border: 1px solid var(--success-light, #d1fae5);
   border-radius: var(--radius-md);
   line-height: 1.5;
 }
@@ -691,9 +691,9 @@
 .forgotPassword__error {
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #dc2626;
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--error, #ef4444);
+  background-color: var(--error-light, #fee2e2);
+  border: 1px solid var(--error-light, #fee2e2);
   border-radius: var(--radius-md);
   line-height: 1.5;
 }
@@ -736,7 +736,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: 1.5rem;
-  color: #16a34a;
+  color: var(--success, #10b981);
 }
 
 /* Footer */
@@ -766,7 +766,7 @@
 }
 
 .forgotPassword__successIcon {
-  color: #16a34a;
+  color: var(--success, #10b981);
 }
 
 .forgotPassword__successTitle {

@@ -7,8 +7,13 @@ export const createAnswerValidation = [
     .toInt(),
   body('content')
     .trim()
-    .isLength({ min: 20 })
-    .withMessage('Content must be at least 20 characters.'),
+    .custom((value, { req }) => {
+      const hasFiles = req.files && req.files.length > 0;
+      if (!hasFiles && value.length < 20) {
+        throw new Error('Content must be at least 20 characters, or include an attachment.');
+      }
+      return true;
+    }),
 ];
 
 export const attachmentIdParamValidation = [

@@ -1,3 +1,7 @@
+/**
+ * DocumentSidebar — lists uploaded RAG documents with status badges (READY/PROCESSING/FAILED)
+ * and a delete button. Embeds PdfUploadDropzone at the top for adding new documents.
+ */
 import { Trash2 } from 'lucide-react';
 import PdfUploadDropzone from './PdfUploadDropzone';
 import styles from './DocumentSidebar.module.css';

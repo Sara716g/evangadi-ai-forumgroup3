@@ -1,3 +1,7 @@
+/**
+ * MyQuestions — user's own questions page. Fetches questions filtered by the
+ * signed-in user and displays them in a list with author/answer metadata.
+ */
 import { useState, useEffect } from "react";
 
 import { motion as Motion } from "framer-motion";

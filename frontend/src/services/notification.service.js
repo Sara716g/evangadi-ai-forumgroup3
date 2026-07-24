@@ -1,3 +1,6 @@
+/**
+ * Notification API service — list, mark-as-read, and delete user notifications.
+ */
 import { apiClient } from './core/api.client.js';
 
 export const notificationService = {

@@ -73,6 +73,7 @@ git push origin feature/T-11-semantic-search
 ```
 
 ### PR Checklist (include in every PR description)
+
 ```markdown
 - [ ] Code compiles with no errors (`npm run dev` starts cleanly)
 - [ ] Postman tests pass for all endpoints in this task (backend tasks)
@@ -80,7 +81,6 @@ git push origin feature/T-11-semantic-search
 - [ ] All acceptance criteria from the task are met
 - [ ] Files match the exact paths listed in the task
 ```
-
 
 ## 4. Logic Diagram
 

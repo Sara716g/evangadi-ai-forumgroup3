@@ -1,3 +1,7 @@
+/**
+ * RAG (Retrieval-Augmented Generation) API service.
+ * Handles document upload, search, query, and PDF preview for the knowledge base.
+ */
 import { apiClient } from "../core/api.client.js";
 
 export const ragService = {
@@ -14,7 +18,7 @@ export const ragService = {
     formData.append("file", file);
     return apiClient
       .post("/api/rag/documents", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { "Content-Type": undefined },
         timeout: 60000,
       })
       .then((r) => r.data.data || r.data);

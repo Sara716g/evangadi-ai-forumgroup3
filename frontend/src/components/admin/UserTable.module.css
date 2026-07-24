@@ -117,8 +117,8 @@
 }
 
 .badgeAdmin {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--warning-light, #fef3c7);
+  color: var(--text-primary, #0f172a);
 }
 
 .badgeUser {
@@ -127,18 +127,18 @@
 }
 
 .badgeActive {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--success-light, #d1fae5);
+  color: var(--text-primary, #0f172a);
 }
 
 .badgeBanned {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--error-light, #fee2e2);
+  color: var(--error, #ef4444);
 }
 
 .badgeSuspended {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--warning-light, #fef3c7);
+  color: var(--text-primary, #0f172a);
 }
 
 .actionBtn {
@@ -178,21 +178,27 @@
 }
 
 .promoteBtn {
-  color: #8b5cf6;
+  color: var(--primary, #f97316);
 }
 
 .promoteBtn:hover {
-  background-color: #ede9fe;
-  border-color: #8b5cf6;
+  background-color: var(--primary-light, #ffedd5);
+  border-color: var(--primary, #f97316);
 }
 
 .demoteBtn {
-  color: #6b7280;
+  color: var(--text-tertiary, #475569);
 }
 
 .demoteBtn:hover {
-  background-color: #f3f4f6;
-  border-color: #6b7280;
+  background-color: var(--surface-container-low, #f1f5f9);
+  border-color: var(--text-tertiary, #475569);
+}
+
+.actionBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .pagination {

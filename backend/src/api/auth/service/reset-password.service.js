@@ -17,7 +17,7 @@ export const resetPasswordService = async ({ code, password }) => {
     SELECT prt.token_id, prt.user_id, prt.expires_at, prt.used
     FROM password_reset_tokens prt
     INNER JOIN users u ON u.user_id = prt.user_id
-    WHERE prt.token = ? AND prt.used = 0
+    WHERE prt.token = $1 AND prt.used = 0
     LIMIT 1
   `;
   const rows = await safeExecute(tokenSql, [code]);
@@ -40,11 +40,11 @@ export const resetPasswordService = async ({ code, password }) => {
   const hashedPassword = await bcrypt.hash(password, salt);
 
   // Update the user's password.
-  const updateSql = 'UPDATE users SET password_hash = ? WHERE user_id = ?';
+  const updateSql = 'UPDATE users SET password_hash = $1 WHERE user_id = $2';
   await safeExecute(updateSql, [hashedPassword, resetToken.user_id]);
 
   // Mark the code as used.
   const markUsedSql =
-    'UPDATE password_reset_tokens SET used = 1 WHERE token_id = ?';
+    'UPDATE password_reset_tokens SET used = 1 WHERE token_id = $1';
   await safeExecute(markUsedSql, [resetToken.token_id]);
 };
